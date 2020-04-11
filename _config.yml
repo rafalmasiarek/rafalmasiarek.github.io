@@ -1,0 +1,15 @@
+# Dependencies
+markdown:         kramdown
+highlighter:      rouge
+
+# Setup
+title:            "Rafał Masiarek"
+description:      ""
+url:              https://masiarek.pl
+baseurl:          "/"
+
+author:
+  name:           "Tyler Benziger"
+
+# Custom vars
+gitlab:         https://gitlab.com/rafalmasiarek
