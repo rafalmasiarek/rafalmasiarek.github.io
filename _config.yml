@@ -9,7 +9,7 @@ url:              https://masiarek.pl
 baseurl:          "/"
 
 author:
-  name:           "Tyler Benziger"
+  name:           "Rafał Masiarek"
 
 # Custom vars
 gitlab:         https://gitlab.com/rafalmasiarek
