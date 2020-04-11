@@ -1,15 +1,22 @@
-# Dependencies
 markdown:         kramdown
 highlighter:      rouge
 
-# Setup
 title:            "Rafał Masiarek"
 description:      ""
+
 url:              https://masiarek.pl
 baseurl:          "/"
 
 author:
   name:           "Rafał Masiarek"
 
-# Custom vars
+# socials
 gitlab:         https://gitlab.com/rafalmasiarek
+
+# compress
+compress_html:
+  clippings: all
+  comments: ["<!-- ", " -->"]
+  endings: all
+  blanklines: false
+  startings: [html, head, body]
