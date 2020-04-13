@@ -15,6 +15,13 @@ GIT
       sassc (>= 1.11, < 3.0)
       sprockets (~> 4.0.beta7)
 
+GIT
+  remote: https://github.com/jekyll/jekyll-sitemap
+  revision: 10deb0cbac3b2730fc2f2ee51be6494b40187172
+  specs:
+    jekyll-sitemap (1.4.0)
+      jekyll (>= 3.7, < 5.0)
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -117,7 +124,7 @@ PLATFORMS
 DEPENDENCIES
   jekyll (~> 4.0.0)
   jekyll-assets!
-  jekyll-feed (~> 0.12)
+  jekyll-sitemap!
   minima (~> 2.5)
   tzinfo (~> 1.2)
   tzinfo-data

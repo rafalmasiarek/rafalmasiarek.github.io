@@ -15,7 +15,7 @@ gem "minima", "~> 2.5"
 # gem "github-pages", group: :jekyll_plugins
 # If you have any plugins, put them here!
 group :jekyll_plugins do
-  gem "jekyll-feed", "~> 0.12"
+  gem "jekyll-sitemap", git: "https://github.com/jekyll/jekyll-sitemap"
   gem "jekyll-assets", git: "https://github.com/envygeeks/jekyll-assets"
 end
 
