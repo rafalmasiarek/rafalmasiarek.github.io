@@ -14,7 +14,7 @@ layout: compress
       {{ site.title }}
   </title>
   {% if jekyll.environment == 'production' %}
-      {% asset style.css %}
+      {% asset style.css !integrity%}
   {% else %}
       <link href="{{ site.url }}{{ site.baseurl }}assets/css/style.css?{{ site.time | date: '%s%N' }}" rel="stylesheet">
   {% endif %}

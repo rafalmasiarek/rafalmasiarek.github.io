@@ -26,6 +26,13 @@ assets:
   compress:  
     js: 'uglifier'  
     css: 'sass'  
+  defaults:
+    integrity:
+      {css,img,js}: false
+  cdn:
+    baseurl: true
+    destination: true
+    url: https://masiarek.pl
   cachebust: hard 
 
 # compress
