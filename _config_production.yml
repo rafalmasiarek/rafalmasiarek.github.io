@@ -1,0 +1,34 @@
+markdown:         kramdown
+highlighter:      rouge
+
+title:            "Rafał Masiarek"
+description:      ""
+
+url:              https://masiarek.pl
+baseurl:          "/"
+
+author:
+  name:           "Rafał Masiarek"
+
+# socials
+gitlab:         https://gitlab.com/rafalmasiarek
+
+# assets
+assets:  
+  source_maps: true
+  compression: true
+  gzip: false
+  caching: ".jekyll-cache/assets"
+  destination: "/assets/compressed"
+  compress:  
+    js: 'uglifier'  
+    css: 'sass'  
+  cachebust: hard 
+
+# compress
+compress_html:
+  clippings: all
+  comments: ["<!-- ", " -->"]
+  endings: all
+  blanklines: false
+  startings: [html, head, body]

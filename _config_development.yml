@@ -1,5 +1,5 @@
 markdown:         kramdown
-highlighter:      rouge
+highlighter:      none
 
 title:            "Rafał Masiarek"
 description:      ""
@@ -13,10 +13,15 @@ author:
 # socials
 gitlab:         https://gitlab.com/rafalmasiarek
 
+# assets
+assets:  
+  source_maps: false
+  compression: false
+  gzip: false
+  #caching: false
+  cachebust: false
+
 # compress
 compress_html:
-  clippings: all
-  comments: ["<!-- ", " -->"]
-  endings: all
-  blanklines: false
-  startings: [html, head, body]
+  ignore:
+    envs: all
