@@ -4,7 +4,9 @@ layout: compress
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="utf-8">
+  <meta name="robots" content="index, follow">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, shrink-to-fit=no">
   <title>
       {% if page.title %}
           {% if page.title != 'Home' %}
@@ -13,8 +15,10 @@ layout: compress
       {% endif %}
       {{ site.title }}
   </title>
+  <meta itemprop="description" name="description" content="{% if page.description %}{{ page.description | truncate: 160 }}{% else %}{{ site.description | truncate: 160  }}{% endif %}" />
+
   {% if jekyll.environment == 'production' %}
-      {% asset style.css !integrity%}
+      {% asset style.css%}
   {% else %}
       <link href="{{ site.url }}{{ site.baseurl }}assets/css/style.css?{{ site.time | date: '%s%N' }}" rel="stylesheet">
   {% endif %}
