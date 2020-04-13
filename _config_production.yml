@@ -18,8 +18,11 @@ assets:
   source_maps: true
   compression: true
   gzip: false
-  caching: ".jekyll-cache/assets"
   destination: "/assets/compressed"
+  caching:
+    enabled: true
+    path: ".jekyll-cache/assets"
+    type: file
   compress:  
     js: 'uglifier'  
     css: 'sass'  
