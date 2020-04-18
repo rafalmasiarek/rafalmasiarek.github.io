@@ -17,6 +17,10 @@ gitlab:         https://gitlab.com/rafalmasiarek
 
 # assets
 assets:  
+  defaults:
+    js:  { integrity: false }
+    css: { integrity: false }
+    img: { integrity: false }
   source_maps: true
   compression: true
   gzip: false
@@ -28,9 +32,6 @@ assets:
   compress:  
     js: 'uglifier'  
     css: 'sass'  
-  defaults:
-    integrity:
-      {css,img,js}: false
   cdn:
     baseurl: true
     destination: true
