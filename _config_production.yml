@@ -32,10 +32,10 @@ assets:
   compress:  
     js: 'uglifier'  
     css: 'sass'  
-  cdn:
-    baseurl: true
-    destination: true
-    url: https://masiarek.pl
+  #cdn:
+  #  baseurl: true
+  #  destination: true
+  #  url: https://masiarek.pl
   cachebust: hard 
 
 # compress
