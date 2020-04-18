@@ -23,17 +23,11 @@ layout: compress
   {% else %}
       <link href="{{ site.url }}{{ site.baseurl }}assets/css/style.css?{{ site.time | date: '%s%N' }}" rel="stylesheet">
   {% endif %}
+  <script src="https://kit.fontawesome.com/cc759ba0dc.js" crossorigin="anonymous"></script>
 </head>
 <body>
-  {% if page.icon %}
-  <style>
-    body .username:after {
-      content: ' {{ page.icon }}';
-    }    
-  </style>
-  {% endif %}
   <header>
-    <p class="username"><a href="{{ site.url }}{{ site.baseurl }}" target="_self">{{ site.title }}</a></p>
+    <p class="username"><a href="{{ site.url }}{{ site.baseurl }}" target="_self">{{ site.title }}</a>{% if page.icon %} <i class="{{ page.icon }}"></i>{% endif %}</p>
   </header>
   {{ content }}
   <footer>
@@ -46,7 +40,12 @@ layout: compress
   {% if page.title != 'Contact' %}
     <a href="{{ site.url }}{{ site.baseurl }}contact" style="border:0">Contact</a> &nbsp;
   {% endif %}
-    <a href="{{ site.gitlab }}">Gitlab</a> &nbsp;
+  {% if site.gitlab != '' %}
+    <a href="{{ site.gitlab }}" style="border:0;text-decoration:none" target="_blank"><i class="fab fa-gitlab"></i>  Gitlab</a> &nbsp;
+  {% endif %}
+  {% if site.linkedin != '' %}
+    <a href="{{ site.linkedin }}" style="border:0;text-decoration:none" target="_blank"><i class="fab fa-linkedin-in"></i>  Linkedin</a>
+  {% endif %}
   </footer>
 </body>
 </html>

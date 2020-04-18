@@ -1,5 +1,5 @@
 ---
 layout: default
 title: Home
-icon: '⌂'
+icon: 'fas fa-home'
 ---
