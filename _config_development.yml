@@ -16,14 +16,6 @@ keybase:        "https://keybase.io/rafalmasiarek"
 gitlab:         "https://gitlab.com/rafalmasiarek"
 linkedin:       "https://www.linkedin.com/in/rafa%C5%82-masiarek-b45699138"
 
-# assets
-assets:  
-  source_maps: false
-  compression: false
-  gzip: false
-  #caching: false
-  cachebust: false
-
 # compress
 compress_html:
   ignore:

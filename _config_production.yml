@@ -17,25 +17,6 @@ keybase:        "https://keybase.io/rafalmasiarek"
 gitlab:         "https://gitlab.com/rafalmasiarek"
 linkedin:       "https://www.linkedin.com/in/rafa%C5%82-masiarek-b45699138"
 
-# assets
-assets:  
-  defaults:
-    js:  { integrity: false }
-    css: { integrity: false }
-    img: { integrity: false }
-  source_maps: true
-  compression: true
-  gzip: false
-  destination: "/assets/compressed"
-  caching:
-    enabled: true
-    path: ".jekyll-cache/assets"
-    type: file
-  compress:  
-    js: 'uglifier'  
-    css: 'sass'  
-  cachebust: hard 
-
 # compress
 compress_html:
   clippings: all

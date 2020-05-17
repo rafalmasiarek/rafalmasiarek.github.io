@@ -1,6 +1,7 @@
-<form class="contact-form" id="contact-form" action="https://formspree.io/xaydprob" method="POST">
+<div id="contact-form-alert" class="alert" style="display: none"></div>
+<form class="contact-form" id="contact-form" method="POST">
     <div class="wrap-input">
-        <input class="input contact-form-nameInput" type="text" name="name" placeholder="Full Name" required>
+        <input class="input" id="contact-form-nameInput" type="text" name="name" placeholder="Full Name" required>
     </div>
 
     <div class="wrap-input">
@@ -8,19 +9,21 @@
     </div>
 
     <div class="wrap-input">
-        <input class="input" id="contact-form-subjectInput" name="_subject" placeholder="Message subject" required>
+        <input class="input" id="contact-form-subjectInput" name="subject" placeholder="Message subject" required>
     </div>
 
     <div class="wrap-input">
-        <textarea class="input" id="contact-form-messageInput" name="message" placeholder="Your Message"></textarea>
+        <textarea class="input" id="contact-form-messageInput" name="message" placeholder="Your Message" required></textarea>
     </div>
 
-    <input type="hidden" name="_language" value="pl" />
-    <input type="text" name="_gotcha" style="display:none" />
+    <input type="hidden" name="recaptcha-token" id="contact-form-recaptcha-token" class="g-recaptcha-response-token">
 
     <div class="container-contact-form-btn">
-        <button class="contact-form-btn" id="contact-form-btn">
+        <button class="contact-form-btn btn-enable-on-input" id="contact-form-btn">
             <i class="fas fa-paper-plane"></i> &nbsp; Send Email
         </button>
     </div>
 </form>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.js" integrity="sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc=" crossorigin="anonymous"></script>
+<script src="https://www.google.com/recaptcha/api.js?render=6Lcf9fcUAAAAACKHtt-sjuyyzPxMJUaA4SS8ndG7"></script>
+<script src="{{ site.url }}{{ site.baseurl }}assets/js/contactform.min.js?{{ site.time | date: '%s%N' }}"></script>

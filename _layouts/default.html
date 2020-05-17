@@ -18,11 +18,7 @@ layout: compress
   <meta itemprop="description" name="description" content="{% if page.description %}{{ page.description | truncate: 160 }}{% else %}{{ site.description | truncate: 160  }}{% endif %}" />
 
   <link rel="canonical" href="{{ page.url | prepend: site.url }}">
-  {% if jekyll.environment == 'production' %}
-      {% asset style.css%}
-  {% else %}
-      <link href="{{ site.url }}{{ site.baseurl }}assets/css/style.css?{{ site.time | date: '%s%N' }}" rel="stylesheet">
-  {% endif %}
+  <link href="{{ site.url }}{{ site.baseurl }}assets/css/style.min.css?{{ site.time | date: '%s%N' }}" rel="stylesheet">
   <script src="https://kit.fontawesome.com/cc759ba0dc.js" crossorigin="anonymous"></script>
 </head>
 <body>
