@@ -9,6 +9,12 @@ $(function(){
                 // add recaptcha token to hidden value
                 $('#contact-form-recaptcha-token').val(gRecaptchaToken);
 
+                // reset alert box
+                $('#contact-form-alert').hide();
+                $('#contact-form-alert').empty();
+                $('#contact-form-alert').removeClass('alert-green');
+                $('#contact-form-alert').removeClass('alert-red');
+
                 // block button to time when post ajax request is sending
                 $('#contact-form-btn').removeClass('btn-enable-on-input');
                 $('#contact-form-btn').addClass('btn-disable-on-input');
