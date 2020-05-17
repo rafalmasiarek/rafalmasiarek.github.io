@@ -5,9 +5,9 @@ $(function(){
         e.preventDefault();
 
         grecaptcha.ready(function () {
-            grecaptcha.execute('6Lcf9fcUAAAAACKHtt-sjuyyzPxMJUaA4SS8ndG7', {action: 'contactform'}).then(function (gRecaptchaToken) {
+            grecaptcha.execute('6Lcf9fcUAAAAACKHtt-sjuyyzPxMJUaA4SS8ndG7', {action: 'contactform'}).then(function (recaptchaToken) {
                 // add recaptcha token to hidden value
-                $('#contact-form-recaptcha-token').val(gRecaptchaToken);
+                $('#contact-form-recaptcha-token').val(recaptchaToken);
 
                 // reset alert box
                 $('#contact-form-alert').hide();
@@ -27,7 +27,7 @@ $(function(){
                     'email': $('#contact-form-replyToInput').val(),
                     'subject': $('#contact-form-subjectInput').val(),
                     'message': $('#contact-form-messageInput').val(),
-                    'g-recaptcha-response': gRecaptchaToken
+                    'g-recaptcha-response': recaptchaToken
                 }, function(response){
                     var obj = JSON.parse(JSON.stringify(response))
                     if(obj.status=="success") {
