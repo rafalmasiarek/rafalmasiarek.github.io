@@ -355,7 +355,8 @@ line-height: 20px;
 }
 
 .navigation li {
-  flex: 3;    
+  flex: 3;
+  justify-content: center;
 }
 
 .navigation .user {
