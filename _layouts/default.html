@@ -27,21 +27,35 @@ layout: compress
   </header>
   {{ content }}
   <footer>
-  {% if page.title != 'Home' %}
-    <a href="{{ site.url }}{{ site.baseurl }}" style="border:0">Home</a> &nbsp;
-  {% endif %}
-  {% if page.title != 'About' %}
-    <a href="{{ site.url }}{{ site.baseurl }}about" style="border:0">About</a> &nbsp;
-  {% endif %}
-  {% if page.title != 'Contact' %}
-    <a href="{{ site.url }}{{ site.baseurl }}contact" style="border:0">Contact</a> &nbsp;
-  {% endif %}
-  {% if site.gitlab != '' %}
-    <a href="{{ site.gitlab }}" style="border:0;text-decoration:none" target="_blank"><i class="fab fa-gitlab"></i>  Gitlab</a> &nbsp;
-  {% endif %}
-  {% if site.linkedin != '' %}
-    <a href="{{ site.linkedin }}" style="border:0;text-decoration:none" target="_blank"><i class="fab fa-linkedin-in"></i>  Linkedin</a>
-  {% endif %}
+    <nav class="navigation">
+      <ul>
+        {% if page.title != 'Home' %}
+          <li>
+            <a href="{{ site.url }}{{ site.baseurl }}" style="border:0">Home</a>
+          </li>
+        {% endif %}
+        {% if page.title != 'About' %}
+          <li>
+            <a href="{{ site.url }}{{ site.baseurl }}about" style="border:0">About</a>
+          </li>
+        {% endif %}
+        {% if page.title != 'Contact' %}
+          <li>
+            <a href="{{ site.url }}{{ site.baseurl }}contact" style="border:0">Contact</a>
+          </li>
+        {% endif %}
+        {% if site.gitlab != '' %}
+          <li>
+            <a href="{{ site.gitlab }}" style="border:0;text-decoration:none" target="_blank"><i class="fab fa-gitlab"></i>  Gitlab</a>
+          </li>
+        {% endif %}   
+        {% if site.linkedin != '' %}
+          <li>
+            <a href="{{ site.linkedin }}" style="border:0;text-decoration:none" target="_blank"><i class="fab fa-linkedin-in"></i>  Linkedin</a>
+          </li>
+        {% endif %}
+      </ul>
+    </nav>
   </footer>
 </body>
 </html>

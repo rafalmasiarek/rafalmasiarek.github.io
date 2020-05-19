@@ -6,8 +6,9 @@ body {
   margin: 0;
 }
 main, footer, body > header {
-  max-width: 64ch;
-  margin: auto;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 3em 1.5em;
 }
 main {
   box-sizing: border-box;
@@ -344,4 +345,43 @@ line-height: 20px;
 .alert-bgray {
 	background-color: #90A4AE !important;
 	color: #fff !important;
+}
+
+.navigation ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+}
+
+.navigation li {
+  flex: 3;    
+}
+
+.navigation .user {
+  flex: 1;
+}
+
+@media all and (max-width: 1000px) {
+  .navigation ul {
+     flex-wrap: wrap;
+  }
+  
+  .navigation li {
+     flex: 1 1 50%;
+  }
+
+  .navigation .user {
+     flex: 1 1 33.33%;
+  }
+}
+
+@media all and (max-width: 480px) {
+  .navigation li {
+     flex-basis: 100%;
+  }
+
+  .navigation .user {
+     flex-basis: 50%;
+  }
 }
