@@ -5,7 +5,7 @@ body {
   padding: 1ch;
   margin: 0;
 }
-main, footer, body > header {
+div#container, footer, body > header {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 3em 1.5em;
