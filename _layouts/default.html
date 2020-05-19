@@ -25,7 +25,9 @@ layout: compress
   <header>
     <p class="username"><a href="{{ site.url }}{{ site.baseurl }}" target="_self">{{ site.title }}</a>{% if page.icon %} <i class="{{ page.icon }}"></i>{% endif %}</p>
   </header>
-  {{ content }}
+  <div class="content" id="container">
+      {{ content }}
+  </div>
   <footer>
     <nav class="navigation">
       <ul>
