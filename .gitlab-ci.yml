@@ -4,7 +4,7 @@ pages:
   stage: deploy
   script:
   - bundle install
-  - bundle exec jekyll build -d public --config $JEKYLL_CONFIG_PROD
+  - bundle exec jekyll build -d public
   artifacts:
     paths:
     - public
