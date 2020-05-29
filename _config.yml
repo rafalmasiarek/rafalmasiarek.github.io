@@ -1,6 +1,7 @@
 markdown:         kramdown
-highlighter:      none
+highlighter:      rouge
 permalink: 	  /:title/
+
 
 title:            "Rafał Masiarek"
 description:      "I am devops. Automation and configuration management tools are the foundation of my work"
@@ -19,4 +20,9 @@ linkedin:       "https://www.linkedin.com/in/rafa%C5%82-masiarek-b45699138"
 # compress
 compress_html:
   ignore:
-    envs: all
+    envs: development
+  clippings: all
+  comments: ["<!-- ", " -->"]
+  endings: all
+  blanklines: false
+  startings: [html, head, body]
