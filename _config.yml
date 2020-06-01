@@ -3,14 +3,14 @@ highlighter:      rouge
 permalink: 	  /:title/
 
 
-title:            "Rafał Masiarek"
+title:            "Rafal Masiarek"
 description:      "I am devops. Automation and configuration management tools are the foundation of my work"
 
 url:              https://masiarek.pl
 baseurl:          "/"
 
 author:
-  name:           "Rafał Masiarek"
+  name:           "Rafal Masiarek"
 
 # socials
 keybase:        "https://keybase.io/rafalmasiarek"
