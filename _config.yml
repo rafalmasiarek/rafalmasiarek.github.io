@@ -20,7 +20,7 @@ linkedin:       "https://www.linkedin.com/in/rafa%C5%82-masiarek-b45699138"
 # compress
 compress_html:
   ignore:
-    envs: development
+    envs: [development, local]
   clippings: all
   comments: ["<!-- ", " -->"]
   endings: all
