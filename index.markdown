@@ -1,7 +1,8 @@
 ---
 layout: about
 title: About me
-avatar: https://masiarek.dev/media/users/kvgzWSbW/4265176406-1590862705/profile.png
+avatar: https://www.gravatar.com/avatar/a3d53255f25e34edea9ee99f34f6f1ea
+
 ---
 
 <p>My name is Rafal Masiarek.<br>
