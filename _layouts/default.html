@@ -18,7 +18,7 @@ layout: compress
   <meta itemprop="description" name="description" content="{% if page.description %}{{ page.description | truncate: 160 }}{% else %}{{ site.description | truncate: 160  }}{% endif %}" />
 
   <link rel="canonical" href="{{ page.url | prepend: site.url }}">
-  <link href="{{ site.url }}{{ site.baseurl }}assets/css/style.min.css?{{ site.time | date: '%s%N' }}" rel="stylesheet">
+  <link href="{{ site.url }}{{ site.baseurl }}assets/css/style.css?{{ site.time | date: '%s%N' }}" rel="stylesheet">
   <link href="{{ site.url }}{{ site.baseurl }}assets/css/instafilters.min.css?v0.1.4" rel="stylesheet">
   <script src="https://kit.fontawesome.com/cc759ba0dc.js" crossorigin="anonymous"></script>
 </head>
