@@ -1,5 +1,9 @@
-image: ruby:2.7
+image: jekyll/builder:latest
 
+variables:
+  JEKYLL_ENV: production
+  LC_ALL: C.UTF-8
+  
 cache:
   paths:
     - vendor/
