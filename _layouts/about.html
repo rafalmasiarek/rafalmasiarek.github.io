@@ -6,14 +6,16 @@ layout: default
     {% if page.avatar != '' or site.github.owner.avatar_url != '' %}
       <div class="avatar-wrapper">
         <figure class="filter-willow">
-          <img src="{% if page.avatar %}{{ page.avatar }}{% else %}{{ site.github.owner.avatar_url }}{% endif %}">
+          <img src="{% if site.github.owner.avatar_url %}{{ site.github.owner.avatar_url }}{% else %}{{ page.avatar }}{% endif %}">
         </figure>
       </div>
     {% endif %}
     {% if page.title != '' %}
-      <header class="heading">
-        <h1 class="title">{{ page.title }}</h1>
-      </header>
+      {% if page.dont_show_title != true %}
+        <header class="heading">
+          <h1 class="title">{{ page.title }}</h1>
+        </header>
+      {% endif %}
     {% endif %}
   {{ content }}
     </article>
