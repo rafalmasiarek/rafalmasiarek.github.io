@@ -9,9 +9,8 @@ plugins:
 # socials
 socials:
   github:         "https://github.com/rafalmasiarek"
-  gitlab:         "https://gitlab.com/rafalmasiarek"
   linkedin:       "https://www.linkedin.com/in/rafa%C5%82-masiarek-b45699138"
-
+    
 # compress
 compress_html:
   ignore:
