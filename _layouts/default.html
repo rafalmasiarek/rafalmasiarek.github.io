@@ -1,3 +1,6 @@
+---
+layout: compress
+---
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -13,13 +16,13 @@
       {{ site.title }}
   </title>
   <meta itemprop="description" name="description" content="{% if page.description %}{{ page.description | truncate: 160 }}{% else %}{{ site.description | truncate: 160  }}{% endif %}" />
-  <link href="assets/css/style.min.css?{{ site.time | date: '%s%N' }}" rel="stylesheet">
-  <link href="assets/css/instafilters.min.css?v0.1.4" rel="stylesheet">
+  <link href="/assets/css/style.min.css?{{ site.time | date: '%s%N' }}" rel="stylesheet">
+  <link href="/assets/css/instafilters.min.css?v0.1.4" rel="stylesheet">
   <script src="https://kit.fontawesome.com/cc759ba0dc.js" crossorigin="anonymous"></script>
 </head>
 <body>
   <header>
-    <p class="username"><a href="{{ site.url }}" target="_self">{{ site.title }}</a>{% if page.icon %} <i class="{{ page.icon }}"></i>{% endif %}</p>
+    <p class="username"><a href="/" target="_self">{{ site.title }}</a>{% if page.icon %} <i class="{{ page.icon }}"></i>{% endif %}</p>
   </header>
   <div class="content" id="container">
       {{ content }}
@@ -29,22 +32,22 @@
       <ul>
         {% if page.title != 'About me' %}
           <li>
-            <a href="{{ site.url }}" style="border:0">Home</a>
+            <a href="/" style="border:0">Home</a>
           </li>
         {% endif %}
         {% if page.title != 'Contact' %}
           <li>
-            <a href="{{ site.url }}/contact" style="border:0">Contact</a>
+            <a href="/contact" style="border:0">Contact</a>
           </li>
         {% endif %}
         {% if site.gitlab != '' %}
           <li>
-            <a href="{{ site.github }}" style="border:0;text-decoration:none" target="_blank"><i class="fab fa-github"></i>  Github</a>
+            <a href="{{ site.socials.github }}" style="border:0;text-decoration:none" target="_blank"><i class="fab fa-github"></i>  Github</a>
           </li>
         {% endif %}   
         {% if site.linkedin != '' %}
           <li>
-            <a href="{{ site.linkedin }}" style="border:0;text-decoration:none" target="_blank"><i class="fab fa-linkedin-in"></i>  Linkedin</a>
+            <a href="{{ site.socials.linkedin }}" style="border:0;text-decoration:none" target="_blank"><i class="fab fa-linkedin-in"></i>  Linkedin</a>
           </li>
         {% endif %}
       </ul>

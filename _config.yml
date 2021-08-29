@@ -6,9 +6,6 @@ permalink:  /:title/
 title:            "Rafal Masiarek"
 description:      "I am devops. Automation and configuration management tools are the foundation of my work"
 
-url:              https://masiarek.pl
-baseurl:          "/"
-
 # plugins
 plugins:
   - jekyll-sitemap
