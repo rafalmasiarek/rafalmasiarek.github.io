@@ -1,0 +1,106 @@
+version: 2
+jobs:
+  checkout_code:
+    docker:
+      - image: circleci/ruby:2.7
+
+    working_directory: ~/jekyll
+
+    steps:
+      - checkout
+      - save_cache:
+          key: v1-jekyll-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - ~/jekyll
+
+  bundle_dependencies:
+    docker:
+      - image: circleci/ruby:2.7
+
+    working_directory: ~/jekyll
+
+    steps:
+      - restore_cache:
+          keys:
+            - v1-jekyll-{{ .Environment.CIRCLE_SHA1 }}
+      - restore_cache:
+          keys:
+            - v1-bundle-{{ checksum "Gemfile.lock" }}
+      - run:
+          name: install builder
+          command : |
+            gem install bundler
+      - run: 
+          name: install vendor
+          command : |
+            bundle config set --local path 'vendor/bundle'
+            bundle install
+      - save_cache:
+          key: v1-bundle-{{ checksum "Gemfile.lock" }}
+          paths:
+            - ~/jekyll/vendor/bundle
+
+  precompile:
+    docker:
+      - image: circleci/ruby:2.7
+
+    working_directory: ~/jekyll
+
+    steps:
+      - restore_cache:
+          keys:
+            - v1-jekyll-{{ .Environment.CIRCLE_SHA1 }}
+      - restore_cache:
+          keys:
+            - v1-bundle-{{ checksum "Gemfile.lock" }}
+      - run:
+          name: Install Builder
+          command : |
+            gem install bundler            
+      - run: 
+          name: Link Bundle Path
+          command : |
+            bundle --path vendor/bundle
+      - run:
+          name: Precompile Assets
+          command: bundle exec jekyll build
+      - save_cache:
+          key: v1-assets-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - ~/jekyll
+
+  deploy:
+    machine: true
+
+    working_directory: ~/jekyll
+
+    steps:
+      - restore_cache:
+          keys:
+            - v1-assets-{{ .Environment.CIRCLE_SHA1 }}
+      - run: echo ${CIRCLE_BRANCH}
+      - run: |
+          set -xu
+          scripts/gh-deploy.sh
+workflows:
+  version: 2
+  build-and-deploy:
+    jobs:
+      - checkout_code:
+          filters:
+            branches:
+              ignore:
+                - gh-pages
+      - bundle_dependencies:
+          requires:
+            - checkout_code
+      - precompile:
+          requires:
+            - bundle_dependencies
+      - deploy:
+          requires:
+            - precompile
+          filters:
+            branches:
+              only:
+                - main
