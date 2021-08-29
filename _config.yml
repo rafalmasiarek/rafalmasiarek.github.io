@@ -3,10 +3,14 @@ description:      "I am devops. Automation and configuration management tools ar
 
 # plugins
 plugins:
+  - github-pages
   - jekyll-sitemap
   - jekyll-assets
   - jekyll-github-metadata
   - jekyll-gist
+
+# Github repository 
+repository: rafalmasiarek/rafalmasiarek.github.io
 
 # socials
 socials:
