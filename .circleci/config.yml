@@ -60,7 +60,8 @@ jobs:
       - run: 
           name: Link Bundle Path
           command : |
-            bundle --path vendor/bundle
+            bundle config set --local path 'vendor/bundle'
+            bundle
       - run:
           name: Precompile Assets
           command: bundle exec jekyll build
@@ -81,7 +82,7 @@ jobs:
       - run: echo ${CIRCLE_BRANCH}
       - run: |
           set -xu
-          scripts/gh-deploy.sh
+          .circleci/scripts/gh-deploy.sh
 workflows:
   version: 2
   build-and-deploy:

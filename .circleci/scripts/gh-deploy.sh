@@ -20,15 +20,15 @@ if [ "$CIRCLE_BRANCH" == "master" ]; then
 	last_message=$(git show -s --format=%s master)
 
 	# Move the generated site in our temp folder
-	mv _site ../${temp_folder}
+	mv _site ${temp_folder}
 
 	# Checkout the gh-pages branch and clean it's contents
 	git checkout gh-pages
 	rm -rf *
 
 	# Copy the site content from the temp folder and remove the temp folder
-	cp -r ../${temp_folder}/* .
-	rm -rf ../${temp_folder}
+	cp -r ${temp_folder}/* .
+	rm -rf ${temp_folder}
 
 	# Commit and push our generated site to GitHub
 	git add -A
@@ -37,7 +37,7 @@ if [ "$CIRCLE_BRANCH" == "master" ]; then
 	git tag -a "release_${CIRCLE_BRANCH}_${CIRCLE_BUILD_NUM}" -m "Release based on build ${CIRCLE_BUILD_NUM}, status ${CIRCLE_BUILD_URL}"
 	git push -q --tags https://${GITHUB_TOKEN}@github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}.git
 
-	# Go back to the main branch
+	# Go back to the master branch
 	git checkout master
 else
 	echo "Not master branch. Skipping build"
