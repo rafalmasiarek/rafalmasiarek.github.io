@@ -17,7 +17,7 @@ if [ "$CIRCLE_BRANCH" == "master" ]; then
     git config user.name "${GITHUB_USERNAME}"
 
 	# Store the last commit message from master branch
-	last_message=$(git show -s --format=%s master)
+	last_message=$(git show -s --format=%s $CIRCLE_BRANCH)
 
 	# Move the generated site in our temp folder
 	mv _site ${temp_folder}
@@ -27,7 +27,6 @@ if [ "$CIRCLE_BRANCH" == "master" ]; then
 	rm -rf *
 
 	# Copy the site content from the temp folder and remove the temp folder
-	pwd
 	rsync -avz ${temp_folder}/_site/ ./
 	rm -rf ${temp_folder}
 
@@ -39,7 +38,7 @@ if [ "$CIRCLE_BRANCH" == "master" ]; then
 	git push -q --tags https://${GITHUB_TOKEN}@github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}.git
 
 	# Go back to the master branch
-	git checkout master
+	git checkout $CIRCLE_BRANCH
 else
 	echo "Not master branch. Skipping build"
 fi
