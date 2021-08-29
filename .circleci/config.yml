@@ -29,7 +29,7 @@ jobs:
       - run:
           name: install builder
           command : |
-            gem install bundler
+            gem install bundler -v $BUNDLER_VERSION
       - run: 
           name: install vendor
           command : |
@@ -56,7 +56,7 @@ jobs:
       - run:
           name: Install Builder
           command : |
-            gem install bundler            
+            gem install bundler  -v $BUNDLER_VERSION          
       - run: 
           name: Link Bundle Path
           command : |
@@ -82,7 +82,7 @@ jobs:
       - run: echo ${CIRCLE_BRANCH}
       - run: |
           set -xu
-          .circleci/scripts/gh-deploy.sh
+          bash .circleci/scripts/gh-deploy.sh
 workflows:
   version: 2
   build-and-deploy:
