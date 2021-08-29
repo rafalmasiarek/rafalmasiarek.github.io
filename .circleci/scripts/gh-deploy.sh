@@ -23,7 +23,7 @@ if [ "$CIRCLE_BRANCH" == "master" ]; then
 	mv _site ${temp_folder}
 
 	# Checkout the gh-pages branch and clean it's contents
-	git checkout gh-pages
+	git show-branch gh-pages &>/dev/null && git checkout gh-pages || git checkout -b gh-pages
 	rm -rf *
 
 	# Copy the site content from the temp folder and remove the temp folder
@@ -33,7 +33,7 @@ if [ "$CIRCLE_BRANCH" == "master" ]; then
 	# Commit and push our generated site to GitHub
 	git add -A
 	git commit --allow-empty -m "Page release ${CIRCLE_BUILD_NUM} from ${CIRCLE_BRANCH}" -m "$last_message"
-	git push -q --force https://${GITHUB_TOKEN}@github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}.git
+	git push -q --force https://${GITHUB_TOKEN}@github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}.git gh-pages:gh-pages
 	git tag -a "release_${CIRCLE_BRANCH}_${CIRCLE_BUILD_NUM}" -m "Release based on build ${CIRCLE_BUILD_NUM}, status ${CIRCLE_BUILD_URL}"
 	git push -q --tags https://${GITHUB_TOKEN}@github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}.git
 
