@@ -42,7 +42,7 @@ jobs:
           name: install vendor
           command : |
             bundle config set --local path 'vendor/bundle'
-            bundle install
+            bundle check || bundle install --jobs=4 --retry=3
       - run:
           name: check checksum for Gemfile.lock before vendor installation
           command : |
@@ -77,7 +77,7 @@ jobs:
           name: Link Bundle Path
           command : |
             bundle config set --local path 'vendor/bundle'
-            bundle
+            bundle check || bundle install --jobs=4 --retry=3
       - run:
           name: Precompile Assets
           command: bundle exec jekyll build
