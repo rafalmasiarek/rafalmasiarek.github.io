@@ -32,7 +32,7 @@ if [ "$CIRCLE_BRANCH" == "master" ]; then
 	rm -rf ${temp_folder}
 
     # Add custom domain
-	[ ! -z "${GITHUG_CUSTOM_DOMAINS}" ]; then
+	if [ ! -z "${GITHUG_CUSTOM_DOMAINS}" ]; then
 	    echo -ne "${GITHUG_CUSTOM_DOMAINS}" > ./CNAME
 	fi
 
