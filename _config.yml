@@ -3,7 +3,6 @@ description:      "I am devops. Automation and configuration management tools ar
 
 # plugins
 plugins:
-  - github-pages
   - jekyll-sitemap
   - jekyll-assets
 
