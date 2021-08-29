@@ -28,7 +28,13 @@ if [ "$CIRCLE_BRANCH" == "master" ]; then
 
 	# Copy the site content from the temp folder and remove the temp folder
 	rsync -avz ${temp_folder}/_site/ ./
+
 	rm -rf ${temp_folder}
+
+    # Add custom domain
+	[ ! -z "${GITHUG_CUSTOM_DOMAINS}" ]; then
+	    echo -ne "${GITHUG_CUSTOM_DOMAINS}" > ./CNAME
+	fi
 
 	# Commit and push our generated site to GitHub
 	git add -A
