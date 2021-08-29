@@ -30,27 +30,11 @@ jobs:
           name: install builder
           command : |
             gem install bundler -v $BUNDLER_VERSION
-      - run:
-          name: check checksum for Gemfile.lock before vendor installation
-          command : |
-            cksum ~/jekyll/Gemfile.lock
-      - run:
-          name: list Gemfile.lock
-          command : |
-            cat ~/jekyll/Gemfile.lock
       - run: 
           name: install vendor
           command : |
             bundle config set --local path 'vendor/bundle'
             bundle check || bundle install --jobs=4 --retry=3
-      - run:
-          name: check checksum for Gemfile.lock before vendor installation
-          command : |
-            cksum ~/jekyll/Gemfile.lock
-      - run:
-          name: list Gemfile.lock
-          command : |
-            cat ~/jekyll/Gemfile.lock
       - save_cache:
           key: v1-bundle-{{ checksum "Gemfile.lock" }}
           paths:
