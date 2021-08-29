@@ -10,7 +10,7 @@ set -o xtrace
 temp_folder=$(mktemp -d -t _gh-pages-temp-XXXXXXXXXX)
 
 # Make sure our main code runs only if we push the master branch
-if [ "$CIRCLE_BRANCH" == "main" ]; then
+if [ "$CIRCLE_BRANCH" == "master" ]; then
 
     git config credential.helper 'cache --timeout=120'
     git config user.email "${GITHUB_EMAIL}"
@@ -38,7 +38,7 @@ if [ "$CIRCLE_BRANCH" == "main" ]; then
 	git push -q --tags https://${GITHUB_TOKEN}@github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}.git
 
 	# Go back to the main branch
-	git checkout main
+	git checkout master
 else
-	echo "Not main branch. Skipping build"
+	echo "Not master branch. Skipping build"
 fi
