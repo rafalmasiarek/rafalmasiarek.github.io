@@ -379,7 +379,7 @@ line-height: 20px;
 
 /* hand waving by Jake Jarvis from https://jarv.is/notes/css-waving-hand-emoji/ */
 .hand-waving {
-  animation-name: wave-animation;
+  animation-name: hand-waving-animation;
   animation-duration: 2.5s;
   animation-iteration-count: infinite;
   transform-origin: 70% 70%;

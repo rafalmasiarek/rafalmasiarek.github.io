@@ -64,7 +64,7 @@ jobs:
             bundle check || bundle install --jobs=4 --retry=3
       - run:
           name: Precompile Assets
-          command: bundle exec jekyll build
+          command: JEKYLL_ENV=production bundle exec jekyll build
       - save_cache:
           key: v1-assets-{{ .Environment.CIRCLE_SHA1 }}
           paths:
