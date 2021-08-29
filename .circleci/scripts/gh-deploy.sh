@@ -27,14 +27,15 @@ if [ "$CIRCLE_BRANCH" == "master" ]; then
 	rm -rf *
 
 	# Copy the site content from the temp folder and remove the temp folder
-	cp -r ${temp_folder}/* .
+	pwd
+	rsync -avz ${temp_folder}/_site/ ./
 	rm -rf ${temp_folder}
 
 	# Commit and push our generated site to GitHub
 	git add -A
 	git commit --allow-empty -m "Page release ${CIRCLE_BUILD_NUM} from ${CIRCLE_BRANCH}" -m "$last_message"
 	git push -q --force https://${GITHUB_TOKEN}@github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}.git gh-pages:gh-pages
-	git tag -a "release_${CIRCLE_BRANCH}_${CIRCLE_BUILD_NUM}" -m "Release based on build ${CIRCLE_BUILD_NUM}, status ${CIRCLE_BUILD_URL}"
+	git tag -a "release_branch-${CIRCLE_BRANCH}_build-${CIRCLE_BUILD_NUM}" -m "Release based on build ${CIRCLE_BUILD_NUM}" -m "Build on ${CIRCLE_BUILD_URL}"
 	git push -q --tags https://${GITHUB_TOKEN}@github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}.git
 
 	# Go back to the master branch
