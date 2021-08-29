@@ -3,10 +3,10 @@ layout: default
 ---
   <main>
     <article class="md">
-    {% if page.avatar != '' or site.github.owner.avatar_url != '' %}
+    {% if page.avatar != '' %}
       <div class="avatar-wrapper">
         <figure class="filter-willow">
-          <img src="{% if site.github.owner.avatar_url %}{{ site.github.owner.avatar_url }}{% else %}{{ page.avatar }}{% endif %}">
+          <img src="{{ page.avatar }}">
         </figure>
       </div>
     {% endif %}

@@ -5,8 +5,6 @@ gem "jekyll", github: "jekyll/jekyll"
 group :jekyll_plugins do
   gem "jekyll-sitemap"
   gem "jekyll-assets"
-  gem "jekyll-github-metadata"
-  gem "jekyll-gist"
 end
 
 # Windows and JRuby does not include zoneinfo files, so bundle the tzinfo-data gem
