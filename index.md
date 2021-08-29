@@ -2,7 +2,6 @@
 layout: about
 title: About me
 avatar: https://www.gravatar.com/avatar/a3d53255f25e34edea9ee99f34f6f1ea?s=700
-
 ---
 
 <p>My name is Rafal Masiarek.<br>
