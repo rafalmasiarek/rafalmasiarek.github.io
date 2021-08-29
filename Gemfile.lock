@@ -144,7 +144,7 @@ GEM
 
 PLATFORMS
   x86_64-darwin-20
-  x86_86-linux
+  x86_64-linux
 
 DEPENDENCIES
   jekyll!
