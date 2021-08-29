@@ -1,13 +1,3 @@
-@import 'https://fonts.googleapis.com/css?family=Roboto+Mono:400,700';
-
-/**
-body {
-  font: 16px/1.5em 'Roboto Mono', 'Consolas', 'Andale Mono', 'Monaco', 'Courier New', Courier, monospace;
-  padding: 1ch;
-  margin: 0;
-}
-*/
-
 *, *:before, *:after {
   margin: 0;
   padding: 0;
