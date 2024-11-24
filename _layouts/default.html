@@ -3,58 +3,68 @@ layout: compress
 ---
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8">
   <meta name="robots" content="index, follow">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, shrink-to-fit=no">
   <title>
-      {% if page.title %}
-          {% if page.title != 'About me' %}
-              {{ page.title }} - 
-          {% endif %}
-      {% endif %}
-      {{ site.title }}
+    {% if page.title %}
+    {% if page.title != 'About me' %}
+    {{ page.title }} -
+    {% endif %}
+    {% endif %}
+    {{ site.title }}
   </title>
-  <meta itemprop="description" name="description" content="{% if page.description %}{{ page.description | truncate: 160 }}{% else %}{{ site.description | truncate: 160  }}{% endif %}" />
+  <meta itemprop="description" name="description"
+    content="{% if page.description %}{{ page.description | truncate: 160 }}{% else %}{{ site.description | truncate: 160  }}{% endif %}" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@100..700&display=swap" rel="stylesheet">
   <link href="/assets/css/style.min.css?{{ site.time | date: '%s%N' }}" rel="stylesheet">
   <link href="/assets/css/instafilters.min.css?v0.1.4" rel="stylesheet">
   <script src="https://kit.fontawesome.com/cc759ba0dc.js" crossorigin="anonymous"></script>
 </head>
+
 <body>
   <header>
-    <p class="username"><a href="/" target="_self">{{ site.title }}</a>{% if page.icon %} <i class="{{ page.icon }}"></i>{% endif %}</p>
+    <p class="username"><a href="/" target="_self">{{ site.title }}</a>{% if page.icon %} <i
+        class="{{ page.icon }}"></i>{% endif %}</p>
   </header>
   <div class="content" id="container">
-      {{ content }}
+    {{ content }}
   </div>
   <footer>
     <nav class="navigation">
       <ul>
         {% if page.title != 'About me' %}
-          <li>
-            <a href="/" style="border:0">Home</a>
-          </li>
+        <li>
+          <a href="/" style="border:0">Home</a>
+        </li>
         {% endif %}
         {% if page.title != 'Contact' %}
-          <li>
-            <a href="/contact" style="border:0">Contact</a>
-          </li>
+        <li>
+          <a href="/contact" style="border:0">Contact</a>
+        </li>
         {% endif %}
-        {% if site.gitlab != '' %}
-          <li>
-            <a href="{{ site.socials.github }}" style="border:0;text-decoration:none" target="_blank"><i class="fab fa-github"></i>  Github</a>
-          </li>
-        {% endif %}   
-        {% if site.linkedin != '' %}
-          <li>
-            <a href="{{ site.socials.linkedin }}" style="border:0;text-decoration:none" target="_blank"><i class="fab fa-linkedin-in"></i>  Linkedin</a>
-          </li>
+        {% if page.title != 'Legal Disclaimer' %}
+        <li>
+          <a href="/legal-disclaimer" style="border:0">Legal</a>
+        </li>
         {% endif %}
+
+
+        <li>
+          <a href="{{ site.socials.github }}" style="border:0;text-decoration:none" target="_blank"><i
+              class="fab fa-github"></i> Github</a>
+        </li>
+        <li>
+          <a href="{{ site.socials.linkedin }}" style="border:0;text-decoration:none" target="_blank"><i
+              class="fab fa-linkedin-in"></i> Linkedin</a>
+        </li>
       </ul>
     </nav>
   </footer>
 </body>
+
 </html>
