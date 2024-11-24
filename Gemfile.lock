@@ -54,6 +54,8 @@ GEM
       sprockets (~> 2.10)
       sprockets-helpers
       sprockets-sass
+    jekyll-last-modified-at (1.3.2)
+      jekyll (>= 3.7, < 5.0)
     jekyll-sass-converter (3.0.0)
       sass-embedded (~> 1.54)
     jekyll-sitemap (1.4.0)
@@ -125,6 +127,7 @@ PLATFORMS
 DEPENDENCIES
   jekyll!
   jekyll-assets
+  jekyll-last-modified-at
   jekyll-sitemap
   tzinfo (~> 1.2)
   tzinfo-data

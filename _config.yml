@@ -1,5 +1,5 @@
-title:            "Rafal Masiarek"
-description:      "I am devops. Automation and configuration management tools are the foundation of my work"
+title: "Rafal Masiarek"
+description: "I am devops. Automation and configuration management tools are the foundation of my work"
 
 # plugins
 plugins:
@@ -8,9 +8,9 @@ plugins:
 
 # socials
 socials:
-  github:         "https://github.com/rafalmasiarek"
-  linkedin:       "https://www.linkedin.com/in/rafa%C5%82-masiarek-b45699138"
-    
+  github: "https://github.com/rafalmasiarek"
+  linkedin: "https://www.linkedin.com/in/rafa%C5%82-masiarek-b45699138"
+
 # compress
 compress_html:
   ignore:
