@@ -1,0 +1,16 @@
+---
+layout: default
+---
+
+<div class="legal-disclaimer">
+  <div class="lang-nav">
+    <a href="{{ "/terms-and-conditions" | prepend: site.baseurl_root }}">🇬🇧</a> / <a href="{{ "/pl/terms-and-conditions" | prepend: site.baseurl_root }}">🇵🇱</a>
+  </div>
+  <br>
+  <h1 class="page-title">{% t pages.terms-and-conditions %}</h1>
+  <br>
+  {{ content }}
+  <br>
+  <p class="last-modified-at">{% t global.last-modified %}: {{ page.last_modified_at | date: '%d-%B-%Y %R' }}</p>
+  <br>
+</div>

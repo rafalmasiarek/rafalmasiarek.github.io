@@ -6,7 +6,7 @@ layout: compress
 
 <head>
   <meta charset="utf-8">
-  <meta name="robots" content="index, follow">
+  <meta name="robots" content="noindex, nofollow">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, shrink-to-fit=no">
   <title>
     {% if page.title %}
@@ -49,7 +49,7 @@ layout: compress
         {% endif %}
         {% if page.title != 'Legal Disclaimer' %}
         <li>
-          <a href="/legal-disclaimer" style="border:0">Legal</a>
+          <a href="{{ "/terms-and-conditions" | prepend: site.baseurl_root }}" style="border:0">Legal</a>
         </li>
         {% endif %}
 
@@ -64,6 +64,7 @@ layout: compress
         </li>
       </ul>
     </nav>
+    <br>
   </footer>
 </body>
 
