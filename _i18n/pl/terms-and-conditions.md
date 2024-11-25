@@ -1,9 +1,3 @@
----
-layout: legal-disclaimer
-title: Legal Disclaimer
-permalink: /legal-disclaimer/
----
-
 **§ 1. Wstęp**
 
 1. Niniejszy regulamin określa zasady korzystania z serwisu internetowego dostępnego pod adresem **MASIAREK.PL** (dalej: "Serwis").
@@ -38,6 +32,3 @@ permalink: /legal-disclaimer/
 
 1. Właściciel Serwisu zastrzega sobie prawo do zmiany niniejszego regulaminu w dowolnym czasie. Zmiany wchodzą w życie z dniem ich publikacji na stronie Serwisu.
 2. Korzystanie z Serwisu po opublikowaniu zmian w regulaminie oznacza akceptację nowych warunków.
-
-Last Modification: {{ page.last_modified_at | date: '%d-%B-%Y %R' }}
-

@@ -445,6 +445,12 @@ textarea.input {
   color: #fff !important;
 }
 
+.lang-nav a {
+  color: #ccc;
+  text-decoration: none;
+}
+
+
 .navigation ul {
   list-style: none;
   margin: 0;

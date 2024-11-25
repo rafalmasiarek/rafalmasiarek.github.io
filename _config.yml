@@ -3,6 +3,8 @@ description: "I am devops. Automation and configuration management tools are the
 
 # plugins
 plugins:
+  - jekyll-last-modified-at
+  - jekyll-multiple-languages-plugin
   - jekyll-sitemap
   - jekyll-assets
 
@@ -10,6 +12,8 @@ plugins:
 socials:
   github: "https://github.com/rafalmasiarek"
   linkedin: "https://www.linkedin.com/in/rafa%C5%82-masiarek-b45699138"
+
+languages: ["en", "pl"]
 
 # compress
 compress_html:
