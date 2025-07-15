@@ -1,12 +1,16 @@
 source "https://rubygems.org"
 
 gem "jekyll", github: "jekyll/jekyll"
+gem 'logger'
+gem 'benchmark'
+gem 'ostruct'
 
 group :jekyll_plugins do
   gem "jekyll-last-modified-at"
   gem "jekyll-multiple-languages-plugin"
   gem "jekyll-sitemap"
   gem "jekyll-assets"
+  gem 'jekyll-paginate-v2'
 end
 
 # Windows and JRuby does not include zoneinfo files, so bundle the tzinfo-data gem
