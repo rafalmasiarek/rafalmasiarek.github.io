@@ -16,12 +16,12 @@ jobs:
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'
+          php-version: "8.2"
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.2'
+          ruby-version: "3.2"
 
       - name: Install dependencies
         run: |
@@ -41,7 +41,7 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.RSYNC_HOST }} >> ~/.ssh/known_hosts
 
-      - Prepare rsync exclude list
+      - name: Prepare rsync exclude list
         run: |
           echo "${{ secrets.RSYNC_EXCLUDE }}" > exclude.txt
 
