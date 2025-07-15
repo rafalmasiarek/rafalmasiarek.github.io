@@ -1,5 +1,6 @@
 title: "Rafal Masiarek"
 description: "I am devops. Automation and configuration management tools are the foundation of my work"
+github_repo: "https://github.com/rafalmasiarek/rafalmasiarek.github.io"
 
 # plugins
 plugins:
@@ -7,15 +8,19 @@ plugins:
   - jekyll-multiple-languages-plugin
   - jekyll-sitemap
   - jekyll-assets
+  - jekyll-paginate-v2
 
-# socials
+collections:
+  vinyls:
+    output: true
+    permalink: /vinyls/:name
+
 socials:
   github: "https://github.com/rafalmasiarek"
   linkedin: "https://www.linkedin.com/in/rafa%C5%82-masiarek-b45699138"
 
 languages: ["en", "pl"]
 
-# compress
 compress_html:
   ignore:
     envs: [development, local]

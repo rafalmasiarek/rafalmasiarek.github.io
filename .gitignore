@@ -11,3 +11,10 @@ vendor
 *.swp
 *.lock
 !Gemfile.lock
+
+_includes/commit_tree.md
+_vinyls/*
+!_vinyls/.gitkeep
+assets/vinyl_covers/
+!assets/vinyl_covers/.gitkeep
+bin/
