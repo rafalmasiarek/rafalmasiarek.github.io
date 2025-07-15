@@ -539,3 +539,9 @@ textarea.input {
     flex-basis: 50%;
   }
 }
+
+@media (min-width: 1024px) {
+  body {
+    max-width: 70em;
+  }
+}

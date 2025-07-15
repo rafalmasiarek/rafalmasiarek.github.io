@@ -500,6 +500,19 @@ textarea.input {
     }
 }
 
+@media (min-width: 1024px) {
+  body {
+    max-width: 70em;
+  }
+}
+
+.blockquote {
+  font-style: italic;
+  border-left: 4px solid #ddd;
+  padding-left: 1rem;
+  color: #666;
+}
+
 .lang-nav a:hover,
 .lang-nav a:visited,
 .lang-nav a:link,
