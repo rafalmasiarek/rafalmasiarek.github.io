@@ -1,21 +1,24 @@
 #!/usr/bin/env php
 <?php
 
-// Wczytaj .env do $_ENV
 $envPath = __DIR__ . '/.env';
 if (file_exists($envPath)) {
     foreach (file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
         if (strpos(trim($line), '#') === 0) continue;
         [$key, $val] = explode('=', $line, 2);
-        $_ENV[trim($key)] = trim($val);
+        $key = trim($key);
+        $val = trim($val);
+
+        $_ENV[$key] = $val;
+        putenv("$key=$val");
     }
 }
 
-$discogsUsername = $_ENV['DISCOGS_USERNAME'] ?? null;
-$discogsToken = $_ENV['DISCOGS_TOKEN'] ?? null;
+$discogsUsername = getenv('DISCOGS_USERNAME') ?? null;
+$discogsToken = getenv('DISCOGS_TOKEN') ?? null;
 
 if (!$discogsUsername || !$discogsToken) {
-    echo "❌ Brakuje konfiguracji w .env (DISCOGS_USERNAME lub DISCOGS_TOKEN)\n";
+    echo "❌ Configuration missing: Please define DISCOGS_USERNAME and DISCOGS_TOKEN in your environment or .env file.\n";
     exit(1);
 }
 
