@@ -17,4 +17,4 @@ _vinyls/*
 !_vinyls/.gitkeep
 assets/vinyl_covers/
 !assets/vinyl_covers/.gitkeep
-bin/
+bin/.env
