@@ -1,9 +1,6 @@
 source "https://rubygems.org"
 
 gem "jekyll", github: "jekyll/jekyll"
-gem 'logger'
-gem 'benchmark'
-gem 'ostruct'
 
 group :jekyll_plugins do
   gem "jekyll-last-modified-at"
