@@ -8,18 +8,24 @@ plugins:
   - jekyll-multiple-languages-plugin
   - jekyll-sitemap
   - jekyll-assets
-  - jekyll-paginate-v2
 
 collections:
   vinyls:
     output: true
-    permalink: /vinyls/:name
+    permalink: /vinyls/:name/
 
 socials:
   github: "https://github.com/rafalmasiarek"
   linkedin: "https://www.linkedin.com/in/rafa%C5%82-masiarek-b45699138"
 
-languages: ["en", "pl"]
+i18n:
+  enabled: true
+  default_lang: pl
+  langs: [pl, en]
+  translations:
+    terms-and-conditions.md:
+      pl: "terms-and-conditions"
+      en: "terms-and-conditions"
 
 compress_html:
   ignore:
@@ -29,3 +35,7 @@ compress_html:
   endings: all
   blanklines: false
   startings: [html, head, body]
+
+
+exclude:
+  - "**/*.md.overwrite"
