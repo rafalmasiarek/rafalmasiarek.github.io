@@ -39,10 +39,17 @@ jobs:
 
       - name: Setup SSH key
         run: |
+          set -e
           mkdir -p ~/.ssh
           echo "${{ secrets.RSYNC_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.RSYNC_HOST }} >> ~/.ssh/known_hosts
+
+          if [ -n "${{ secrets.RSYNC_HOST }}" ]; then
+            ssh-keyscan -H ${{ secrets.RSYNC_HOST }} >> ~/.ssh/known_hosts
+          else
+            echo "❌ RSYNC_HOST is empty"
+            exit 1
+          fi
 
       - name: Prepare rsync exclude list
         run: |
