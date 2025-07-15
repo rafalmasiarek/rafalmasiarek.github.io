@@ -1,0 +1,50 @@
+name: Build and Deploy Jekyll via rsync
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+
+      - name: Install dependencies
+        run: |
+          gem install bundler
+          bundle install
+
+      - name: Run Discogs fetcher (build covers and .md)
+        run: php bin/fetch_discogs_collection.php
+
+      - name: Build Jekyll site
+        run: bundle exec jekyll build
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.RSYNC_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.RSYNC_HOST }} >> ~/.ssh/known_hosts
+
+      - Prepare rsync exclude list
+        run: |
+          echo "${{ secrets.RSYNC_EXCLUDE }}" > exclude.txt
+
+      - name: Deploy via rsync
+        run: |
+          rsync -avz --delete --exclude=exclude.txt _site/ ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }}:${{ secrets.RSYNC_DEST_PATH }}
