@@ -15,6 +15,7 @@ vendor
 _includes/commit_tree.md
 _vinyls/*
 !_vinyls/.gitkeep
+!_vinyls/*.md.overwrite
 assets/vinyl_covers/
 !assets/vinyl_covers/.gitkeep
 bin/.env
