@@ -21,7 +21,7 @@ jobs:
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "3.2"
+          ruby-version: ${{ secrets.RUBY_VERSION }}
           bundler-cache: false
 
       - name: Cache Ruby gems
@@ -33,7 +33,6 @@ jobs:
             ${{ runner.os }}-gems-
 
       - name: Cache Composer dependencies
-        if: exists('composer.json')
         uses: actions/cache@v4
         with:
           path: vendor
@@ -41,15 +40,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-composer-
 
-      - name: Install Ruby dependencies
+      - name: Install dependencies
         run: |
           gem install bundler
           bundle config set path 'vendor/bundle'
           bundle install --jobs 4 --retry 3
 
-      - name: Install Composer dependencies
-        if: exists('composer.json')
-        run: composer install --no-interaction --prefer-dist --no-progress
+          if [ -f composer.json ]; then
+            composer install --no-interaction --prefer-dist --optimize-autoloader
+          fi
 
       - name: Run Discogs fetcher (build covers and .md)
         env:
@@ -71,9 +70,7 @@ jobs:
           ssh-keyscan -p ${{ secrets.RSYNC_SSH_PORT }} -H ${{ secrets.RSYNC_HOST }} >> ~/.ssh/known_hosts
 
       - name: Create rsync exclude file
-        run: echo "$RSYNC_EXCLUDES" > rsync-exclude.txt
-        env:
-          RSYNC_EXCLUDES: ${{ secrets.RSYNC_EXCLUDES }}
+        run: echo "${{ secrets.RSYNC_EXCLUDES }}" > rsync-exclude.txt
 
       - name: Deploy via rsync
         run: |
