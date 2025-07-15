@@ -29,6 +29,9 @@ jobs:
           bundle install
 
       - name: Run Discogs fetcher (build covers and .md)
+        env:
+          DISCOGS_USERNAME: ${{ secrets.DISCOGS_USERNAME }}
+          DISCOGS_TOKEN: ${{ secrets.DISCOGS_TOKEN }}
         run: php bin/fetch_discogs_collection.php --clean
 
       - name: Build Jekyll site
