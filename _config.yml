@@ -5,7 +5,6 @@ github_repo: "https://github.com/rafalmasiarek/rafalmasiarek.github.io"
 # plugins
 plugins:
   - jekyll-last-modified-at
-  - jekyll-multiple-languages-plugin
   - jekyll-sitemap
   - jekyll-assets
 
@@ -17,15 +16,6 @@ collections:
 socials:
   github: "https://github.com/rafalmasiarek"
   linkedin: "https://www.linkedin.com/in/rafa%C5%82-masiarek-b45699138"
-
-i18n:
-  enabled: true
-  default_lang: pl
-  langs: [pl, en]
-  translations:
-    terms-and-conditions.md:
-      pl: "terms-and-conditions"
-      en: "terms-and-conditions"
 
 compress_html:
   ignore:
