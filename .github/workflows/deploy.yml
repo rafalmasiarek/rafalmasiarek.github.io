@@ -42,14 +42,8 @@ jobs:
           set -e
           mkdir -p ~/.ssh
           echo "${{ secrets.RSYNC_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          ssh-keyscan -p ${{ secrets.RSYNC_SSH_PORT }} -H ${{ secrets.RSYNC_HOST }} >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/id_rsa
-
-          if [ -n "${{ secrets.RSYNC_HOST }}" ]; then
-            ssh-keyscan -H ${{ secrets.RSYNC_HOST }} >> ~/.ssh/known_hosts
-          else
-            echo "❌ RSYNC_HOST is empty"
-            exit 1
-          fi
 
       - name: Prepare rsync exclude list
         run: |
@@ -57,4 +51,4 @@ jobs:
 
       - name: Deploy via rsync
         run: |
-          rsync -avz --delete --exclude=exclude.txt _site/ ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }}:${{ secrets.RSYNC_DEST_PATH }}
+          rsync -avz -e "ssh -p ${{ secrets.RSYNC_SSH_PORT }}" --delete --exclude=exclude.txt _site/ ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }}:${{ secrets.RSYNC_DEST_PATH }}
