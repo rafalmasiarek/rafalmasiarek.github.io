@@ -1,0 +1,35 @@
+name: Refresh
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Refresh every weekend
+    - cron: '0 2 * * 6'
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Refresh github projects
+        env:
+          GITHUB_TOKEN: ${{ secrets.ABOUT_GITHUB_TOKEN }}
+        run: |
+          set -ex
+          make github-report
+      - name: Commit, Push
+        run: |
+          set -ex
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git diff --quiet --exit-code && exit
+          git commit -a -m 'Refresh github projects'
+          git push
+
+  workflow-keepalive:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - uses: liskin/gh-workflow-keepalive@v1

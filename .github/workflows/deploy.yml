@@ -1,6 +1,8 @@
 name: Build and Deploy Jekyll via rsync
 
 on:
+  schedule:
+    - cron: '0 * * * *'
   push:
     branches: [master]
   workflow_dispatch:
@@ -50,16 +52,12 @@ jobs:
             composer install --no-interaction --prefer-dist --optimize-autoloader
           fi
 
-      - name: Run Discogs fetcher (build covers and .md)
-        env:
-          DISCOGS_USERNAME: ${{ secrets.DISCOGS_USERNAME }}
-          DISCOGS_TOKEN: ${{ secrets.DISCOGS_TOKEN }}
-        run: php bin/fetch_discogs_collection.php --clean
-
       - name: Build Jekyll site
         run: bundle exec jekyll build
         env:
           JEKYLL_ENV: production
+          DISCOGS_USERNAME: ${{ secrets.DISCOGS_USERNAME }}
+          DISCOGS_TOKEN: ${{ secrets.DISCOGS_TOKEN }}
 
       - name: Setup SSH key
         run: |
