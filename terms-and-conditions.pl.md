@@ -1,3 +1,11 @@
+---
+layout: terms-and-conditions
+title: Warunki Korzystania
+permalink: /pl/terms-and-conditions/
+skip_title: true
+lang: pl
+---
+
 **§ 1. Wstęp**
 
 1. Niniejszy regulamin określa zasady korzystania z serwisu internetowego dostępnego pod adresem **MASIAREK.PL** (dalej: "Serwis").
