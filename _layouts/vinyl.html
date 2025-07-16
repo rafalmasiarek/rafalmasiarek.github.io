@@ -7,7 +7,7 @@ layout: default-bootstrap
     <div class="col-md-4">
       {% if page.artist and page.title %}
       {% assign full_title = page.artist | append: '-' | append: page.title %}
-      {% assign slug = full_title | slugify %}
+      {% assign slug = full_title | slugify: 'default', 'ascii' %}
       {% if page.cover %}
           {% assign cover_path = '/assets/vinyl_covers/' | append: page.cover %}
       {% else %}

@@ -10,14 +10,17 @@ layout: default-bootstrap
       <a href="{{ vinyl.url }}" class="text-decoration-none text-dark">
         <div class="card h-100 shadow-sm vinyl-card">
           {% if vinyl.artist and vinyl.title %}
-          {% assign full_title = vinyl.artist | append: '-' | append: vinyl.title %}
-          {% assign slug = full_title | slugify %}
-          {% assign cover_path = '/assets/vinyl_covers/' | append: slug | append: '.jpg' %}
-          <img src="{{ cover_path }}"
-            onerror="this.onerror=null;this.src='https://placehold.co/600x600?text=Brak+okładki';" class="card-img-top"
-            alt="{{ vinyl.title }}">
+              {% assign full_title = vinyl.artist | append: '-' | append: vinyl.title %}
+              {% assign slug = full_title | slugify: 'default', 'ascii' %}
+              {% if vinyl.cover %}
+                  {% assign cover_path = '/assets/vinyl_covers/' | append: vinyl.cover %}
+              {% else %}
+                  {% assign cover_path = '/assets/vinyl_covers/' | append: slug | append: '.jpg' %}
+              {% endif %}
+              <img src="{{ cover_path }}" onerror="this.onerror=null;this.src='https://placehold.co/600x600?text=Brak+okładki';"
+              class="card-img-top" alt="{{ vinyl.title }}">
           {% else %}
-          <img src="https://placehold.co/600x600?text=Brak+okładki" class="card-img-top" alt="Brak danych">
+              <img src="https://placehold.co/600x600?text=Brak+okładki" class="card-img-top" alt="Brak danych">
           {% endif %}
           <div class="card-body">
             <h5 class="card-title">{{ vinyl.title }}</h5>
