@@ -1,17 +1,9 @@
 require 'net/http'
 require 'json'
 require 'fileutils'
-require 'i18n'
+require_relative 'transliteration_filter'
 
-I18n.config.available_locales = :en
-
-def slugify(str)
-  I18n.transliterate(str.to_s)
-      .downcase
-      .gsub(/[^a-z0-9]+/, '-')
-      .gsub(/-{2,}/, '-')
-      .gsub(/^-|-$/, '')
-end
+include SlugifyHelper
 
 class DiscogsFetcher
   API_URL = "https://api.discogs.com/users/%{username}/collection/folders/0/releases"
@@ -74,7 +66,7 @@ end
     year = release["basic_information"]["year"]
     thumb = release["basic_information"]["cover_image"]
 
-    slug = slugify("#{artist}-#{title}")
+    slug = translit_slugify("#{artist}-#{title}")
     md_path = File.join(@vinyl_dir, "#{slug}.md")
     jpg_path = File.join(@cover_dir, "#{slug}.jpg")
     overwrite_path = File.join(@vinyl_dir, "#{slug}.md.overwrite")
