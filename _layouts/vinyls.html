@@ -11,7 +11,7 @@ layout: default-bootstrap
         <div class="card h-100 shadow-sm vinyl-card">
           {% if vinyl.artist and vinyl.title %}
               {% assign full_title = vinyl.artist | append: '-' | append: vinyl.title %}
-              {% assign slug = full_title | slugify: "ascii" %}
+              {% assign slug = full_title | translit_slugify %}
               {% if vinyl.cover %}
                   {% assign cover_path = '/assets/vinyl_covers/' | append: vinyl.cover %}
               {% else %}
