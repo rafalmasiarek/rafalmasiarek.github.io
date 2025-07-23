@@ -1,11 +1,11 @@
-$(function(){
-    $('#contact-form').submit(function(e){
+$(function () {
+    $('#contact-form').submit(function (e) {
 
         // Stop the form actually posting
         e.preventDefault();
 
         grecaptcha.ready(function () {
-            grecaptcha.execute('6Lcf9fcUAAAAACKHtt-sjuyyzPxMJUaA4SS8ndG7', {action: 'contactform'}).then(function (recaptchaToken) {
+            grecaptcha.execute('6Lcf9fcUAAAAACKHtt-sjuyyzPxMJUaA4SS8ndG7', { action: 'contactform' }).then(function (recaptchaToken) {
                 // add recaptcha token to hidden value
                 $('#contact-form-recaptcha-token').val(recaptchaToken);
 
@@ -22,15 +22,15 @@ $(function(){
                 $('#contact-form-btn').html('<i class="fas fa-spinner fa-spin"></i> &nbsp; Sending...')
 
                 // send post request
-                $.post('https://masiarekpl-contactform-backend.herokuapp.com', {
+                $.post('/api/contactform_send.php', {
                     'name': $('#contact-form-nameInput').val(),
                     'email': $('#contact-form-replyToInput').val(),
                     'subject': $('#contact-form-subjectInput').val(),
                     'message': $('#contact-form-messageInput').val(),
                     'g-recaptcha-response': recaptchaToken
-                }, function(response){
+                }, function (response) {
                     var obj = JSON.parse(JSON.stringify(response))
-                    if(obj.status=="success") {
+                    if (obj.status == "success") {
                         $('#contact-form-alert').addClass('alert-green');
                     } else {
                         $('#contact-form-alert').addClass('alert-red');
