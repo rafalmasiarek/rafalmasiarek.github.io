@@ -67,16 +67,19 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -p ${{ secrets.RSYNC_SSH_PORT }} -H ${{ secrets.RSYNC_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Create rsync exclude file
-        run: echo "${{ secrets.RSYNC_EXCLUDES }}" > rsync-exclude.txt
-
-      - name: Generate .rsync-filter from server and secrets
+      - name: Generate rsync-exclude.txt from remote markers
         run: |
           ssh -p ${{ secrets.RSYNC_SSH_PORT }} ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }} "\
             find '${{ secrets.RSYNC_DEST_PATH }}' -type f -name '.cicd-pipeline-exclude' \
             -exec dirname {} \;" \
-          | sed "s|^${{ secrets.RSYNC_DEST_PATH }}|/|; s|$|/|; s|^| - |" > .rsync-filter
+          | sed "s|^${{ secrets.RSYNC_DEST_PATH }}/||; s|$|/|" > rsync-exclude.txt
 
-      - name: Deploy via rsync
-        run: |
-          rsync -avz -e "ssh -p ${{ secrets.RSYNC_SSH_PORT }}" --delete --filter="merge .rsync-filter" _site/ ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }}:${{ secrets.RSYNC_DEST_PATH }}
+          echo "${{ secrets.RSYNC_EXCLUDES }}" >> rsync-exclude.txt
+
+        - name: Deploy via rsync
+          run: |
+            rsync -avz \
+              -e "ssh -p ${{ secrets.RSYNC_SSH_PORT }}" \
+              --delete \
+              --exclude-from=rsync-exclude.txt \
+              _site/ ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }}:${{ secrets.RSYNC_DEST_PATH }}
