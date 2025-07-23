@@ -11,7 +11,15 @@ permalink: /assets/vinyls.json
     "year": {{ vinyl.year | jsonify }},
     "slug": {{ vinyl.slug | jsonify }},
     "discogs_id": {{ vinyl.discogs_id | jsonify }},
-    "cover": "{{ site.url }}/assets/vinyl_covers/{{ vinyl.slug }}.jpg"
+    "cover": "{% if vinyl.cover %}
+      {% if vinyl.cover contains 'http://' or vinyl.cover contains 'https://' %}
+        {{ vinyl.cover }}
+      {% else %}
+        {{ site.url }}/assets/vinyl_covers/{{ vinyl.cover }}
+      {% endif %}
+    {% else %}
+      {{ site.url }}/assets/vinyl_covers/{{ vinyl.slug }}.jpg
+    {% endif %}"
   }{% if forloop.last == false %},{% endif %}
 {% endfor %}
 ]
