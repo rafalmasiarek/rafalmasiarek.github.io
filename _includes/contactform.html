@@ -13,10 +13,12 @@
     </div>
 
     <div class="wrap-input">
-        <textarea class="input" id="contact-form-messageInput" name="message" placeholder="Your Message" required></textarea>
+        <textarea class="input" id="contact-form-messageInput" name="message" placeholder="Your Message"
+            required></textarea>
     </div>
 
     <input type="hidden" name="recaptcha-token" id="contact-form-recaptcha-token" class="g-recaptcha-response-token">
+    <input type="hidden" name="csrf_token" id="csrf_token">
 
     <div class="container-contact-form-btn">
         <button class="contact-form-btn btn-enable-on-input" id="contact-form-btn">
@@ -24,6 +26,19 @@
         </button>
     </div>
 </form>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.js" integrity="sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc=" crossorigin="anonymous"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        fetch('/api/csrf_token_gen.php')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('csrf_token').value = data.csrf_token;
+            })
+            .catch(err => {
+                console.error('CSRF token fetch error:', err);
+            });
+    });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.js"
+    integrity="sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc=" crossorigin="anonymous"></script>
 <script src="https://www.google.com/recaptcha/api.js?render=6Lcf9fcUAAAAACKHtt-sjuyyzPxMJUaA4SS8ndG7"></script>
 <script src="/assets/js/contactform.min.js?{{ site.time | date: '%s%N' }}"></script>
