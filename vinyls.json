@@ -1,0 +1,17 @@
+---
+layout: null
+permalink: /assets/vinyls.json
+---
+
+[
+{% for vinyl in site.vinyls %}
+  {
+    "title": {{ vinyl.title | jsonify }},
+    "artist": {{ vinyl.artist | jsonify }},
+    "year": {{ vinyl.year | jsonify }},
+    "slug": {{ vinyl.slug | jsonify }},
+    "discogs_id": {{ vinyl.discogs_id | jsonify }},
+    "cover": "{{ site.url }}/assets/vinyl_covers/{{ vinyl.slug }}.jpg"
+  }{% if forloop.last == false %},{% endif %}
+{% endfor %}
+]

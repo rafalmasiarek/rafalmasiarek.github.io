@@ -1,0 +1,22 @@
+---
+layout: default-bootstrap
+---
+
+<div class="container my-5">
+  <h1 class="mb-4">{{ page.title }}</h1>
+
+  <button id="toggle-tags-btn" class="btn btn-outline-primary mb-3 d-md-none" type="button">
+    Filter by artist
+  </button>
+
+  <div id="vinyl-tags" class="collapse d-md-flex flex-wrap mb-4">
+      <div id="artist-buttons" class="me-auto"></div>
+      <button id="close-tags-btn" class="btn btn-dark btn-sm mt-2 d-md-none">✖ Close</button>
+  </div>
+
+  <div id="vinyl-grid" class="row g-4"></div>
+  <div id="loading" class="text-center py-4" style="display:none;">Loading...</div>
+</div>
+
+<script src="/assets/js/vinyl-loader.js"></script>
+

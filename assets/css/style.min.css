@@ -436,6 +436,33 @@ textarea.input {
     flex: 1
 }
 
+.gallery-item.hidden-until-loaded {
+  opacity: 0;
+  transform: scale(0.97);
+}
+
+.gallery-item.visible {
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.card-img-top {
+  transition: filter 0.4s ease-out, opacity 0.4s ease-out;
+  filter: blur(10px);
+  opacity: 0.5;
+}
+
+.card-img-top.loaded {
+  filter: blur(0);
+  opacity: 1;
+}
+
+  .gallery-item { opacity: 0; transform: scale(0.98); transition: opacity 0.4s ease, transform 0.4s ease; }
+  .gallery-item.visible { opacity: 1; transform: scale(1); }
+  img[data-src] { filter: blur(20px); transition: filter 0.3s ease; }
+  img.loaded { filter: blur(0); }
+
 .hand-waving {
     animation-name: hand-waving-animation;
     animation-duration: 2.5s;
