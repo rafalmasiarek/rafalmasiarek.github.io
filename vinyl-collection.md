@@ -1,5 +1,5 @@
 ---
-layout: vinyls
+layout: vinyls-lazyloader
 title: 'My Vinyl Collection'
 permalink: /vinyls/
 ---
