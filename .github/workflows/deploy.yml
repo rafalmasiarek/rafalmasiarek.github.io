@@ -76,10 +76,10 @@ jobs:
 
           echo "${{ secrets.RSYNC_EXCLUDES }}" >> rsync-exclude.txt
 
-        - name: Deploy via rsync
-          run: |
-            rsync -avz \
-              -e "ssh -p ${{ secrets.RSYNC_SSH_PORT }}" \
-              --delete \
-              --exclude-from=rsync-exclude.txt \
-              _site/ ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }}:${{ secrets.RSYNC_DEST_PATH }}
+      - name: Deploy via rsync
+        run: |
+          rsync -avz \
+            -e "ssh -p ${{ secrets.RSYNC_SSH_PORT }}" \
+            --delete \
+            --exclude-from=rsync-exclude.txt \
+            _site/ ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }}:${{ secrets.RSYNC_DEST_PATH }}
