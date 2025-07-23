@@ -76,6 +76,9 @@ jobs:
 
           echo "${{ secrets.RSYNC_EXCLUDES }}" >> rsync-exclude.txt
 
+          echo "Final rsync-exclude.txt:"
+          cat rsync-exclude.txt
+
       - name: Deploy via rsync
         run: |
           rsync -avz \
