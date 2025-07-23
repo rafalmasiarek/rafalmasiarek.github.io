@@ -2,7 +2,7 @@ name: Build and Deploy Jekyll via rsync
 
 on:
   schedule:
-    - cron: '0 * * * *'
+    - cron: "0 * * * *"
   push:
     branches: [master]
   workflow_dispatch:
@@ -72,8 +72,10 @@ jobs:
 
       - name: Generate .rsync-filter from server and secrets
         run: |
-          ssh -p ${{ secrets.RSYNC_SSH_PORT }} ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }} "find '${{ secrets.RSYNC_DEST_PATH }}' -type f -name '.cicd-pipeline-exclude' -exec dirname {} \;" | sed "s|^${{ secrets.RSYNC_DEST_PATH }}|-/|" > .rsync-filter
-          echo "${{ secrets.RSYNC_EXCLUDES }}" >> .rsync-filter
+          ssh -p ${{ secrets.RSYNC_SSH_PORT }} ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }} "\
+            find '${{ secrets.RSYNC_DEST_PATH }}' -type f -name '.cicd-pipeline-exclude' \
+            -exec dirname {} \;" \
+          | sed "s|^${{ secrets.RSYNC_DEST_PATH }}|/|; s|$|/|; s|^| - |" > .rsync-filter
 
       - name: Deploy via rsync
         run: |
