@@ -1,5 +1,6 @@
 <div id="contact-form-alert" class="alert" style="display: none"></div>
-<form class="contact-form" id="contact-form" method="POST">
+<form class="contact-form" id="contact-form" data-recaptcha-sitekey="6Lcf9fcUAAAAACKHtt-sjuyyzPxMJUaA4SS8ndG7"
+    method="POST">
     <div class="wrap-input">
         <input class="input" id="contact-form-nameInput" type="text" name="name" placeholder="Full Name" required>
     </div>
@@ -26,19 +27,5 @@
         </button>
     </div>
 </form>
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        fetch('/api/csrf_token_gen.php')
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('csrf_token').value = data.csrf_token;
-            })
-            .catch(err => {
-                console.error('CSRF token fetch error:', err);
-            });
-    });
-</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.js"
-    integrity="sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc=" crossorigin="anonymous"></script>
 <script src="https://www.google.com/recaptcha/api.js?render=6Lcf9fcUAAAAACKHtt-sjuyyzPxMJUaA4SS8ndG7"></script>
 <script src="/assets/js/contactform.min.js?{{ site.time | date: '%s%N' }}"></script>
