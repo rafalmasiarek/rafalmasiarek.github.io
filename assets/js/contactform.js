@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const RECAPTCHA_SITE_KEY = form.dataset.recaptchaSitekey;
 
-    // Pobierz CSRF token
+    // Fetch CSRF token and set it in the form
     fetch('/api/csrf_token_gen.php')
         .then(res => res.json())
         .then(data => {
@@ -20,15 +20,17 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
 
         try {
-            const recaptchaToken = await grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'contactform' });
-
             submitBtn.classList.remove('btn-enable-on-input');
             submitBtn.classList.add('btn-disable-on-input');
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> &nbsp; Sending...';
 
             const formData = new FormData(form);
-            formData.set('g-recaptcha-response', recaptchaToken);
+            // If reCAPTCHA is enabled, execute it
+            if (RECAPTCHA_SITE_KEY) {
+                const recaptchaToken = await grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'contactform' });
+                formData.set('g-recaptcha-response', recaptchaToken);
+            }
 
             const response = await fetch('/api/contactform_send.php', {
                 method: 'POST',
