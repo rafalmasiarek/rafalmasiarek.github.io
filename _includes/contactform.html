@@ -1,6 +1,6 @@
 <div id="contact-form-alert" class="alert" style="display: none"></div>
-<form class="contact-form" id="contact-form" data-recaptcha-sitekey="6Lcf9fcUAAAAACKHtt-sjuyyzPxMJUaA4SS8ndG7"
-    method="POST">
+<form class="contact-form" id="contact-form" {% if jekyll.environment=="production" %}
+    data-recaptcha-sitekey="{{ site.recaptcha_site_key }}" {% endif %} method="POST">
     <div class="wrap-input">
         <input class="input" id="contact-form-nameInput" type="text" name="name" placeholder="Full Name" required>
     </div>
@@ -17,8 +17,9 @@
         <textarea class="input" id="contact-form-messageInput" name="message" placeholder="Your Message"
             required></textarea>
     </div>
-
-    <input type="hidden" name="recaptcha-token" id="contact-form-recaptcha-token" class="g-recaptcha-response-token">
+    {% if jekyll.environment == "production" %}
+    <input type="hidden" name="g-recaptcha-response" id="contact-form-recaptcha-token">
+    {% endif %}
     <input type="hidden" name="csrf_token" id="csrf_token">
 
     <div class="container-contact-form-btn">
@@ -27,5 +28,7 @@
         </button>
     </div>
 </form>
-<script src="https://www.google.com/recaptcha/api.js?render=6Lcf9fcUAAAAACKHtt-sjuyyzPxMJUaA4SS8ndG7"></script>
+{% if jekyll.environment == "production" %}
+<script src="https://www.google.com/recaptcha/api.js"></script>
+{% endif %}
 <script src="/assets/js/contactform.min.js?{{ site.time | date: '%s%N' }}"></script>
