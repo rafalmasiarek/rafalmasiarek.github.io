@@ -39,14 +39,14 @@ class DiscogsFetcher
 
     loop do
       url = "#{API_URL % { username: @username }}?token=#{@token}&page=#{page}&per_page=100"
-uri = URI(url)
-res = Net::HTTP.get_response(uri)
+      uri = URI(url)
+      res = Net::HTTP.get_response(uri)
 
-unless res.is_a?(Net::HTTPSuccess)
-  Jekyll.logger.error "❌ DiscogsFetcher:", "HTTP #{res.code} for #{uri}"
-  Jekyll.logger.error "Response body:", res.body[0..500]
-  break
-end
+      unless res.is_a?(Net::HTTPSuccess)
+        Jekyll.logger.error "❌ DiscogsFetcher:", "HTTP #{res.code} for #{uri}"
+        Jekyll.logger.error "Response body:", res.body[0..500]
+        break
+      end
 
       data = JSON.parse(res.body)
       Jekyll.logger.info "📦 DiscogsFetcher:", "Fetched #{data["releases"].size} releases (page #{page})"
@@ -69,42 +69,43 @@ end
     slug = translit_slugify("#{artist}-#{title}")
     md_path = File.join(@vinyl_dir, "#{slug}.md")
     jpg_path = File.join(@cover_dir, "#{slug}.jpg")
+    overwrite_jpg_path = File.join(@cover_dir, "#{slug}.overwrite.jpg")
     overwrite_path = File.join(@vinyl_dir, "#{slug}.md.overwrite")
 
-front_matter = {
-  "layout" => "vinyl",
-  "discogs_id" => id,
-  "title" => title,
-  "artist" => artist,
-  "year" => year,
-  "slug" => slug,
-}
+    front_matter = {
+      "layout" => "vinyl",
+      "discogs_id" => id,
+      "title" => title,
+      "artist" => artist,
+      "year" => year,
+      "slug" => slug,
+    }
 
-# Jeśli istnieje .overwrite, scal front matter i zawartość
-if File.exist?(overwrite_path)
-  overwrite = File.read(overwrite_path)
+    if File.exist?(overwrite_path)
+      overwrite = File.read(overwrite_path)
 
-  if overwrite =~ /\A---(.+?)---/m
-    overwrite_yaml = YAML.safe_load($1)
-    front_matter.merge!(overwrite_yaml || {})
+      if overwrite =~ /\A---(.+?)---/m
+        overwrite_yaml = YAML.safe_load($1)
+        front_matter.merge!(overwrite_yaml || {})
 
-    # Zostaw scaloną zawartość
-    content_body = overwrite.sub(/\A---(.+?)---/m, '').lstrip
-  else
-    content_body = overwrite
-  end
-else
-  content_body = "" # Możesz dać jakiś placeholder jeśli chcesz
-end
+        content_body = overwrite.sub(/\A---(.+?)---/m, '').lstrip
+      else
+        content_body = overwrite
+      end
+    else
+      content_body = ""
+    end
 
-# Finalna zawartość pliku .md
-content = "#{front_matter.to_yaml}---\n#{content_body}"
+    content = "#{front_matter.to_yaml}---\n#{content_body}"
 
     FileUtils.mkdir_p(@vinyl_dir)
     File.write(md_path, content)
     Jekyll.logger.info "📄 Vinyl saved:", "#{slug}.md"
 
-    unless File.exist?(jpg_path)
+    if File.exist?(overwrite_jpg_path)
+      FileUtils.cp(overwrite_jpg_path, jpg_path)
+      Jekyll.logger.info "🖼️  Custom cover used:", File.basename(overwrite_jpg_path)
+    elsif !File.exist?(jpg_path)
       download_cover(thumb, jpg_path)
     end
   end
