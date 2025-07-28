@@ -103,11 +103,17 @@ class DiscogsFetcher
     Jekyll.logger.info "📄 Vinyl saved:", "#{slug}.md"
 
     if File.exist?(overwrite_jpg_path)
-      File.delete(jpg_path) if File.exist?(jpg_path)
-      FileUtils.cp(overwrite_jpg_path, jpg_path)
-      Jekyll.logger.info "🖼️  Custom cover used:", File.basename(overwrite_jpg_path)
+      if File.exist?(jpg_path)
+        File.delete(jpg_path)
+        Jekyll.logger.info "🗑️  Old cover deleted:", jpg_path
+      end
+
+      FileUtils.cp(overwrite_jpg_path, jpg_path, preserve: false)
+      Jekyll.logger.info "🖼️  Custom cover used:", "#{overwrite_jpg_path} -> #{jpg_path}"
     elsif !File.exist?(jpg_path)
       download_cover(thumb, jpg_path)
+    else
+      Jekyll.logger.info "🖼️  Cover already exists:", jpg_path
     end
   end
 

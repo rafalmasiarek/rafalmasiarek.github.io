@@ -11,15 +11,16 @@ permalink: /assets/vinyls.json
     "year": {{ vinyl.year | jsonify }},
     "slug": {{ vinyl.slug | jsonify }},
     "discogs_id": {{ vinyl.discogs_id | jsonify }},
-    "cover": {% if vinyl.cover %}
-      {% if vinyl.cover contains 'http://' or vinyl.cover contains 'https://' %}
-        {{ vinyl.cover | jsonify }}
+    "cover":
+      {% if vinyl.cover %}
+        {% if vinyl.cover contains 'http://' or vinyl.cover contains 'https://' %}
+          {{ vinyl.cover | jsonify }}
+        {% else %}
+          {{ (site.url | append: '/assets/vinyl_covers/' | append: vinyl.cover) | jsonify }}
+        {% endif %}
       {% else %}
-        {{ (site.url | append: '/assets/vinyl_covers/' | append: vinyl.cover) | jsonify }}
+        {{ (site.url | append: '/assets/vinyl_covers/' | append: vinyl.slug | append: '.jpg') | jsonify }}
       {% endif %}
-    {% else %}
-      {{ (site.url | append: '/assets/vinyl_covers/' | append: vinyl.slug | append: '.jpg') | jsonify }}
-    {% endif %}
   }{% unless forloop.last %},{% endunless %}
 {% endfor %}
 ]
