@@ -498,6 +498,63 @@ textarea.input {
   display: inline-block;
 }
 
+.hero {
+  text-align: center;
+  overflow: hidden;
+  max-height: 600px;
+  padding: 3rem 1rem;
+  transition: all 0.5s ease;
+}
+
+.hero img.logo {
+  max-width: 240px;
+  height: auto;
+  transition: max-width 0.5s ease;
+}
+
+.hero h1 {
+  transition: font-size 0.5s ease;
+  font-size: 2.5rem;
+}
+
+.hero.shrink {
+  max-height: 160px;
+  padding: 1rem 1rem;
+}
+
+.hero.shrink img.logo {
+  max-width: 160px;
+}
+
+.hero.shrink h1 {
+  font-size: 1.5rem;
+}
+
+.project-card {
+  transition: transform 0.2s;
+}
+
+.project-card:hover {
+  transform: scale(1.03);
+}
+
+.main-content {
+  padding-top: 2rem;
+}
+
+.badge-dynamic {
+  color: #fff;
+  font-weight: 500;
+}
+
+.filter-bar {
+  margin-bottom: 1rem;
+}
+
+.filter-bar .btn {
+  margin: 0.25rem;
+}
+
 @keyframes hand-waving-animation {
   0% {
     transform: rotate(0.0deg)
@@ -565,5 +622,19 @@ textarea.input {
 @media (min-width: 1024px) {
   body {
     max-width: 70em;
+  }
+}
+
+@media (min-width: 1200px) {
+  .hero {
+    max-height: 800px;
+  }
+
+  .hero img.logo {
+    max-width: 600px;
+  }
+
+  .hero.shrink {
+    max-height: 200px;
   }
 }

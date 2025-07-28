@@ -58,7 +58,11 @@ layout: compress
           <a href="{{ " /vinyls" | prepend: site.baseurl_root }}" style="border:0">Vinyls</a>
         </li>
         {% endif %}
-
+        {% if page.title != 'Projects' %}
+        <li>
+          <a href="{{ " /projects" | prepend: site.baseurl_root }}" style="border:0">Projects</a>
+        </li>
+        {% endif %}
         <li>
           <a href="{{ site.socials.github }}" style="border:0;text-decoration:none" target="_blank"><i
               class="fab fa-github"></i> Github</a>
