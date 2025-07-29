@@ -79,7 +79,24 @@ class DiscogsFetcher
       "artist" => artist,
       "year" => year,
       "slug" => slug,
+      "cover" => "#{slug}.jpg",
     }
+
+    if File.exist?(overwrite_jpg_path)
+      if File.exist?(jpg_path)
+        File.delete(jpg_path)
+        Jekyll.logger.info "🗑️  Old cover deleted:", jpg_path
+      end
+      FileUtils.cp(overwrite_jpg_path, jpg_path, preserve: false)
+      Jekyll.logger.info "🖼️  Custom cover used:", "#{overwrite_jpg_path} -> #{jpg_path}"
+      front_matter["cover"] = "#{slug}.jpg"
+    elsif !File.exist?(jpg_path)
+      download_cover(thumb, jpg_path)
+      front_matter["cover"] = thumb
+    else
+      Jekyll.logger.info "🖼️  Cover already exists:", jpg_path
+      front_matter["cover"] ||= "#{slug}.jpg"
+    end
 
     if File.exist?(overwrite_path)
       overwrite = File.read(overwrite_path)
@@ -98,26 +115,8 @@ class DiscogsFetcher
 
     content = "#{front_matter.to_yaml}---\n#{content_body}"
 
-    FileUtils.mkdir_p(@vinyl_dir)
     File.write(md_path, content)
     Jekyll.logger.info "📄 Vinyl saved:", "#{slug}.md"
-
-    if File.exist?(overwrite_jpg_path)
-      if File.exist?(jpg_path)
-        File.delete(jpg_path)
-        Jekyll.logger.info "🗑️  Old cover deleted:", jpg_path
-      end
-
-      FileUtils.cp(overwrite_jpg_path, jpg_path, preserve: false)
-      Jekyll.logger.info "🖼️  Custom cover used:", "#{overwrite_jpg_path} -> #{jpg_path}"
-      front_matter["cover"] = "#{slug}.jpg"
-    elsif !File.exist?(jpg_path)
-      download_cover(thumb, jpg_path)
-      front_matter["cover"] = thumb
-    else
-      Jekyll.logger.info "🖼️  Cover already exists:", jpg_path
-      front_matter["cover"] ||= "#{slug}.jpg"
-    end
   end
 
   def download_cover(url, path)
