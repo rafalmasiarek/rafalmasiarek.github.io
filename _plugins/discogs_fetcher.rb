@@ -110,10 +110,13 @@ class DiscogsFetcher
 
       FileUtils.cp(overwrite_jpg_path, jpg_path, preserve: false)
       Jekyll.logger.info "🖼️  Custom cover used:", "#{overwrite_jpg_path} -> #{jpg_path}"
+      front_matter["cover"] = "#{slug}.jpg"
     elsif !File.exist?(jpg_path)
       download_cover(thumb, jpg_path)
+      front_matter["cover"] = thumb
     else
       Jekyll.logger.info "🖼️  Cover already exists:", jpg_path
+      front_matter["cover"] ||= "#{slug}.jpg"
     end
   end
 
