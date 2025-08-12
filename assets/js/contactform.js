@@ -3,7 +3,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const alertBox = document.getElementById("contact-form-alert");
   const submitBtn = document.getElementById("contact-form-btn");
   const csrfInput = document.getElementById("csrf_token");
+
+  // Ensure all required elements are present
   if (!form || !alertBox || !submitBtn || !csrfInput) return;
+
+  // reCAPTCHA site key: hidden input OR data-attribute (fallback)
+  const sitekeyInput = document.getElementById("g-recaptcha-sitekey");
+  const sitekey = sitekeyInput?.value || form.dataset.recaptchaSitekey || "";
 
   // Fetch initial CSRF token
   fetch("/api/csrf/generate")
@@ -53,14 +59,25 @@ document.addEventListener("DOMContentLoaded", () => {
       submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> &nbsp; Sending...';
 
       const formData = new FormData(form);
-      // recaptcha logic if you use it (optional)
-      const sitekey = form.dataset.recaptchaSitekey;
-      if (sitekey && typeof grecaptcha !== "undefined") {
+
+      // --- reCAPTCHA v3 ---
+      async function ensureRecaptcha(timeoutMs = 5000) {
+        const start = Date.now();
+        while (!(window.grecaptcha && typeof grecaptcha.ready === "function")) {
+          if (Date.now() - start > timeoutMs) throw new Error("grecaptcha not loaded");
+          await new Promise(r => setTimeout(r, 50));
+        }
+      }
+
+      if (sitekey) {
+        await ensureRecaptcha();
+        await new Promise(r => grecaptcha.ready(r));
         const token = await grecaptcha.execute(sitekey, { action: "contactform" });
         formData.set("g-recaptcha-response", token);
       }
+      // --- /reCAPTCHA ---
 
-      const response = await fetch("/api/contactform-send", {
+      const response = await fetch("/api/contactform/send", {
         method: "POST",
         body: formData
       });
