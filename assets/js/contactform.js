@@ -4,8 +4,48 @@ document.addEventListener("DOMContentLoaded", () => {
   const submitBtn = document.getElementById("contact-form-btn");
   const csrfInput = document.getElementById("csrf_token");
 
-  // Ensure all required elements are present
+  // Hidden input for clientRequestId
+  let clientIdInput = document.getElementById("cf_request_id");
+  if (!clientIdInput) {
+    clientIdInput = document.createElement("input");
+    clientIdInput.type = "hidden";
+    clientIdInput.name = "cf_request_id";
+    clientIdInput.id = "cf_request_id";
+    form.appendChild(clientIdInput);
+  }
+  // Generate client request ID
+  clientIdInput.value = Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
+
   if (!form || !alertBox || !submitBtn || !csrfInput) return;
+
+  (function(){
+    const ta = document.getElementById("contact-form-messageInput");
+    if (!ta) return;
+
+    // ensure a sensible maxlength (sync with backend: 5000)
+    const maxLen = parseInt(ta.getAttribute("maxlength"), 10) || 5000;
+    if (!ta.hasAttribute("maxlength")) ta.setAttribute("maxlength", String(maxLen));
+
+    // wrap textarea in a positioned container
+    const wrapper = document.createElement("div");
+    wrapper.className = "textarea-wrapper";
+    ta.parentNode.insertBefore(wrapper, ta);
+    wrapper.appendChild(ta);
+
+    // create watermark-like counter
+    const counter = document.createElement("span");
+    counter.className = "char-counter";
+    wrapper.appendChild(counter);
+
+    function updateCounter(){
+      const remaining = maxLen - ta.value.length;
+      counter.textContent = remaining;
+      counter.classList.toggle("red", remaining < 50);
+    }
+
+    ta.addEventListener("input", updateCounter);
+    updateCounter(); // init
+  })();
 
   // reCAPTCHA site key: hidden input OR data-attribute (fallback)
   const sitekeyInput = document.getElementById("g-recaptcha-sitekey");
@@ -84,13 +124,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const json = await response.json();
 
+      const ref = json?.data?.ref ? ` (Ref: ${json.data.ref})` : "";
+
       alertBox.classList.remove("alert-green", "alert-red");
-      alertBox.textContent = json.message || "Unexpected response.";
+      alertBox.textContent = (json.message || "Unexpected response.") + ref;
       alertBox.classList.add(json.status === "success" ? "alert-green" : "alert-red");
       alertBox.style.display = "block";
 
       if (json.status === "success") {
         form.reset();
+        // Regenerate request ID for the next submission
+        clientIdInput.value = Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
       }
     } catch (err) {
       console.error("Contact form error:", err);

@@ -637,3 +637,12 @@ img.loaded {
     -webkit-box-shadow: none !important;
     box-shadow: none !important;
 }
+
+.textarea-wrapper{position:relative;display:inline-block;width:100%}
+#contact-form-messageInput{width:100%;padding-right:42px}
+.char-counter{
+  position:absolute;bottom:6px;right:10px;
+  font-size:.8em;color:rgba(0,0,0,.32);
+  pointer-events:none;user-select:none;transition:color .2s ease
+}
+.char-counter.red{color:rgba(200,0,0,.78)}
