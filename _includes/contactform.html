@@ -1,25 +1,26 @@
 <div id="contact-form-alert" class="alert" style="display: none"></div>
 <form class="contact-form" id="contact-form" method="POST">
     <div class="wrap-input">
-        <input class="input" id="contact-form-nameInput" type="text" name="name" placeholder="Full Name" required>
+        <input class="input" id="contact-form-nameInput" type="text" name="name" placeholder="Full Name" required  autocomplete="off">
     </div>
 
     <div class="wrap-input">
-        <input class="input" id="contact-form-replyToInput" type="email" name="email" placeholder="Email" required>
+        <input class="input" id="contact-form-replyToInput" type="email" name="email" placeholder="Email" required  autocomplete="off">
     </div>
 
     <div class="wrap-input">
-        <input class="input" id="contact-form-subjectInput" name="subject" placeholder="Message subject" required>
+        <input class="input" id="contact-form-subjectInput" name="subject" placeholder="Message subject" required  autocomplete="off">
     </div>
 
     <div class="wrap-input">
-        <textarea class="input" id="contact-form-messageInput" name="message" placeholder="Your Message"
-            required></textarea>
+        <textarea class="input" id="contact-form-messageInput" name="message" maxlength="600" placeholder="Your Message"
+            required autocomplete="off"></textarea>
     </div>
     {% if jekyll.environment == "production" %}
     <input type="hidden" id="g-recaptcha-sitekey" value="{{ site.recaptcha_site_key }}">
     <input type="hidden" name="g-recaptcha-response" id="contact-form-recaptcha-token">
     {% endif %}
+    <input type="hidden" name="cf_request_id" id="cf_request_id">
     <input type="hidden" name="csrf_token" id="csrf_token">
 
     <div class="container-contact-form-btn">
