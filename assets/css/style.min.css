@@ -638,6 +638,57 @@ img.loaded {
     box-shadow: none !important;
 }
 
+.licenses-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 2em 0;
+  font-size: 0.95em;
+  background: #fff;
+}
+
+.licenses-table th,
+.licenses-table td {
+  border: 1px solid #ccc;
+  padding: 10px 12px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.licenses-table th {
+  background: #f5f5f5;
+  font-weight: 600;
+}
+
+.licenses-table tr:nth-child(even) {
+  background: #fafafa;
+}
+
+.licenses-table tr:hover {
+  background: #f0f8ff;
+}
+
+.pkg-name {
+  text-align: left;
+  white-space: nowrap;
+}
+
+.pkg-name a {
+  color: #0073e6;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.pkg-name a:hover .external-link-arrow {
+  transform: translateX(2px);
+}
+
+.external-link-arrow {
+  font-size: 0.8em;
+  margin-left: 4px;
+  transition: transform 0.2s ease;
+  opacity: 0.7;
+}
+
 .textarea-wrapper{position:relative;display:inline-block;width:100%}
 #contact-form-messageInput{width:100%;padding-right:42px}
 .char-counter{

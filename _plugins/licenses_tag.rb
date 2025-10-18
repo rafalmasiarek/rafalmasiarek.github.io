@@ -14,6 +14,13 @@ module Jekyll
       licenses += fetch_api(API_URL)
       licenses += (site.config["licenses"] || [])
       licenses.uniq! { |p| p["name"] }
+
+      licenses.each do |pkg|
+        if pkg["source"] == "Ruby gem" && (pkg["license"].nil? || pkg["license"] == "unknown")
+          pkg["license"] = fetch_rubygems_license(pkg["name"])
+        end
+      end
+
       build_html(licenses)
     end
 
@@ -55,6 +62,17 @@ module Jekyll
       []
     end
 
+    def fetch_rubygems_license(name)
+      uri = URI.parse("https://rubygems.org/api/v1/gems/#{name}.json")
+      res = Net::HTTP.get_response(uri)
+      return "unknown" unless res.is_a?(Net::HTTPSuccess)
+      json = JSON.parse(res.body)
+      licenses = Array(json["licenses"]).reject(&:empty?)
+      licenses.any? ? licenses.join(", ") : "unknown"
+    rescue
+      "unknown"
+    end
+
     def build_html(licenses)
       rows = licenses.map do |pkg|
         name = pkg["name"]
@@ -63,7 +81,7 @@ module Jekyll
         homepage = pkg["homepage"] || "https://rubygems.org/gems/#{name}"
         source = pkg["source"] || "unknown"
 
-        "<tr><td>#{name}</td><td>#{version}</td><td>#{license}</td><td><a href='#{homepage}' target='_blank'>link</a></td><td>#{source}</td></tr>"
+        "<tr><td class='pkg-name'><a href='#{homepage}' target='_blank' rel='noopener'>#{name} <span class='external-link-arrow'>↗</span></a></td><td>#{version}</td><td>#{license}</td><td>#{source}</td></tr>"
       end.join("\n")
 
       <<~HTML
@@ -73,7 +91,6 @@ module Jekyll
               <th>Name</th>
               <th>Version</th>
               <th>License</th>
-              <th>Link</th>
               <th>Source</th>
             </tr>
           </thead>
