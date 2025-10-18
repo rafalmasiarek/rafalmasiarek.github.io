@@ -78,10 +78,16 @@ module Jekyll
         name = pkg["name"]
         version = pkg["version"]
         license = pkg["license"] || "unknown"
-        homepage = pkg["homepage"] || "https://rubygems.org/gems/#{name}"
+        homepage = pkg["homepage"]
         source = pkg["source"] || "unknown"
 
-        "<tr><td class='pkg-name'><a href='#{homepage}' target='_blank' rel='noopener'>#{name} <span class='external-link-arrow'>↗</span></a></td><td>#{version}</td><td>#{license}</td><td>#{source}</td></tr>"
+        name_html = if homepage && !homepage.strip.empty?
+          "<a href='#{homepage}' target='_blank' rel='noopener'>#{name} <span class='external-link-arrow'>↗</span></a>"
+        else
+          name
+        end
+
+        "<tr><td class='pkg-name'>#{name_html}</td><td>#{version}</td><td>#{license}</td><td>#{source}</td></tr>"
       end.join("\n")
 
       <<~HTML
