@@ -38,7 +38,8 @@ lang: en
 
 **§ 6. Open Source Licenses**
 
-The Website uses third-party open-source components and libraries. The following table lists their names, versions, license types, and sources of origin. This list is provided **for informational and transparency purposes** only.
+1. The Website uses third-party open-source components and libraries. The following table lists their names, versions, license types, and sources of origin. This list is provided **for informational and transparency purposes** only.
+
 {% licenses_table %}
 
 

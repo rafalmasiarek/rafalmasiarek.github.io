@@ -37,7 +37,9 @@ lang: pl
 2. Zgodnie z Rozporządzeniem Parlamentu Europejskiego i Rady (UE) 2016/679 z dnia 27 kwietnia 2016 r. w sprawie ochrony osób fizycznych w związku z przetwarzaniem danych osobowych (RODO), użytkownicy mają prawo dostępu do swoich danych osobowych, ich poprawiania oraz usunięcia, zgodnie z warunkami określonymi w Polityce Prywatności.
 
 **§ 6. Licencje Open Source**
-Strona internetowa wykorzystuje komponenty i biblioteki typu open source pochodzące od podmiotów trzecich. Poniższa tabela zawiera ich nazwy, wersje, typy licencji oraz źródła pochodzenia. Niniejsza lista została udostępniona wyłącznie w celach informacyjnych i transparentności.
+
+1. Strona internetowa wykorzystuje komponenty i biblioteki typu open source pochodzące od podmiotów trzecich. Poniższa tabela zawiera ich nazwy, wersje, typy licencji oraz źródła pochodzenia. Niniejsza lista została udostępniona wyłącznie w celach informacyjnych i transparentności.
+
 {% licenses_table %}
 
 **§ 7. Zmiany w regulaminie**

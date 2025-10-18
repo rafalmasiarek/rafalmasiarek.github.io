@@ -644,6 +644,7 @@ img.loaded {
   margin: 2em 0;
   font-size: 0.95em;
   background: #fff;
+  font-weight: 200;
 }
 
 .licenses-table th,
