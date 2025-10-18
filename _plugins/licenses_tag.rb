@@ -1,0 +1,90 @@
+# frozen_string_literal: true
+require 'json'
+require 'net/http'
+require 'uri'
+
+module Jekyll
+  class LicensesTableTag < Liquid::Tag
+    API_URL = "https://masiarek.pl/api/v1/licenses"
+
+    def render(context)
+      site = context.registers[:site]
+      licenses = []
+      licenses += parse_gemfile(File.join(site.source, "Gemfile.lock"))
+      licenses += fetch_api(API_URL)
+      licenses += (site.config["licenses"] || [])
+      licenses.uniq! { |p| p["name"] }
+      build_html(licenses)
+    end
+
+    private
+
+    def parse_gemfile(path)
+      return [] unless File.exist?(path)
+      gems = []
+      File.readlines(path).each do |line|
+        if line =~ /^\s{4}([a-zA-Z0-9_\-]+) \(([\d\.]+)\)/
+          name, version = $1, $2
+          gems << {
+            "name" => name,
+            "version" => version,
+            "license" => "unknown",
+            "homepage" => "https://rubygems.org/gems/#{name}",
+            "source" => "Ruby gem"
+          }
+        end
+      end
+      gems
+    end
+
+    def fetch_api(url)
+      uri = URI.parse(url)
+      res = Net::HTTP.get_response(uri)
+      return [] unless res.is_a?(Net::HTTPSuccess)
+      json = JSON.parse(res.body)
+      json["data"]["packages"].map do |pkg|
+        {
+          "name" => pkg["name"],
+          "version" => pkg["version"],
+          "license" => (pkg["license"] || []).join(", "),
+          "homepage" => pkg["homepage"],
+          "source" => "API"
+        }
+      end
+    rescue
+      []
+    end
+
+    def build_html(licenses)
+      rows = licenses.map do |pkg|
+        name = pkg["name"]
+        version = pkg["version"]
+        license = pkg["license"] || "unknown"
+        homepage = pkg["homepage"] || "https://rubygems.org/gems/#{name}"
+        source = pkg["source"] || "unknown"
+
+        "<tr><td>#{name}</td><td>#{version}</td><td>#{license}</td><td><a href='#{homepage}' target='_blank'>link</a></td><td>#{source}</td></tr>"
+      end.join("\n")
+
+      <<~HTML
+        <table class="licenses-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Version</th>
+              <th>License</th>
+              <th>Link</th>
+              <th>Source</th>
+            </tr>
+          </thead>
+          <tbody>
+            #{rows}
+          </tbody>
+        </table>
+      HTML
+    end
+  end
+end
+
+Liquid::Template.register_tag('licenses_table', Jekyll::LicensesTableTag)
+
