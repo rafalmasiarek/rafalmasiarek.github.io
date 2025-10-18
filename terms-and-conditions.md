@@ -36,7 +36,13 @@ lang: en
 1. Use of the Website involves the processing of personal data in accordance with the Website's Privacy Policy, which is an integral part of these Terms and Conditions.
 2. In accordance with the General Data Protection Regulation (EU) 2016/679 (GDPR), users have the right to access, correct, and delete their personal data, in accordance with the conditions set forth in the Privacy Policy.
 
-**§ 6. Amendments to the Terms and Conditions**
+**§ 6. Open Source Licenses**
+
+The Website uses third-party open-source components and libraries. The following table lists their names, versions, license types, and sources of origin. This list is provided **for informational and transparency purposes** only.
+{% licenses_table %}
+
+
+**§ 7. Amendments to the Terms and Conditions**
 
 1. The Website owner reserves the right to change these Terms and Conditions at any time. Changes will take effect upon their publication on the Website.
 2. Continuing to use the Website after the publication of changes to the Terms and Conditions signifies acceptance of the updated terms.
