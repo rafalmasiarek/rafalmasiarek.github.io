@@ -21,6 +21,10 @@
   let jsonLdInjected = false;
   let __scrollAttached = false;
 
+  // --- NEW: facets/fallback state for artist tags ---
+  const __artistSet = new Set();   // used only if server doesn't provide facets
+  let __facetsLoaded = false;      // becomes true if API returns facets
+
   // Prefetch infra
   const connection = navigator.connection || navigator.webkitConnection || navigator.mozConnection;
   const isSlow = connection && (connection.saveData || /2g/.test(connection.effectiveType || ''));
@@ -100,6 +104,43 @@
         ${artist}
       </button>
     `).join('');
+  }
+
+  // --- NEW: try to fetch server-provided facets once (preferred) ---
+  async function fetchAndRenderFacets() {
+    try {
+      const u = new URL(API_LIST, location.origin);
+      u.searchParams.set('page', '1');
+      u.searchParams.set('per_page', '1');   // tiny payload
+      u.searchParams.set('facets', '1');     // ask for facets if API supports it
+      const r = await fetch(u.toString(), { credentials: 'omit' });
+      const p = await r.json();
+      const artists = p?.facets?.artists;
+      if (Array.isArray(artists) && artists.length) {
+        __facetsLoaded = true;
+        renderArtistTags({ artists });
+      }
+    } catch {
+      // ignore; fallback (progressive) will fill as pages arrive
+    }
+  }
+
+  // --- NEW: fallback – progressively build artist tags from loaded pages ---
+  function updateArtistTagsFromBatch(list) {
+    if (__facetsLoaded) return; // server facets take precedence
+    let changed = false;
+    for (const v of list || []) {
+      if (v?.artist && !__artistSet.has(v.artist)) {
+        __artistSet.add(v.artist);
+        changed = true;
+      }
+    }
+    if (changed) {
+      renderArtistTags({
+        artists: Array.from(__artistSet)
+          .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+      });
+    }
   }
 
   // Build API URL for a page
@@ -185,6 +226,8 @@
     loading = false;
     document.getElementById('loading').style.display = 'none';
     document.getElementById('vinyl-grid').innerHTML = '';
+    // NEW: when we change filters, if facets weren't provided by server, clear the fallback set
+    if (!__facetsLoaded) __artistSet.clear();
   }
 
   function loadMore() {
@@ -201,7 +244,18 @@
         const facets = payload?.facets;
         const pg = payload?.pagination;
 
-        if (currentPage === 1) renderArtistTags(facets);
+        // NEW: first page → prefer server facets; otherwise start progressive fallback
+        if (currentPage === 1) {
+          if (facets?.artists?.length) {
+            __facetsLoaded = true;
+            renderArtistTags(facets);
+          } else {
+            updateArtistTagsFromBatch(list);
+          }
+        } else {
+          // subsequent pages → only update in fallback mode
+          updateArtistTagsFromBatch(list);
+        }
 
         if (list.length === 0) {
           hasMore = false;
@@ -294,13 +348,17 @@
     attachScroll();
     loadMore();
   };
+  window.__vinylsClearFilterSoft = function () {
+    activeArtist = null;
+    document.querySelectorAll('[data-artist]').forEach(b => b.classList.remove('active'));
+  };
 
   // Init
   document.addEventListener('DOMContentLoaded', () => {
     const collapseEl = document.getElementById('vinyl-tags');
     const bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseEl);
     bsCollapse.hide();
-
+    fetchAndRenderFacets();
     attachScroll();
     loadMore();
 
