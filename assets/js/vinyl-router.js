@@ -100,8 +100,6 @@
   }
 
   // ---- UI (with image preload & race guard) ----
-  let __detailReqSeq = 0;
-
   function renderStars(n) {
     let s = '';
     for (let i = 1; i <= 5; i++) s += i <= n ? '★ ' : '☆ ';
