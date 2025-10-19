@@ -16,6 +16,9 @@
   let __restoreScrollY = 0;
   let __restoreSlug = null;
 
+  // --- NEW: if a filter was active when entering detail, reset it on back to list
+  let __resetFilterOnBack = false;
+
   function slugFromHash() {
     return (location.hash || '').replace(/^#\/?/, '') || null;
   }
@@ -115,6 +118,13 @@
     setListHead();
     if (window.attachScroll) window.attachScroll();
 
+    // If a filter was active when entering detail, reset it now (do not restore old scroll in this case)
+    if (__resetFilterOnBack) {
+      __resetFilterOnBack = false;
+      if (window.__vinylsClearFilter) window.__vinylsClearFilter();
+      return;
+    }
+
     if (__restoreScrollY && Number.isFinite(__restoreScrollY)) {
       window.scrollTo({ top: __restoreScrollY, behavior: 'auto' });
       if (__restoreSlug) {
@@ -131,8 +141,10 @@
   let __detailReqSeq = 0;
 
   async function showDetail(slug) {
-    // Soft-reset filter state (no DOM reset), and detach list scroll
-    if (window.__vinylsClearFilterSoft) window.__vinylsClearFilterSoft();
+    // If a filter button is currently active, mark that we must reset on return
+    __resetFilterOnBack = !!document.querySelector('[data-artist].active');
+
+    // Detach infinite scroll while in detail
     if (window.detachScroll) window.detachScroll();
 
     // Panels
@@ -235,7 +247,7 @@
       route();
     });
 
-    // --- NEW: store scroll position & slug when clicking a card on the list
+    // Store scroll position & slug when clicking a card on the list
     document.addEventListener('click', (e) => {
       const link = e.target.closest && e.target.closest('a.card-link');
       if (link) {
