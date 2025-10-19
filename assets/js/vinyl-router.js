@@ -1,4 +1,5 @@
 // assets/js/vinyl-router.js
+
 (function () {
   if (!window.__VINYLS_API__ || !window.__VINYLS_API__.trim()) {
     console.error('VINYLS: Missing window.__VINYLS_API__');
@@ -10,6 +11,7 @@
   const API_LIST = window.__VINYLS_API__.trim().replace(/\/+$/, '');
   const SITE_BASE = window.__SITE_BASE__.trim().replace(/\/+$/, '');
   const VINYLS_ABS = SITE_BASE + '/vinyls';
+  const PLACEHOLDER_COVER = 'https://placehold.co/600x600?text=No+cover';
 
   function slugFromHash() {
     return (location.hash || '').replace(/^#\/?/, '') || null;
@@ -94,7 +96,15 @@
     return list.find(x => x.slug === slug);
   }
 
-  // ---- UI ----
+  // ---- UI (with image preload & race guard) ----
+  let __detailReqSeq = 0;
+
+  function renderStars(n) {
+    let s = '';
+    for (let i = 1; i <= 5; i++) s += i <= n ? '★ ' : '☆ ';
+    return `<strong>Rating:</strong> <span class="text-warning">${s}</span>`;
+  }
+
   function showList() {
     document.getElementById('vinyl-detail').classList.add('d-none');
     document.getElementById('list-panel').classList.remove('d-none');
@@ -105,29 +115,46 @@
   }
 
   async function showDetail(slug) {
-    // Requirement: entering record resets filter
+    // Requirement: entering a record resets filter and detaches list scroll
     if (window.__vinylsClearFilter) window.__vinylsClearFilter();
     if (window.detachScroll) window.detachScroll();
 
+    // Panels
     document.getElementById('vinyl-detail').classList.remove('d-none');
     document.getElementById('list-panel').classList.add('d-none');
     document.getElementById('vinyl-tags').classList.add('d-none');
     document.getElementById('toggle-tags-btn').classList.add('d-none');
 
+    // Request token (race guard)
+    const reqId = ++__detailReqSeq;
+
+    // Reset cover to placeholder and clear texts to avoid showing stale content
+    const imgEl = document.getElementById('d-cover');
+    imgEl.classList.remove('is-loaded');  // rely on CSS to fade-in when loaded
+    imgEl.src = PLACEHOLDER_COVER;
+    imgEl.alt = '';
+
+    document.getElementById('d-title').textContent = '';
+    document.getElementById('d-subtitle').textContent = '';
+    document.getElementById('d-rating')?.classList.add('d-none');
+    document.getElementById('d-review')?.classList.add('d-none');
+    document.getElementById('d-description')?.classList.add('d-none');
+
+    // Fetch data
     const v = await fetchBySlug(slug);
     if (!v) {
-      document.getElementById('vinyl-detail').innerHTML = `<div class="alert alert-danger">Vinyl not found.</div>`;
+      if (__detailReqSeq !== reqId) return;
+      document.getElementById('d-title').textContent = 'Not found';
+      imgEl.src = PLACEHOLDER_COVER;
+      imgEl.alt = 'No cover';
+      imgEl.classList.add('is-loaded');
       return;
     }
+    if (__detailReqSeq !== reqId) return;
 
     const title = v.title || 'Untitled';
     const artist = v.artist || 'Unknown';
     const yearText = v.year ? ` (${v.year})` : '';
-
-    const img = document.getElementById('d-cover');
-    img.alt = title;
-    img.src = v.cover || 'https://placehold.co/600x600?text=No+cover';
-
     document.getElementById('d-title').textContent = title;
     document.getElementById('d-subtitle').textContent = `${artist}${yearText}`;
 
@@ -143,8 +170,28 @@
     if (v.description) { desc.textContent = v.description; desc.classList.remove('d-none'); }
     else { desc.classList.add('d-none'); }
 
+    // SEO
     setDetailHead(v);
 
+    // Preload detail cover, then swap
+    const nextSrc = v.cover || PLACEHOLDER_COVER;
+    const pre = new Image();
+    pre.decoding = 'async';
+    pre.onload = () => {
+      if (__detailReqSeq !== reqId) return;
+      imgEl.src = nextSrc;
+      imgEl.alt = title;
+      imgEl.classList.add('is-loaded');
+    };
+    pre.onerror = () => {
+      if (__detailReqSeq !== reqId) return;
+      imgEl.src = PLACEHOLDER_COVER;
+      imgEl.alt = 'No cover';
+      imgEl.classList.add('is-loaded');
+    };
+    pre.src = nextSrc;
+
+    // Normalize hash and scroll
     const want = '#/' + encodeURIComponent(slug);
     if (location.hash !== want) history.replaceState(null, '', want);
 
