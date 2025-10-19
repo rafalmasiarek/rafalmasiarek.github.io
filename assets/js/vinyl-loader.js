@@ -8,44 +8,61 @@
     console.error('VINYLS: Missing window.__SITE_BASE__ (site.url+baseurl)');
   }
 
-  // ---- Config ----
   const API_LIST = window.__VINYLS_API__.trim().replace(/\/+$/, '');
   const SITE_BASE = window.__SITE_BASE__.trim().replace(/\/+$/, '');
   const VINYLS_ABS = SITE_BASE + '/vinyls';
+  const PER_PAGE = Number.isFinite(+window.__VINYLS_PER_PAGE__) ? +window.__VINYLS_PER_PAGE__ : 9;
+  const PLACEHOLDER_COVER = 'https://placehold.co/600x600?text=No+cover';
 
-  // ---- State ----
-  window.allVinyls = window.allVinyls || [];
-  let filteredVinyls = [];
-  let page = 0;
-  const pageSize = 9;
+  let currentPage = 1;
+  let hasMore = true;
   let loading = false;
   let activeArtist = null;
   let jsonLdInjected = false;
-
-  // ---- Scroll listener management ----
   let __scrollAttached = false;
+
+  // Prefetch infra
+  const connection = navigator.connection || navigator.webkitConnection || navigator.mozConnection;
+  const isSlow = connection && (connection.saveData || /2g/.test(connection.effectiveType || ''));
+  const prefetchInFlight = new Map();
+  const preloadedImages = new Set();
+
+  function prefetchJSON(url) {
+    if (prefetchInFlight.has(url)) return prefetchInFlight.get(url);
+    const p = fetch(url, { credentials: 'omit', cache: 'force-cache' })
+      .catch(() => null)
+      .finally(() => prefetchInFlight.delete(url));
+    prefetchInFlight.set(url, p);
+    return p;
+  }
+  function prefetchImage(url) {
+    if (!url || preloadedImages.has(url)) return Promise.resolve();
+    return new Promise(resolve => {
+      const img = new Image();
+      img.decoding = 'async';
+      img.loading = 'eager';
+      img.fetchPriority = 'low';
+      img.onload = img.onerror = () => { preloadedImages.add(url); resolve(); };
+      img.src = url;
+    });
+  }
+
+  // Scroll mgmt
   function onScroll() {
     const nearBottom = window.scrollY + window.innerHeight >= document.body.offsetHeight - 100;
-    if (!loading && nearBottom) loadMore();
+    if (!loading && hasMore && nearBottom) loadMore();
   }
   function attachScroll() {
-    if (!__scrollAttached) {
-      window.addEventListener('scroll', onScroll);
-      __scrollAttached = true;
-    }
+    if (!__scrollAttached) { window.addEventListener('scroll', onScroll); __scrollAttached = true; }
   }
   function detachScroll() {
-    if (__scrollAttached) {
-      window.removeEventListener('scroll', onScroll);
-      __scrollAttached = false;
-    }
+    if (__scrollAttached) { window.removeEventListener('scroll', onScroll); __scrollAttached = false; }
   }
-  // expose for router
   window.attachScroll = attachScroll;
   window.detachScroll = detachScroll;
 
-  // ---- SEO: ItemList JSON-LD ----
-  function injectListJsonLd(items) {
+  // SEO: emit ItemList only on first page (limit size)
+  function injectListJsonLd(items, pageOffset = 0) {
     if (jsonLdInjected || !Array.isArray(items) || !items.length) return;
     const s = document.createElement('script');
     s.type = 'application/ld+json';
@@ -55,7 +72,7 @@
       '@type': 'ItemList',
       itemListElement: items.map((v, i) => ({
         '@type': 'ListItem',
-        position: i + 1,
+        position: pageOffset + i + 1,
         url: `${VINYLS_ABS}/#/${encodeURIComponent(v.slug)}`
       }))
     });
@@ -63,45 +80,20 @@
     jsonLdInjected = true;
   }
 
-  // ---- Lazy images with timeout fallback ----
-  function lazyLoadVinyls(container, threshold = 0.5) {
-    const images = container.querySelectorAll('img[data-src]');
-    const total = images.length;
-    let loaded = 0, resolved = false;
+  // IO warm-up
+  const io = 'IntersectionObserver' in window ? new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (!e.isIntersecting) continue;
+      const imgEl = e.target.querySelector('img[data-src]');
+      const warmSrc = imgEl && imgEl.getAttribute('data-src');
+      if (warmSrc) prefetchImage(warmSrc);
+      io.unobserve(e.target);
+    }
+  }, { rootMargin: '300px' }) : null;
 
-    return new Promise((resolve) => {
-      if (total === 0) return resolve();
-
-      const t = setTimeout(() => {
-        if (!resolved) { resolved = true; resolve(); }
-      }, 2000);
-
-      function maybeResolve() {
-        if (!resolved && loaded / total >= threshold) {
-          resolved = true; clearTimeout(t); resolve();
-        }
-      }
-
-      images.forEach(img => {
-        const card = img.closest('.gallery-item');
-        const done = () => {
-          loaded++;
-          img.classList.add('loaded');
-          if (card) card.classList.add('visible');
-          maybeResolve();
-        };
-        img.addEventListener('load', done);
-        img.addEventListener('error', done);
-        img.src = img.dataset.src;
-        img.removeAttribute('data-src');
-      });
-    });
-  }
-
-  // ---- UI helpers ----
-  function renderArtistTags(data) {
-    const artists = [...new Set(data.map(v => v.artist))].filter(Boolean)
-      .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+  // Filters UI from facets
+  function renderArtistTags(facets) {
+    const artists = Array.isArray(facets?.artists) ? facets.artists : [];
     const tagContainer = document.getElementById('artist-buttons');
     tagContainer.innerHTML = artists.map(artist => `
       <button class="btn btn-outline-secondary btn-sm me-2 mb-2" data-artist="${artist}">
@@ -110,148 +102,219 @@
     `).join('');
   }
 
-  function rebuildList(fromTop = false) {
-    loading = false; // safety
+  // Build API URL for a page
+  function buildPageUrl(page, artist) {
+    const u = new URL(API_LIST, location.origin);
+    u.searchParams.set('page', String(page));
+    u.searchParams.set('per_page', String(PER_PAGE));
+    if (artist) u.searchParams.set('artist', artist);
+    return u.toString();
+  }
+
+  // Hydrate images with preload
+  function hydrateImages(container, threshold = 0.5) {
+    const images = container.querySelectorAll('img[data-src]');
+    const total = images.length;
+    let loaded = 0, resolved = false;
+
+    return new Promise((resolve) => {
+      if (total === 0) return resolve();
+
+      const t = setTimeout(() => { if (!resolved) { resolved = true; resolve(); } }, 2000);
+
+      function maybeResolve() {
+        if (!resolved && loaded / total >= threshold) {
+          resolved = true; clearTimeout(t); resolve();
+        }
+      }
+
+      images.forEach(imgEl => {
+        const realSrc = imgEl.dataset.src;
+        const card = imgEl.closest('.gallery-item');
+
+        const pre = new Image();
+        pre.decoding = 'async';
+        pre.onload = () => {
+          imgEl.src = realSrc;
+          imgEl.removeAttribute('data-src');
+          imgEl.classList.add('loaded');
+          if (card) card.classList.add('visible');
+          loaded++; maybeResolve();
+        };
+        pre.onerror = () => {
+          imgEl.src = PLACEHOLDER_COVER;
+          imgEl.removeAttribute('data-src');
+          imgEl.classList.add('loaded');
+          if (card) card.classList.add('visible');
+          loaded++; maybeResolve();
+        };
+        pre.src = realSrc;
+      });
+    });
+  }
+
+  function addCardPrefetchHandlers(cardEl, vinyl) {
+    const detailUrl = `${API_LIST}/${encodeURIComponent(vinyl.slug)}`;
+    let scheduled = false;
+    const handler = () => {
+      if (scheduled) return;
+      scheduled = true;
+      prefetchJSON(detailUrl);
+      if (vinyl.cover) prefetchImage(vinyl.cover);
+    };
+    cardEl.addEventListener('mouseenter', handler, { passive: true });
+    cardEl.addEventListener('touchstart', handler, { passive: true });
+    cardEl.addEventListener('focus', handler, { passive: true, capture: true });
+  }
+
+  function prefetchNextPage(page, artist) {
+    if (isSlow) return;
+    const url = buildPageUrl(page, artist);
+    fetch(url, { credentials: 'omit' })
+      .then(r => r.json())
+      .then(p => {
+        const items = p?.data || [];
+        items.forEach(v => v?.cover && prefetchImage(v.cover));
+      })
+      .catch(() => { });
+  }
+
+  function resetListState() {
+    currentPage = 1;
+    hasMore = true;
+    loading = false;
     document.getElementById('loading').style.display = 'none';
-    page = 0;
-    const grid = document.getElementById('vinyl-grid');
-    grid.innerHTML = '';
-
-    if (!filteredVinyls.length) {
-      detachScroll();
-      grid.innerHTML = `<div class="col-12"><div class="alert alert-warning">No results for the selected filter.</div></div>`;
-      if (fromTop) window.scrollTo({ top: 0, behavior: 'instant' });
-      return;
-    }
-
-    attachScroll();
-    if (fromTop) window.scrollTo({ top: 0, behavior: 'instant' });
-    loadMore();
+    document.getElementById('vinyl-grid').innerHTML = '';
   }
 
   function loadMore() {
-    if (loading) return;
+    if (loading || !hasMore) return;
     loading = true;
     const loadingEl = document.getElementById('loading');
     loadingEl.style.display = 'block';
 
-    try {
-      const start = page * pageSize;
-      const end = start + pageSize;
-      const items = filteredVinyls.slice(start, end);
+    const url = buildPageUrl(currentPage, activeArtist);
+    fetch(url, { credentials: 'omit' })
+      .then(r => r.json())
+      .then(payload => {
+        const list = payload?.data || [];
+        const facets = payload?.facets;
+        const pg = payload?.pagination;
 
-      if (items.length === 0) {
-        loadingEl.style.display = 'none';
-        detachScroll();
-        loading = false;
-        return;
-      }
+        if (currentPage === 1) renderArtistTags(facets);
 
-      const container = document.getElementById('vinyl-grid');
-      const temp = document.createElement('div');
+        if (list.length === 0) {
+          hasMore = false;
+          detachScroll();
+          if (currentPage === 1) {
+            document.getElementById('vinyl-grid').innerHTML =
+              `<div class="col-12"><div class="alert alert-warning">No results for the selected filter.</div></div>`;
+          }
+          return;
+        }
 
-      const placeholder = 'data:image/svg+xml;base64,PHN2ZyBoZWlnaHQ9IjEwIiB3aWR0aD0iMTYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIvPg==';
+        const container = document.getElementById('vinyl-grid');
+        const temp = document.createElement('div');
+        const spacer = 'data:image/svg+xml;base64,PHN2ZyBoZWlnaHQ9IjEwIiB3aWR0aD0iMTYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIvPg==';
 
-      temp.innerHTML = items.map(v => {
-        const url = '#/' + encodeURIComponent(v.slug);
-        const cover = v.cover || 'https://placehold.co/600x600?text=No+cover';
-        const safeTitle = (v.title || '').replace(/"/g, '&quot;');
-        return `
-          <div class="col-md-4">
-            <a href="${url}" class="text-decoration-none text-dark">
-              <div class="card h-100 shadow-sm vinyl-card gallery-item hidden-until-loaded">
-                <img src="${placeholder}" data-src="${cover}" class="card-img-top" alt="${safeTitle}" loading="lazy"
-                     onerror="this.onerror=null;this.src='https://placehold.co/600x600?text=No+cover';">
-                <div class="card-body">
-                  <h5 class="card-title">${safeTitle}</h5>
-                  <p class="card-text">${v.artist || 'Unknown'}${v.year ? ` (${v.year})` : ''}</p>
+        temp.innerHTML = list.map(v => {
+          const href = '#/' + encodeURIComponent(v.slug);
+          const cover = v.cover || PLACEHOLDER_COVER;
+          const safeTitle = (v.title || '').replace(/"/g, '&quot;');
+          return `
+            <div class="col-md-4">
+              <a href="${href}" class="text-decoration-none text-dark card-link">
+                <div class="card h-100 shadow-sm vinyl-card gallery-item hidden-until-loaded">
+                  <img src="${spacer}" data-src="${cover}" class="card-img-top" alt="${safeTitle}" loading="lazy"
+                       fetchpriority="low"
+                       onerror="this.onerror=null;this.src='${PLACEHOLDER_COVER}';">
+                  <div class="card-body">
+                    <h5 class="card-title">${safeTitle}</h5>
+                    <p class="card-text">${v.artist || 'Unknown'}${v.year ? ` (${v.year})` : ''}</p>
+                  </div>
                 </div>
-              </div>
-            </a>
-          </div>`;
-      }).join('');
+              </a>
+            </div>`;
+        }).join('');
 
-      [...temp.children].forEach(el => container.appendChild(el));
+        const newEls = [...temp.children];
+        newEls.forEach((el, idx) => {
+          container.appendChild(el);
+          const link = el.querySelector('.card-link');
+          addCardPrefetchHandlers(link, list[idx]);
+          if (io) io.observe(el.querySelector('.vinyl-card'));
+        });
 
-      if (!jsonLdInjected) injectListJsonLd(window.allVinyls);
+        if (!jsonLdInjected && currentPage === 1) injectListJsonLd(list, 0);
 
-      lazyLoadVinyls(container).then(() => {
-        page++;
-      }).finally(() => {
+        return hydrateImages(container).then(() => {
+          if (pg) {
+            hasMore = !!pg.has_more;
+          } else {
+            hasMore = list.length === PER_PAGE;
+          }
+          if (hasMore) {
+            prefetchNextPage(currentPage + 1, activeArtist);
+            currentPage += 1;
+          } else {
+            detachScroll();
+          }
+        });
+      })
+      .catch(err => {
+        console.error('Failed to load page:', err);
+        if (currentPage === 1) {
+          document.getElementById('vinyl-grid').innerHTML =
+            `<div class="col-12"><div class="alert alert-danger">Failed to load vinyls.</div></div>`;
+        }
+        hasMore = false;
+        detachScroll();
+      })
+      .finally(() => {
         loading = false;
         loadingEl.style.display = 'none';
       });
-    } catch (e) {
-      console.error(e);
-      loading = false;
-      document.getElementById('loading').style.display = 'none';
-    }
   }
 
-  function applyFilter() {
-    filteredVinyls = activeArtist ? window.allVinyls.filter(v => v.artist === activeArtist) : window.allVinyls;
-    rebuildList(true);
-  }
-
-  // ---- Public API for router ----
+  // Public API for router
   window.__vinylsClearFilter = function () {
     activeArtist = null;
     document.querySelectorAll('[data-artist]').forEach(b => b.classList.remove('active'));
-    filteredVinyls = window.allVinyls;
-    rebuildList(true);
+    resetListState();
+    attachScroll();
+    loadMore();
   };
-
   window.__vinylsSetFilter = function (artist) {
     activeArtist = artist || null;
     document.querySelectorAll('[data-artist]').forEach(b => {
       const a = b.getAttribute('data-artist');
       if (a === artist) b.classList.add('active'); else b.classList.remove('active');
     });
-    filteredVinyls = activeArtist ? window.allVinyls.filter(v => v.artist === activeArtist) : window.allVinyls;
-    rebuildList(true);
+    resetListState();
+    attachScroll();
+    loadMore();
   };
 
-  // ---- Init ----
+  // Init
   document.addEventListener('DOMContentLoaded', () => {
     const collapseEl = document.getElementById('vinyl-tags');
     const bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseEl);
     bsCollapse.hide();
 
-    fetch(API_LIST, { credentials: 'omit' })
-      .then(r => r.json())
-      .then(p => {
-        if (!p || !p.data) throw new Error('Invalid API response');
-        window.allVinyls = p.data;
-        filteredVinyls = window.allVinyls;
-        renderArtistTags(window.allVinyls);
-        loadMore();
-        attachScroll();
-      })
-      .catch(err => {
-        console.error('Failed to load vinyls:', err);
-        document.getElementById('vinyl-grid').innerHTML =
-          `<div class="col-12"><div class="alert alert-danger">Failed to load vinyls list.</div></div>`;
-        detachScroll();
-      });
+    attachScroll();
+    loadMore();
 
     document.addEventListener('click', e => {
-      // Filter clicks on LIST view (router handles them on DETAIL view)
       if (e.target.matches('[data-artist]')) {
         const detailVisible = !document.getElementById('vinyl-detail').classList.contains('d-none');
-        if (detailVisible) return; // handled by router
-        const btn = e.target;
-        const artist = btn.getAttribute('data-artist');
-        if (artist === activeArtist) {
-          window.__vinylsClearFilter();
-        } else {
-          window.__vinylsSetFilter(artist);
-        }
+        if (detailVisible) return;
+        const artist = e.target.getAttribute('data-artist');
+        if (artist === activeArtist) window.__vinylsClearFilter();
+        else window.__vinylsSetFilter(artist);
       }
-
       if (e.target.id === 'toggle-tags-btn') {
         bootstrap.Collapse.getOrCreateInstance(collapseEl).toggle();
       }
-
       if (e.target.id === 'close-tags-btn') {
         window.__vinylsClearFilter();
         bootstrap.Collapse.getOrCreateInstance(collapseEl).hide();
