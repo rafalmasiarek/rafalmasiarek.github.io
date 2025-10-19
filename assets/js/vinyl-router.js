@@ -1,5 +1,4 @@
 // assets/js/vinyl-router.js
-
 (function () {
   if (!window.__VINYLS_API__ || !window.__VINYLS_API__.trim()) {
     console.error('VINYLS: Missing window.__VINYLS_API__');
@@ -12,6 +11,10 @@
   const SITE_BASE = window.__SITE_BASE__.trim().replace(/\/+$/, '');
   const VINYLS_ABS = SITE_BASE + '/vinyls';
   const PLACEHOLDER_COVER = 'https://placehold.co/600x600?text=No+cover';
+
+  // --- NEW: state for restoring list scroll & origin slug ---
+  let __restoreScrollY = 0;
+  let __restoreSlug = null;
 
   function slugFromHash() {
     return (location.hash || '').replace(/^#\/?/, '') || null;
@@ -105,6 +108,7 @@
     return `<strong>Rating:</strong> <span class="text-warning">${s}</span>`;
   }
 
+  // UI
   function showList() {
     document.getElementById('vinyl-detail').classList.add('d-none');
     document.getElementById('list-panel').classList.remove('d-none');
@@ -112,11 +116,25 @@
     document.getElementById('toggle-tags-btn').classList.remove('d-none');
     setListHead();
     if (window.attachScroll) window.attachScroll();
+
+    if (__restoreScrollY && Number.isFinite(__restoreScrollY)) {
+      window.scrollTo({ top: __restoreScrollY, behavior: 'auto' });
+      if (__restoreSlug) {
+        const anchor = document.querySelector(`a.card-link[href="#/${CSS.escape(__restoreSlug)}"]`);
+        if (anchor) anchor.focus({ preventScroll: true });
+      }
+
+      // Clear after use
+      __restoreScrollY = 0;
+      __restoreSlug = null;
+    }
   }
 
+  let __detailReqSeq = 0;
+
   async function showDetail(slug) {
-    // Requirement: entering a record resets filter and detaches list scroll
-    if (window.__vinylsClearFilter) window.__vinylsClearFilter();
+    // Soft-reset filter state (no DOM reset), and detach list scroll
+    if (window.__vinylsClearFilterSoft) window.__vinylsClearFilterSoft();
     if (window.detachScroll) window.detachScroll();
 
     // Panels
@@ -218,6 +236,17 @@
       history.pushState(null, '', `${VINYLS_ABS}/`);
       route();
     });
+
+    // --- NEW: store scroll position & slug when clicking a card on the list
+    document.addEventListener('click', (e) => {
+      const link = e.target.closest && e.target.closest('a.card-link');
+      if (link) {
+        __restoreScrollY = window.scrollY || window.pageYOffset || 0;
+        const href = link.getAttribute('href') || '';
+        const m = href.match(/^#\/(.+)$/);
+        __restoreSlug = m ? decodeURIComponent(m[1]) : null;
+      }
+    }, true); // capture to run before hashchange navigation
 
     // Clicking a filter while in DETAIL -> go to list URL and enable that filter
     document.addEventListener('click', (e) => {
