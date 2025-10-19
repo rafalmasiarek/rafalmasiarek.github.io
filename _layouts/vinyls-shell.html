@@ -33,7 +33,7 @@ layout: compress
   <!-- Config for JS -->
   <script>
     window.__SITE_BASE__ = "{{ __site_abs }}";
-    window.__VINYLS_API__ = "{{ site.vinyls_api_url | strip }}";
+    window.__VINYLS_API__ = "{{ __site_abs }}/api/v1/vinyls";
     window.__VINYLS_PER_PAGE__ = "{{ site.vinyls_per_page | default: 9 }}";
   </script>
 
