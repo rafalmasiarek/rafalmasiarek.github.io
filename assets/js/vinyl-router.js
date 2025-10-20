@@ -12,11 +12,9 @@
   const VINYLS_ABS = SITE_BASE + '/vinyls';
   const PLACEHOLDER_COVER = 'https://placehold.co/600x600?text=No+cover';
 
-  // --- NEW: state for restoring list scroll & origin slug ---
   let __restoreScrollY = 0;
   let __restoreSlug = null;
 
-  // --- NEW: if a filter was active when entering detail, reset it on back to list
   let __resetFilterOnBack = false;
 
   function slugFromHash() {
@@ -159,11 +157,10 @@
 
     document.getElementById('d-title').textContent = '';
     document.getElementById('d-subtitle').textContent = '';
-    document.getElementById('d-rating')?.classList.add('d-none');
     document.getElementById('d-review')?.classList.add('d-none');
     document.getElementById('d-description')?.classList.add('d-none');
     document.getElementById('d-notes')?.classList.add('d-none');
-    document.getElementById('d-score')?.classList.add('d-none'); // NEW: reset score block
+    document.getElementById('d-score')?.classList.add('d-none'); // keep score hidden until rendered
 
     // Fetch data
     const v = await fetchBySlug(slug);
@@ -183,13 +180,27 @@
     document.getElementById('d-title').textContent = title;
     document.getElementById('d-subtitle').textContent = `${artist}${yearText}`;
 
-    if (typeof window.__renderGradeAndNotes === 'function') {
-      window.__renderGradeAndNotes(v);
-    } else {
-      // If helper is missing, keep rating hidden
-      document.getElementById('d-rating')?.classList.add('d-none');
+    if (typeof window.__renderNotes === 'function') {
+      window.__renderNotes(v);
     }
 
+    (function addInlineGrade(detail) {
+      const subEl = document.getElementById('d-subtitle');
+      if (!subEl || typeof window.__getGradeInfo !== 'function') return;
+      // Remove previous inline grade if re-rendering
+      subEl.querySelector('.inline-grade')?.remove();
+
+      const info = window.__getGradeInfo(detail?.rating);
+      if (!info) return;
+
+      const span = document.createElement('span');
+      // Reuse the same badge style and color variant; small left margin
+      span.className = `grade-badge ${info.cls} inline-grade ms-2`;
+      span.textContent = info.short;
+      subEl.appendChild(span);
+    })(v);
+
+    // Score (stars) – optional personal score
     (function renderScoreStars(detail) {
       const wrap = document.getElementById('d-score');
       const starsEl = document.getElementById('d-stars');

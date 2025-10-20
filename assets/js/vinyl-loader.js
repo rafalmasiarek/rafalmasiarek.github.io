@@ -21,7 +21,6 @@
   let jsonLdInjected = false;
   let __scrollAttached = false;
 
-  // --- NEW: facets/fallback state for artist tags ---
   const __artistSet = new Set();   // used only if server doesn't provide facets
   let __facetsLoaded = false;      // becomes true if API returns facets
 
@@ -106,7 +105,6 @@
     `).join('');
   }
 
-  // --- NEW: try to fetch server-provided facets once (preferred) ---
   async function fetchAndRenderFacets() {
     try {
       const u = new URL(API_LIST, location.origin);
@@ -125,7 +123,6 @@
     }
   }
 
-  // --- NEW: fallback – progressively build artist tags from loaded pages ---
   function updateArtistTagsFromBatch(list) {
     if (__facetsLoaded) return; // server facets take precedence
     let changed = false;
@@ -226,7 +223,6 @@
     loading = false;
     document.getElementById('loading').style.display = 'none';
     document.getElementById('vinyl-grid').innerHTML = '';
-    // NEW: when we change filters, if facets weren't provided by server, clear the fallback set
     if (!__facetsLoaded) __artistSet.clear();
   }
 
@@ -244,7 +240,6 @@
         const facets = payload?.facets;
         const pg = payload?.pagination;
 
-        // NEW: first page → prefer server facets; otherwise start progressive fallback
         if (currentPage === 1) {
           if (facets?.artists?.length) {
             __facetsLoaded = true;
@@ -330,17 +325,15 @@
       });
   }
 
-  // --- NEW: Grade mapping & rendering helpers (for detail view) ---
-  // These helpers map numeric rating from API to human-readable label and CSS class,
-  // and render both the grade "stamp" and optional personal notes.
+  // Keep the map minimal: short letter and CSS class only.
   const GRADE_MAP = new Map([
-    [1, { short: 'P', label: 'Poor', cls: 'grade-poor' }],
-    [2, { short: 'G', label: 'Good', cls: 'grade-good' }],
-    [2.5, { short: 'G+', label: 'Good Plus', cls: 'grade-gplus' }],
-    [3, { short: 'VG', label: 'Very Good', cls: 'grade-vg' }],
-    [3.5, { short: 'VG+', label: 'Very Good+', cls: 'grade-vgplus' }],
-    [4, { short: 'NM', label: 'Near Mint', cls: 'grade-nm' }],
-    [5, { short: 'M', label: 'Mint', cls: 'grade-m' }],
+    [1, { short: 'P', cls: 'grade-poor' }],
+    [2, { short: 'G', cls: 'grade-good' }],
+    [2.5, { short: 'G+', cls: 'grade-gplus' }],
+    [3, { short: 'VG', cls: 'grade-vg' }],
+    [3.5, { short: 'VG+', cls: 'grade-vgplus' }],
+    [4, { short: 'NM', cls: 'grade-nm' }],
+    [5, { short: 'M', cls: 'grade-m' }],
   ]);
 
   function normalizeScore(score) {
@@ -365,42 +358,22 @@
     return nearest != null ? GRADE_MAP.get(nearest) : null;
   }
 
-  function renderGradeAndNotes(detail) {
-    // Expected fields from API:
-    // - detail.rating: Number like 1, 2, 2.5, 3, 3.5, 4, 5
-    // - detail.notes:  String (optional)
-    const ratingWrap = document.getElementById('d-rating');
-    const gradeEl = document.getElementById('d-grade');
+  function renderNotes(detail) {
+    // Render only personal notes into #d-notes.
     const notesWrap = document.getElementById('d-notes');
-
-    // Grade rendering
-    if (detail && detail.rating != null) {
-      const info = getGradeInfo(detail.rating);
-      if (info) {
-        if (gradeEl) {
-          gradeEl.textContent = info.short + ' — ' + info.label;
-          gradeEl.className = 'grade-badge ' + info.cls;
-        }
-        if (ratingWrap) ratingWrap.classList.remove('d-none');
-      } else {
-        if (ratingWrap) ratingWrap.classList.add('d-none');
-      }
-    } else {
-      if (ratingWrap) ratingWrap.classList.add('d-none');
-    }
-
-    // Notes rendering
+    if (!notesWrap) return;
     if (detail && typeof detail.notes === 'string' && detail.notes.trim().length) {
-      const p = notesWrap ? notesWrap.querySelector('p') : null;
+      const p = notesWrap.querySelector('p');
       if (p) p.textContent = detail.notes.trim();
-      if (notesWrap) notesWrap.classList.remove('d-none');
+      notesWrap.classList.remove('d-none');
     } else {
-      if (notesWrap) notesWrap.classList.add('d-none');
+      notesWrap.classList.add('d-none');
     }
   }
 
-  // Expose the renderer so your detail-view code can call it after fetching one record.
-  window.__renderGradeAndNotes = renderGradeAndNotes;
+  // Expose minimal helpers for the router.
+  window.__getGradeInfo = getGradeInfo;  // returns {short, cls} or null
+  window.__renderNotes = renderNotes;    // renders #d-notes only
 
   // Public API for router
   window.__vinylsClearFilter = function () {
