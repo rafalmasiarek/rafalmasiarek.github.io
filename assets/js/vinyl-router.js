@@ -167,6 +167,7 @@
     document.getElementById('d-rating')?.classList.add('d-none');
     document.getElementById('d-review')?.classList.add('d-none');
     document.getElementById('d-description')?.classList.add('d-none');
+    document.getElementById('d-notes')?.classList.add('d-none');
 
     // Fetch data
     const v = await fetchBySlug(slug);
@@ -186,9 +187,12 @@
     document.getElementById('d-title').textContent = title;
     document.getElementById('d-subtitle').textContent = `${artist}${yearText}`;
 
-    const r = document.getElementById('d-rating');
-    if (typeof v.rating === 'number') { r.innerHTML = renderStars(v.rating); r.classList.remove('d-none'); }
-    else { r.classList.add('d-none'); }
+    if (typeof window.__renderGradeAndNotes === 'function') {
+      window.__renderGradeAndNotes(v);
+    } else {
+      // If helper is missing, keep rating hidden (no stars fallback here)
+      document.getElementById('d-rating')?.classList.add('d-none');
+    }
 
     const rev = document.getElementById('d-review');
     if (v.review) { rev.querySelector('p').textContent = v.review; rev.classList.remove('d-none'); }
