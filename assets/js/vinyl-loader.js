@@ -330,6 +330,78 @@
       });
   }
 
+  // --- NEW: Grade mapping & rendering helpers (for detail view) ---
+  // These helpers map numeric rating from API to human-readable label and CSS class,
+  // and render both the grade "stamp" and optional personal notes.
+  const GRADE_MAP = new Map([
+    [1, { short: 'P', label: 'Poor', cls: 'grade-poor' }],
+    [2, { short: 'G', label: 'Good', cls: 'grade-good' }],
+    [2.5, { short: 'G+', label: 'Good Plus', cls: 'grade-gplus' }],
+    [3, { short: 'VG', label: 'Very Good', cls: 'grade-vg' }],
+    [3.5, { short: 'VG+', label: 'Very Good+', cls: 'grade-vgplus' }],
+    [4, { short: 'NM', label: 'Near Mint', cls: 'grade-nm' }],
+    [5, { short: 'M', label: 'Mint', cls: 'grade-m' }],
+  ]);
+
+  function normalizeScore(score) {
+    // Accept strings or numbers. Snap to known floating keys when close (e.g., 2.5).
+    const n = Number(score);
+    if (!Number.isFinite(n)) return null;
+    for (const k of GRADE_MAP.keys()) {
+      if (Math.abs(n - k) < 0.001) return k;
+    }
+    return n;
+  }
+
+  function getGradeInfo(score) {
+    const key = normalizeScore(score);
+    if (key != null && GRADE_MAP.has(key)) return GRADE_MAP.get(key);
+    // Fallback: nearest known value
+    let nearest = null, best = Infinity;
+    for (const k of GRADE_MAP.keys()) {
+      const d = Math.abs((key ?? 0) - k);
+      if (d < best) { best = d; nearest = k; }
+    }
+    return nearest != null ? GRADE_MAP.get(nearest) : null;
+  }
+
+  function renderGradeAndNotes(detail) {
+    // Expected fields from API:
+    // - detail.rating: Number like 1, 2, 2.5, 3, 3.5, 4, 5
+    // - detail.notes:  String (optional)
+    const ratingWrap = document.getElementById('d-rating');
+    const gradeEl = document.getElementById('d-grade');
+    const notesWrap = document.getElementById('d-notes');
+
+    // Grade rendering
+    if (detail && detail.rating != null) {
+      const info = getGradeInfo(detail.rating);
+      if (info) {
+        if (gradeEl) {
+          gradeEl.textContent = info.short + ' — ' + info.label;
+          gradeEl.className = 'grade-badge ' + info.cls;
+        }
+        if (ratingWrap) ratingWrap.classList.remove('d-none');
+      } else {
+        if (ratingWrap) ratingWrap.classList.add('d-none');
+      }
+    } else {
+      if (ratingWrap) ratingWrap.classList.add('d-none');
+    }
+
+    // Notes rendering
+    if (detail && typeof detail.notes === 'string' && detail.notes.trim().length) {
+      const p = notesWrap ? notesWrap.querySelector('p') : null;
+      if (p) p.textContent = detail.notes.trim();
+      if (notesWrap) notesWrap.classList.remove('d-none');
+    } else {
+      if (notesWrap) notesWrap.classList.add('d-none');
+    }
+  }
+
+  // Expose the renderer so your detail-view code can call it after fetching one record.
+  window.__renderGradeAndNotes = renderGradeAndNotes;
+
   // Public API for router
   window.__vinylsClearFilter = function () {
     activeArtist = null;
