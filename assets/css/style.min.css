@@ -724,3 +724,53 @@ img.loaded {
 .char-counter.red {
     color: rgba(200, 0, 0, .78)
 }
+
+/* Record grade "stamp" */
+.grade-badge {
+    display: inline-block;
+    padding: .35rem .6rem;
+    border-radius: 9999px;
+    /* pill */
+    font-weight: 600;
+    font-size: .85rem;
+    border: 2px solid currentColor;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    line-height: 1;
+}
+
+/* Color variants */
+.grade-poor {
+    color: #8a2a2a;
+    background: rgba(138, 42, 42, .08);
+}
+
+.grade-good {
+    color: #8a6400;
+    background: rgba(138, 100, 0, .08);
+}
+
+.grade-gplus {
+    color: #6f6a00;
+    background: rgba(111, 106, 0, .08);
+}
+
+.grade-vg {
+    color: #0b5ed7;
+    background: rgba(13, 110, 253, .08);
+}
+
+.grade-vgplus {
+    color: #0a58ca;
+    background: rgba(10, 88, 202, .08);
+}
+
+.grade-nm {
+    color: #157347;
+    background: rgba(21, 115, 71, .08);
+}
+
+.grade-m {
+    color: #146c43;
+    background: rgba(20, 108, 67, .10);
+}
