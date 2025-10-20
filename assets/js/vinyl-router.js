@@ -103,11 +103,6 @@
   }
 
   // ---- UI (with image preload & race guard) ----
-  function renderStars(n) {
-    let s = '';
-    for (let i = 1; i <= 5; i++) s += i <= n ? '★ ' : '☆ ';
-    return `<strong>Rating:</strong> <span class="text-warning">${s}</span>`;
-  }
 
   // UI
   function showList() {
@@ -168,6 +163,7 @@
     document.getElementById('d-review')?.classList.add('d-none');
     document.getElementById('d-description')?.classList.add('d-none');
     document.getElementById('d-notes')?.classList.add('d-none');
+    document.getElementById('d-score')?.classList.add('d-none'); // NEW: reset score block
 
     // Fetch data
     const v = await fetchBySlug(slug);
@@ -190,9 +186,21 @@
     if (typeof window.__renderGradeAndNotes === 'function') {
       window.__renderGradeAndNotes(v);
     } else {
-      // If helper is missing, keep rating hidden (no stars fallback here)
+      // If helper is missing, keep rating hidden
       document.getElementById('d-rating')?.classList.add('d-none');
     }
+
+    (function renderScoreStars(detail) {
+      const wrap = document.getElementById('d-score');
+      const starsEl = document.getElementById('d-stars');
+      const n = Number(detail?.score);
+      if (!Number.isFinite(n) || !wrap || !starsEl) return;
+      const full = Math.max(0, Math.min(5, Math.round(n))); // clamp 0..5
+      let stars = '';
+      for (let i = 1; i <= 5; i++) stars += i <= full ? '★ ' : '☆ ';
+      starsEl.textContent = stars.trim();
+      wrap.classList.remove('d-none');
+    })(v);
 
     const rev = document.getElementById('d-review');
     if (v.review) { rev.querySelector('p').textContent = v.review; rev.classList.remove('d-none'); }
@@ -228,12 +236,6 @@
     if (location.hash !== want) history.replaceState(null, '', want);
 
     window.scrollTo({ top: 0, behavior: 'instant' });
-  }
-
-  function renderStars(n) {
-    let s = '';
-    for (let i = 1; i <= 5; i++) s += i <= n ? '★ ' : '☆ ';
-    return `<strong>Rating:</strong> <span class="text-warning">${s}</span>`;
   }
 
   // ---- Router ----
