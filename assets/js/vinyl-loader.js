@@ -337,22 +337,31 @@
   ]);
 
   function normalizeScore(score) {
-    // Accept strings or numbers. Snap to known floating keys when close (e.g., 2.5).
+    if (score == null) return null;
+    if (typeof score === 'string' && score.trim() === '') return null;
+
     const n = Number(score);
-    if (!Number.isFinite(n)) return null;
+    if (!Number.isFinite(n) || n <= 0) return null;
+
+    // Snap to known floating keys when very close (e.g., 2.5)
     for (const k of GRADE_MAP.keys()) {
       if (Math.abs(n - k) < 0.001) return k;
     }
-    return n;
+    return n; // return the numeric value for "nearest" resolution
   }
 
   function getGradeInfo(score) {
+    // If score is missing/invalid -> no grade
     const key = normalizeScore(score);
-    if (key != null && GRADE_MAP.has(key)) return GRADE_MAP.get(key);
-    // Fallback: nearest known value
+    if (key == null) return null;
+
+    // Exact match on known keys
+    if (GRADE_MAP.has(key)) return GRADE_MAP.get(key);
+
+    // Otherwise choose the nearest known key
     let nearest = null, best = Infinity;
     for (const k of GRADE_MAP.keys()) {
-      const d = Math.abs((key ?? 0) - k);
+      const d = Math.abs(key - k);
       if (d < best) { best = d; nearest = k; }
     }
     return nearest != null ? GRADE_MAP.get(nearest) : null;
