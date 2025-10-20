@@ -368,15 +368,17 @@
   }
 
   function renderNotes(detail) {
-    // Render only personal notes into #d-notes.
-    const notesWrap = document.getElementById('d-notes');
-    if (!notesWrap) return;
-    if (detail && typeof detail.notes === 'string' && detail.notes.trim().length) {
-      const p = notesWrap.querySelector('p');
-      if (p) p.textContent = detail.notes.trim();
-      notesWrap.classList.remove('d-none');
+    // Render personal notes directly into the <p id="d-notes"> element.
+    const el = document.getElementById('d-notes');
+    if (!el) return;
+
+    const txt = (typeof detail?.notes === 'string') ? detail.notes.trim() : '';
+    if (txt) {
+      el.textContent = txt;
+      el.classList.remove('d-none');
     } else {
-      notesWrap.classList.add('d-none');
+      el.textContent = '';
+      el.classList.add('d-none');
     }
   }
 
