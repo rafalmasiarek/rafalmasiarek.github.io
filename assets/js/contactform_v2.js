@@ -12,6 +12,7 @@
  * Licensed for internal use only. No license is granted to copy,
  * sublicense, or redistribute this code.
  */
+
 // Endpoints configuration
 const ENDPOINTS = {
   csrfGenerate:   '/api/v1/csrf/generate', 
@@ -19,33 +20,38 @@ const ENDPOINTS = {
   csrfExpiry:     '/api/v1/csrf/token-expiry',
   formSubmit:     '/api/v2/contactform/send'
 };
-document.addEventListener('DOMContentLoaded', () => {
-  const form   = document.getElementById('contact-form');
-  const alert  = document.getElementById('contact-form-alert');
-  const button = document.getElementById('contact-form-btn');
-  const csrfEl = document.getElementById('csrf_token');
 
-  // Ensure request ID hidden input
+// Target CSRF container (editable)
+const CSRF_CONTAINER = 'contactform_main';
+
+document.addEventListener('DOMContentLoaded', () => {
+  const form  = document.getElementById('contact-form');
+  const alert = document.getElementById('contact-form-alert');
+  const btn   = document.getElementById('contact-form-btn');
+  const tokenInput = document.getElementById('csrf_token');
+
+  if (!form || !alert || !btn || !tokenInput) return;
+
+  // Ensure cf_request_id hidden input
   let reqId = document.getElementById('cf_request_id');
-  if (!reqId && form) {
+  if (!reqId) {
     reqId = document.createElement('input');
     reqId.type = 'hidden';
     reqId.name = 'cf_request_id';
     reqId.id   = 'cf_request_id';
     form.appendChild(reqId);
   }
-  if (reqId) {
-    reqId.value = Math.random().toString(36).substring(2,10) + Date.now().toString(36);
-  }
+  reqId.value = Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
 
-  if (!form || !alert || !button || !csrfEl) return;
-
-  // --- Textarea counter ---
-  (function initCounter() {
+  // Optional: textarea character counter
+  (function setupTextareaCounter() {
     const ta = document.getElementById('contact-form-messageInput');
     if (!ta) return;
+
     const max = parseInt(ta.getAttribute('maxlength'), 10) || 5000;
-    if (!ta.hasAttribute('maxlength')) ta.setAttribute('maxlength', String(max));
+    if (!ta.hasAttribute('maxlength')) {
+      ta.setAttribute('maxlength', String(max));
+    }
 
     const wrap = document.createElement('div');
     wrap.className = 'textarea-wrapper';
@@ -56,31 +62,46 @@ document.addEventListener('DOMContentLoaded', () => {
     counter.className = 'char-counter';
     wrap.appendChild(counter);
 
-    function update() {
+    function updateCounter() {
       const left = max - ta.value.length;
       counter.textContent = left;
       counter.classList.toggle('red', left < 50);
     }
-    ta.addEventListener('input', update);
-    update();
+
+    ta.addEventListener('input', updateCounter);
+    updateCounter();
   })();
 
-  // --- reCAPTCHA sitekey ---
+  // Optional reCAPTCHA sitekey
   const sitekeyEl = document.getElementById('g-recaptcha-sitekey');
-  const SITEKEY = sitekeyEl?.value || form.dataset.recaptchaSitekey || '';
+  const SITEKEY   = sitekeyEl?.value || form.dataset.recaptchaSitekey || '';
 
-  // --- CSRF bootstrap ---
-  fetch(ENDPOINTS.csrfGenerate)
-    .then(r => r.json())
-    .then(j => { if (j.status === 'success' && j.data?.csrf_token) csrfEl.value = j.data.csrf_token; })
+  // Helper: common fetch init for CSRF endpoints
+  function csrfGet(url) {
+    return fetch(url, {
+      method: 'GET',
+      headers: { 'X-CSRF-Container': CSRF_CONTAINER },
+      credentials: 'same-origin',
+    });
+  }
+
+  // Initial CSRF token fetch
+  csrfGet(ENDPOINTS.csrfGenerate)
+    .then(res => res.json())
+    .then(json => {
+      if (json.status === 'success' && json.data?.csrf_token) {
+        tokenInput.value = json.data.csrf_token;
+      }
+    })
     .catch(err => console.error('CSRF token fetch error:', err));
 
-  async function regenerateCsrf() {
+  // Regenerate token
+  async function regenerateToken() {
     try {
-      const r = await fetch(ENDPOINTS.csrfRegenerate);
-      const j = await r.json();
-      if (j.status === 'success' && j.data?.csrf_token) {
-        csrfEl.value = j.data.csrf_token;
+      const res = await csrfGet(ENDPOINTS.csrfRegenerate);
+      const json = await res.json();
+      if (json.status === 'success' && json.data?.csrf_token) {
+        tokenInput.value = json.data.csrf_token;
         console.log('CSRF token regenerated and updated.');
       }
     } catch (err) {
@@ -88,55 +109,72 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Periodic TTL check (every 10s)
   setInterval(async () => {
     try {
-      const r = await fetch(ENDPOINTS.csrfExpiry);
-      const j = await r.json();
-      if (j.status === 'success' && typeof j.data?.ttl === 'number' && j.data.ttl < 30) {
-        await regenerateCsrf();
+      const res = await csrfGet(ENDPOINTS.csrfExpiry);
+      const json = await res.json();
+      if (json.status === 'success' && typeof json.data?.ttl === 'number' && json.data.ttl < 30) {
+        await regenerateToken();
       }
     } catch (err) {
       console.error('CSRF token expiry check error:', err);
     }
   }, 10000);
 
-  // --- Submit handler ---
+  // Submit handler
   form.addEventListener('submit', async (ev) => {
     ev.preventDefault();
+
     try {
-      button.classList.remove('btn-enable-on-input');
-      button.classList.add('btn-disable-on-input');
-      button.disabled = true;
-      button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> &nbsp; Sending...';
+      // Disable button + spinner
+      btn.classList.remove('btn-enable-on-input');
+      btn.classList.add('btn-disable-on-input');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> &nbsp; Sending...';
 
-      const fd = new FormData(form);
+      const body = new FormData(form);
 
+      // Handle reCAPTCHA if configured
       if (SITEKEY) {
-        await new Promise((res, rej) => {
+        // wait until grecaptcha is ready (up to 5s)
+        await new Promise((resolve, reject) => {
           let waited = 0;
-          const int = setInterval(() => {
+          const iv = setInterval(() => {
             if (window.grecaptcha && typeof grecaptcha.ready === 'function') {
-              clearInterval(int); res();
+              clearInterval(iv);
+              resolve();
+            } else if ((waited += 50) > 5000) {
+              clearInterval(iv);
+              reject(new Error('grecaptcha not loaded'));
             }
-            if ((waited += 50) > 5000) { clearInterval(int); rej(new Error('grecaptcha not loaded')); }
           }, 50);
         });
-        await new Promise(res => grecaptcha.ready(res));
-        const token = await grecaptcha.execute(SITEKEY, { action: 'contactform' });
-        fd.set('g-recaptcha-response', token);
+
+        await new Promise((resolve) => grecaptcha.ready(resolve));
+        const recaptchaToken = await grecaptcha.execute(SITEKEY, { action: 'contactform' });
+        body.set('g-recaptcha-response', recaptchaToken);
       }
 
-      const res = await fetch(ENDPOINTS.formSubmit, { method: 'POST', body: fd });
-      const json = await res.json();
+      // Send the form
+      const res = await fetch(ENDPOINTS.formSubmit, {
+        method: 'POST',
+        body,
+      });
 
-      const ref = json?.data?.ref ? ` (Ref: ${json.data.ref})` : '';
-      alert.className = json.status === 'success' ? 'alert-green' : 'alert-red';
-      alert.textContent = (json.message || 'Unexpected response.') + ref;
+      const json = await res.json();
+      const refSuffix = json?.data?.ref ? ` (Ref: ${json.data.ref})` : '';
+
+      alert.className = (json.status === 'success') ? 'alert-green' : 'alert-red';
+      alert.textContent = (json.message || 'Unexpected response.') + refSuffix;
       alert.style.display = 'block';
 
       if (json.status === 'success') {
         form.reset();
-        if (reqId) reqId.value = Math.random().toString(36).substring(2,10) + Date.now().toString(36);
+        // refresh request id
+        if (reqId) {
+          reqId.value = Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
+        }
       }
     } catch (err) {
       console.error('Contact form error:', err);
@@ -144,10 +182,11 @@ document.addEventListener('DOMContentLoaded', () => {
       alert.textContent = '✖ Unexpected error occurred.';
       alert.style.display = 'block';
     } finally {
-      button.classList.remove('btn-disable-on-input');
-      button.classList.add('btn-enable-on-input');
-      button.disabled = false;
-      button.innerHTML = '<i class="fas fa-paper-plane"></i> &nbsp; Send Email';
+      // Re-enable button
+      btn.classList.remove('btn-disable-on-input');
+      btn.classList.add('btn-enable-on-input');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-paper-plane"></i> &nbsp; Send Email';
     }
   });
 });
