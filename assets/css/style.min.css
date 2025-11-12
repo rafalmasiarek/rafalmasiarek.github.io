@@ -775,7 +775,6 @@ img.loaded {
     background: rgba(20, 108, 67, .10);
 }
 
-
 .ssh-gen__intro {
     margin: 0 0 1.2em;
     font-size: 0.9em;
@@ -875,15 +874,6 @@ img.loaded {
     gap: 0.5em;
     margin-bottom: 0.4em;
     font-size: 0.78em;
-}
-
-.ssh-gen__badge {
-    display: inline-block;
-    padding: 0.1em 0.5em;
-    border-radius: 999px;
-    border: 1px solid #ccc;
-    font-size: 0.7em;
-    color: #555;
 }
 
 .ssh-gen__panel-label {
