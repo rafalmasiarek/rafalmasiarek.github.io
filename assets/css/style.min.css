@@ -775,18 +775,6 @@ img.loaded {
     background: rgba(20, 108, 67, .10);
 }
 
-.ssh-gen {
-    margin: 2em 0 3em;
-    padding: 1.5em 1.5em 1.75em;
-    border: 1px solid #ececec;
-    background: #fafafa;
-    font-family: 'Roboto Mono', monospace;
-}
-
-.ssh-gen__title {
-    font-size: 1em;
-    margin: 0 0 0.3em;
-}
 
 .ssh-gen__intro {
     margin: 0 0 1.2em;

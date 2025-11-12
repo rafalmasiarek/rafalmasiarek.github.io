@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Access
+title: SSH Access Helper
 permalink: /access/
 ---
 
