@@ -775,11 +775,7 @@ img.loaded {
     background: rgba(20, 108, 67, .10);
 }
 
-.ssh-gen__intro {
-    margin: 0 0 1.2em;
-    font-size: 0.9em;
-    color: #444;
-}
+/* SSH Access Helper styles */
 
 .ssh-gen__grid {
     display: grid;
