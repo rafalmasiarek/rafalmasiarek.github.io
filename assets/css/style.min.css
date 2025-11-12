@@ -774,3 +774,183 @@ img.loaded {
     color: #146c43;
     background: rgba(20, 108, 67, .10);
 }
+
+.ssh-gen {
+    margin: 2em 0 3em;
+    padding: 1.5em 1.5em 1.75em;
+    border: 1px solid #ececec;
+    background: #fafafa;
+    font-family: 'Roboto Mono', monospace;
+}
+
+.ssh-gen__title {
+    font-size: 1em;
+    margin: 0 0 0.3em;
+}
+
+.ssh-gen__intro {
+    margin: 0 0 1.2em;
+    font-size: 0.9em;
+    color: #444;
+}
+
+.ssh-gen__grid {
+    display: grid;
+    grid-template-columns: 2fr 2fr;
+    gap: 1.5em;
+    align-items: flex-start;
+}
+
+.ssh-gen__group {
+    margin-bottom: 1.2em;
+}
+
+.ssh-gen__legend {
+    font-size: 0.72em;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #777;
+    margin-bottom: 0.4em;
+}
+
+.ssh-gen__option {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5em;
+    margin: 0.15em 0;
+    padding: 0.3em 0.4em;
+    border-radius: 4px;
+    transition: background 0.15s ease, border-color 0.15s ease;
+    border: 1px solid transparent;
+    cursor: pointer;
+}
+
+.ssh-gen__option input[type="radio"],
+.ssh-gen__option input[type="checkbox"] {
+    margin-top: 0.1em;
+    cursor: pointer;
+}
+
+.ssh-gen__option:hover {
+    background: #f4f4f4;
+    border-color: #e0e0e0;
+}
+
+.ssh-gen__option-title {
+    font-size: 0.9em;
+    font-weight: 600;
+    color: #222;
+}
+
+.ssh-gen__hint {
+    font-size: 0.78em;
+    color: #666;
+}
+
+.ssh-gen__inline {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    font-size: 0.85em;
+}
+
+.ssh-gen__inline input {
+    font-family: 'Roboto Mono', monospace;
+    padding: 0.25em 0.4em;
+    font-size: 0.85em;
+    border: 1px solid #ddd;
+    width: 8em;
+    background: #fff;
+}
+
+.ssh-gen__inline input:focus {
+    border-color: #000;
+}
+
+.ssh-gen__note {
+    font-size: 0.72em;
+    color: #777;
+    margin-top: 0.2em;
+}
+
+.ssh-gen__panel {
+    padding: 0.9em 0.9em 0.8em;
+    border-radius: 4px;
+    border: 1px solid #e0e0e0;
+    background: #fff;
+}
+
+.ssh-gen__panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.5em;
+    margin-bottom: 0.4em;
+    font-size: 0.78em;
+}
+
+.ssh-gen__badge {
+    display: inline-block;
+    padding: 0.1em 0.5em;
+    border-radius: 999px;
+    border: 1px solid #ccc;
+    font-size: 0.7em;
+    color: #555;
+}
+
+.ssh-gen__panel-label {
+    color: #999;
+    font-size: 0.72em;
+}
+
+.ssh-gen__command-box {
+    position: relative;
+}
+
+.ssh-gen__output {
+    width: 100%;
+    min-height: 70px;
+    max-height: 140px;
+    padding: 0.5em 4.4em 0.5em 0.5em;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.8em;
+    background: #222;
+    color: #fff;
+    border-radius: 3px;
+    border: none;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+.ssh-gen__copy-btn {
+    position: absolute;
+    right: 0.4em;
+    bottom: 0.4em;
+    padding: 0.15em 0.5em;
+    font-size: 0.7em;
+    border-radius: 3px;
+    border: 1px solid #ddd;
+    background: #fafafa;
+    color: #000;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.ssh-gen__copy-btn:hover {
+    background: #000;
+    color: #fff;
+    border-color: #000;
+}
+
+.ssh-gen__status {
+    margin-top: 0.35em;
+    font-size: 0.72em;
+    color: #555;
+}
+
+/* Mobile */
+@media (max-width: 720px) {
+    .ssh-gen__grid {
+        grid-template-columns: 1fr;
+    }
+}

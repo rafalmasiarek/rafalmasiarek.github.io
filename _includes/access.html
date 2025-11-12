@@ -1,0 +1,103 @@
+<section class="ssh-gen" id="ssh-access-helper">
+    <h2 class="ssh-gen__title">SSH access helper</h2>
+    <p class="ssh-gen__intro">
+        Generate a one-liner for managing SSH access via <code>access.masiarek.pl</code>.
+        Copy and run it directly on the target server.
+    </p>
+
+    <div class="ssh-gen__grid">
+        <div class="ssh-gen__left">
+            <div class="ssh-gen__group">
+                <div class="ssh-gen__legend">1. Action</div>
+
+                <label class="ssh-gen__option">
+                    <input type="radio" name="ssh-gen-mode" value="add" checked>
+                    <div>
+                        <div class="ssh-gen__option-title">Set up access on this server</div>
+                        <div class="ssh-gen__hint">
+                            Creates a dedicated user and installs the managed SSH key.
+                            Requires <code>sudo</code>.
+                        </div>
+                    </div>
+                </label>
+
+                <label class="ssh-gen__option">
+                    <input type="radio" name="ssh-gen-mode" value="remove">
+                    <div>
+                        <div class="ssh-gen__option-title">Remove access from this server</div>
+                        <div class="ssh-gen__hint">
+                            Removes the dedicated user, sudoers entry and updater.
+                            Requires <code>sudo</code>.
+                        </div>
+                    </div>
+                </label>
+
+                <label class="ssh-gen__option">
+                    <input type="radio" name="ssh-gen-mode" value="--updatekey">
+                    <div>
+                        <div class="ssh-gen__option-title">Update key only (manual run)</div>
+                        <div class="ssh-gen__hint">
+                            For an existing user: refresh the key according to the DNS fingerprint.
+                            Does not use <code>sudo</code>.
+                        </div>
+                    </div>
+                </label>
+            </div>
+
+            <div class="ssh-gen__group">
+                <div class="ssh-gen__legend">2. User</div>
+                <div class="ssh-gen__inline">
+                    <span>Target username:</span>
+                    <input id="ssh-gen-username" type="text" value="rm" spellcheck="false">
+                </div>
+                <div class="ssh-gen__note">
+                    Default is <code>rm</code>. Change only if you explicitly need a different account name.
+                </div>
+            </div>
+
+            <div class="ssh-gen__group">
+                <div class="ssh-gen__legend">3. Options</div>
+
+                <label class="ssh-gen__option">
+                    <input type="checkbox" id="ssh-gen-sudo" checked>
+                    <div>
+                        <div class="ssh-gen__option-title">
+                            Grant passwordless sudo (trusted admins only)
+                        </div>
+                        <div class="ssh-gen__hint">
+                            Adds a sudoers rule: this user can run any command via <code>sudo</code> without a password.
+                            Used only with the “Set up access” action.
+                        </div>
+                    </div>
+                </label>
+
+                <div class="ssh-gen__note">
+                    For “Remove access”, <code>sudo</code> is always required and included in the command.
+                </div>
+            </div>
+        </div>
+
+        <div class="ssh-gen__right">
+            <div class="ssh-gen__panel">
+                <div class="ssh-gen__panel-header">
+                    <span class="ssh-gen__badge">curl | bash helper</span>
+                    <span class="ssh-gen__panel-label">Generated command</span>
+                </div>
+
+                <div class="ssh-gen__command-box">
+                    <textarea id="ssh-gen-output" class="ssh-gen__output" readonly></textarea>
+                    <button id="ssh-gen-copy" class="ssh-gen__copy-btn" type="button">
+                        ⧉ Copy
+                    </button>
+                </div>
+
+                <div class="ssh-gen__status">
+                    <span id="ssh-gen-summary">
+                        Action: set up access for user <code>rm</code> with passwordless sudo.
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<script src="/assets/js/access-helper.js?{{ site.time | date: '%s%N' }}"></script>
