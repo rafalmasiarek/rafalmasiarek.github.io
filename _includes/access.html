@@ -72,26 +72,18 @@
         </div>
 
         <div class="ssh-gen__right">
-            <!-- Session ID panel -->
             <div class="ssh-gen__panel">
+                <!-- Session -->
                 <div class="ssh-gen__panel-header">
                     <span class="ssh-gen__panel-label">Session</span>
                 </div>
 
                 <div class="ssh-gen__command-box ssh-gen__session-box">
-                    <label for="ssh-gen-session">
-                        Session ID (read-only, used to link this page with server logs):
-                    </label>
-                    <input
-                        id="ssh-gen-session"
-                        type="text"
-                        readonly
+                    <input id="ssh-gen-session" type="text" readonly
                         style="width:100%;font-family:monospace;font-size:.85rem;padding:.35rem .5rem;border-radius:4px;border:1px solid #ccc;background:#f7f7f7;">
                 </div>
-            </div>
 
-            <!-- Command panel -->
-            <div class="ssh-gen__panel">
+                <!-- Generated command -->
                 <div class="ssh-gen__panel-header">
                     <span class="ssh-gen__panel-label">Generated command</span>
                 </div>
