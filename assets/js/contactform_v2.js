@@ -15,19 +15,19 @@
 
 // Endpoints configuration
 const ENDPOINTS = {
-  csrfGenerate:   '/api/v1/csrf/generate', 
+  csrfGenerate: '/api/v1/csrf/generate',
   csrfRegenerate: '/api/v1/csrf/regenerate',
-  csrfExpiry:     '/api/v1/csrf/token-expiry',
-  formSubmit:     '/api/v2/contactform/send'
+  csrfExpiry: '/api/v1/csrf/token-expiry',
+  formSubmit: '/api/v2/contactform/send'
 };
 
 // Target CSRF container (editable)
 const CSRF_CONTAINER = 'contactform_main';
 
 document.addEventListener('DOMContentLoaded', () => {
-  const form  = document.getElementById('contact-form');
+  const form = document.getElementById('contact-form');
   const alert = document.getElementById('contact-form-alert');
-  const btn   = document.getElementById('contact-form-btn');
+  const btn = document.getElementById('contact-form-btn');
   const tokenInput = document.getElementById('csrf_token');
 
   if (!form || !alert || !btn || !tokenInput) return;
@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
     reqId = document.createElement('input');
     reqId.type = 'hidden';
     reqId.name = 'cf_request_id';
-    reqId.id   = 'cf_request_id';
+    reqId.id = 'cf_request_id';
     form.appendChild(reqId);
   }
   reqId.value = Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Optional reCAPTCHA sitekey
   const sitekeyEl = document.getElementById('g-recaptcha-sitekey');
-  const SITEKEY   = sitekeyEl?.value || form.dataset.recaptchaSitekey || '';
+  const SITEKEY = sitekeyEl?.value || form.dataset.recaptchaSitekey || '';
 
   // Helper: common fetch init for CSRF endpoints
   function csrfGet(url) {
@@ -165,7 +165,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const json = await res.json();
       const refSuffix = json?.data?.ref ? ` (Ref: ${json.data.ref})` : '';
 
-      alert.className = (json.status === 'success') ? 'alert-green' : 'alert-red';
+      alert.className = 'alert ' + (
+        json.status === 'success'
+          ? 'alert-green'
+          : 'alert-red'
+      );
       alert.textContent = (json.message || 'Unexpected response.') + refSuffix;
       alert.style.display = 'block';
 
@@ -178,7 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } catch (err) {
       console.error('Contact form error:', err);
-      alert.className = 'alert-red';
+      alert.className = 'alert alert-red';
       alert.textContent = '✖ Unexpected error occurred.';
       alert.style.display = 'block';
     } finally {
