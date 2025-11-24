@@ -16,11 +16,62 @@
     const alertText = document.getElementById('ssh-gen-alert-text');
     const alertClose = document.getElementById('ssh-gen-alert-close');
 
+    const banner = document.getElementById('ssh-gen-banner');
+    const bannerClose = document.getElementById('ssh-gen-banner-close');
+
     if (!output) return;
 
     let userActivated = false;
     let eventSource = null;
     let currentToken = null;
+
+    const MODE_ADD = 'add';
+    const MODE_REMOVE = 'remove';
+    const MODE_UPDATE = 'update'; // "Update key only / manually"
+
+    // ---------------------------------------------
+    // CSRF
+    // ---------------------------------------------
+    const CSRF_ENDPOINT = 'https://masiarek.pl/api/v1/csrf/generate';
+    const CSRF_CONTAINER = 'ssh-install-stream-event';
+
+    let csrfToken = null;
+    let csrfTokenTime = null; // do prostego sprawdzenia TTL
+
+    async function ensureCsrfToken() {
+        const now = Date.now();
+
+        // Jeśli token mamy i nie "stary", użyj ponownie
+        if (csrfToken && csrfTokenTime && (now - csrfTokenTime) < 850 * 1000) {
+            return csrfToken;
+        }
+
+        try {
+            const params = new URLSearchParams({ container: CSRF_CONTAINER });
+            const resp = await fetch(CSRF_ENDPOINT + '?' + params.toString(), {
+                method: 'GET',
+                credentials: 'include'
+            });
+
+            if (!resp.ok) {
+                console.warn('CSRF fetch failed with status', resp.status);
+                return null;
+            }
+
+            const data = await resp.json();
+            if (data && data.status === 'success' && data.data && data.data.csrf_token) {
+                csrfToken = data.data.csrf_token;
+                csrfTokenTime = now;
+                return csrfToken;
+            }
+
+            console.warn('Unexpected CSRF response structure', data);
+            return null;
+        } catch (e) {
+            console.warn('Error fetching CSRF token', e);
+            return null;
+        }
+    }
 
     // -------------------------------------------------
     // Session ID
@@ -62,22 +113,54 @@
         if (alertBox) alertBox.style.display = 'none';
     }
 
-    if (alertClose) {
-        alertClose.addEventListener('click', hideAlert);
+   if (alertClose) {
+        alertClose.addEventListener('click', function () {
+            hideAlert();
+            closeStream();
+            revokeToken();
+        });
     }
 
     // -------------------------------------------------
-    // Build SSH command
+    // Tryb UI – disable/enable user + sudo
+    // -------------------------------------------------
+    function updateModeUI(mode) {
+        const isUpdateMode = (mode === MODE_UPDATE);
+
+        if (usernameInput) {
+            usernameInput.disabled = isUpdateMode;
+            usernameInput.classList.toggle('input--disabled', isUpdateMode);
+        }
+
+        if (sudoCheckbox) {
+            sudoCheckbox.disabled = isUpdateMode;
+            if (isUpdateMode) {
+                sudoCheckbox.checked = false;
+            }
+            const sudoLabel = sudoCheckbox.closest('label');
+            if (sudoLabel) {
+                sudoLabel.classList.toggle('input--disabled', isUpdateMode);
+            }
+        }
+    }
+
+    function getCurrentMode() {
+        const modeEl = document.querySelector('input[name="ssh-gen-mode"]:checked');
+        return modeEl ? modeEl.value : MODE_ADD;
+    }
+
+    // -------------------------------------------------
+    // Build SSH Command
     // -------------------------------------------------
     function buildCommand() {
-        const modeEl = document.querySelector('input[name="ssh-gen-mode"]:checked');
-        const mode = modeEl ? modeEl.value : 'add';
+        const mode = getCurrentMode();
+
         const username = (usernameInput?.value || 'rm').trim() || 'rm';
         const sudoFlag = !!sudoCheckbox && sudoCheckbox.checked;
 
         let cmd = 'curl -Ls "' + BASE_URL + '" | ';
 
-        if (mode === 'add' || mode === 'remove') {
+        if (mode === MODE_ADD || mode === MODE_REMOVE) {
             cmd += 'sudo bash -s -- ';
         } else {
             cmd += 'bash -s -- ';
@@ -85,23 +168,27 @@
 
         cmd += mode + ' ';
 
-        if (username) cmd += '--username ' + username + ' ';
-        if (mode === 'add' && sudoFlag) cmd += '--sudo ';
-        if (sessionId) cmd += '--session-id ' + sessionId + ' ';
+        if (mode !== MODE_UPDATE) {
+            if (username) cmd += '--username ' + username + ' ';
+            if (mode === MODE_ADD && sudoFlag) cmd += '--sudo ';
+            if (sessionId) cmd += '--session-id ' + sessionId + ' ';
+        }
 
         output.value = cmd.trim();
 
         let text;
-        if (mode === 'add') {
+        if (mode === MODE_ADD) {
             text = 'Action: set up access for user "' + username + '"' +
                 (sudoFlag ? ' with passwordless sudo.' : '.');
-        } else if (mode === 'remove') {
+        } else if (mode === MODE_REMOVE) {
             text = 'Action: remove access (user "' + username + '", schedules, sudoers). Uses sudo.';
         } else {
-            text = 'Action: run key update for current user (ignores sudo flag).';
+            text = 'Action: update SSH key for current user only (no username / sudo / session-id / stream).';
         }
 
         summary.innerHTML = text;
+
+        updateModeUI(mode);
     }
 
     modeInputs.forEach(i => i.addEventListener('change', buildCommand));
@@ -118,15 +205,19 @@
 
             userActivated = true;
 
-            showAlert(
-                'info',
-                'Waiting for server confirmation… Once the script completes on the target server, this page will show its hostname and IP.'
-            );
+            const mode = getCurrentMode();
+
+            if (mode !== MODE_UPDATE) {
+                showAlert(
+                    'info',
+                    'Waiting for server confirmation… Once the script completes on the target server, this page will show its hostname and IP.'
+                );
+            }
 
             const success = () => {
                 const original = copyBtn.textContent;
                 copyBtn.textContent = '✔ Copied';
-                setTimeout(() => copyBtn.textContent = '⧉ Copy', 900);
+                setTimeout(() => copyBtn.textContent = '📋 Copy', 900);
             };
 
             if (navigator.clipboard?.writeText) {
@@ -137,8 +228,9 @@
                 fallbackCopy(text, success);
             }
 
-            // Start events stream only after user clicks Copy
-            registerForStream();
+            if (mode !== MODE_UPDATE) {
+                registerForStream();
+            }
         });
     }
 
@@ -152,13 +244,22 @@
     }
 
     // -------------------------------------------------
-    // Events API
+    // Events API + CSRF
     // -------------------------------------------------
     async function registerForStream() {
         if (!window.fetch || !window.EventSource) return;
         if (eventSource) return; // already open
 
         try {
+            const csrf = await ensureCsrfToken();
+            if (!csrf) {
+                console.warn('No CSRF token – aborting registerForStream');
+                if (userActivated) {
+                    showAlert('error', 'Could not initialize real-time updates (CSRF).');
+                }
+                return;
+            }
+
             const email = sessionId + '@access.masiarek.pl';
 
             const payload = {
@@ -167,10 +268,17 @@
                 _ttl: 3600
             };
 
+            const headers = {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': csrf,
+                'X-CSRF-Container': CSRF_CONTAINER
+            };
+
             const resp = await fetch(EVENTS_BASE + '/register', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                headers: headers,
+                body: JSON.stringify(payload),
+                credentials: 'include'
             });
 
             if (!resp.ok) {
@@ -189,6 +297,7 @@
             currentToken = data.token;
             openStream(data.token);
         } catch (err) {
+            console.warn('registerForStream error', err);
             if (userActivated) {
                 showAlert(
                     'error',
@@ -201,13 +310,26 @@
     async function revokeToken() {
         if (!currentToken) return;
         try {
+            const csrf = await ensureCsrfToken();
+            if (!csrf) {
+                console.warn('No CSRF token – revokeToken without CSRF');
+            }
+
+            const headers = {
+                'Authorization': 'Bearer ' + currentToken,
+                'Content-Type': 'application/json'
+            };
+
+            if (csrf) {
+                headers['X-CSRF-Token'] = csrf;
+                headers['X-CSRF-Container'] = CSRF_CONTAINER;
+            }
+
             await fetch(EVENTS_BASE + '/deregister', {
                 method: 'POST',
-                headers: {
-                    'Authorization': 'Bearer ' + currentToken,
-                    'Content-Type': 'application/json'
-                },
-                body: '{}'
+                headers: headers,
+                body: '{}',
+                credentials: 'include'
             });
         } catch (err) {
             console.warn('Failed to revoke token:', err);
@@ -248,7 +370,6 @@
 
         es.onerror = function () {
             console.warn('EventSource error');
-            // do not auto-close here; we want it to retry until we get a real event
         };
     }
 
@@ -273,7 +394,6 @@
                 'SSH access has been installed on "' + host + '" (IP: ' + ip + ').'
             );
 
-            // We got what we needed – revoke token and close the stream
             revokeToken();
             closeStream();
         }
@@ -285,10 +405,22 @@
                 'SSH access has been removed from "' + host + '".'
             );
 
-            // After removal, also revoke token and close stream
             revokeToken();
             closeStream();
         }
+    }
+
+    // -------------------------------------------------
+    // Banner
+    // -------------------------------------------------
+    if (bannerClose) {
+        bannerClose.addEventListener('click', function () {
+            if (banner) {
+                banner.style.display = 'none';
+            }
+            closeStream();
+            revokeToken();
+        });
     }
 
     // -------------------------------------------------
@@ -296,3 +428,4 @@
     // -------------------------------------------------
     buildCommand();
 })();
+
