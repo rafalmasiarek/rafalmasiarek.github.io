@@ -125,12 +125,6 @@
       aA.href = '#';
     }
 
-    // Show/hide separator dot depending on both links
-    const dot = wrap.querySelector('.listen-dot');
-    if (dot) {
-      dot.style.display = (spotifyUrl && appleUrl) ? '' : 'none';
-    }
-
     wrap.classList.remove('d-none');
   }
 
