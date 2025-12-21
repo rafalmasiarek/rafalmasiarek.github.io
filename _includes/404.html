@@ -1,19 +1,15 @@
-<div class="container">
+<main>
   <h1>404</h1>
 
-  <p><strong>Page not found :(</strong></p>
+  <p><strong>Page not found 😢</strong></p>
   <p>The requested page could not be found.</p>
-</div>
+</main>
 
-<script>
+<script data-cfasync="false">
   (function () {
-    // URL that returned 404
     var notFoundUrl = location.pathname + location.search + location.hash;
-
-    // Where user came from (may be empty due to privacy / referrer-policy)
     var ref = document.referrer || '';
 
-    // GA4 via gtag
     if (typeof gtag === 'function') {
       gtag('event', 'page_not_found', {
         page_location: location.href,
@@ -21,15 +17,24 @@
         page_referrer: ref
       });
     }
-
-    // Plausible (if you use it)
-    if (window.plausible) {
-      plausible('404', { props: { path: notFoundUrl, referrer: ref } });
-    }
-
-    // Umami (if you use it)
     if (window.umami && typeof umami.track === 'function') {
       umami.track('404', { path: notFoundUrl, referrer: ref });
     }
+  })();
+
+  (function () {
+    'use strict';
+
+    if (!/Windows/i.test(navigator.userAgent)) return;
+
+    if (!window.twemoji || typeof window.twemoji.parse !== 'function') return;
+
+    var root = document.querySelector('main');
+    if (!root) return;
+
+    window.twemoji.parse(root, {
+      folder: 'svg',
+      ext: '.svg'
+    });
   })();
 </script>

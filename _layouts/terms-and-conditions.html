@@ -15,3 +15,20 @@ layout: base
   <p class="last-modified-at">Last modification: {{ page.last_modified_at | date: '%d-%B-%Y %R' }}</p>
   <br>
 </div>
+<script>
+  (function () {
+    'use strict';
+
+    if (!/Windows/i.test(navigator.userAgent)) return;
+
+    if (!window.twemoji || typeof window.twemoji.parse !== 'function') return;
+
+    var root = document.querySelector('.lang-nav');
+    if (!root) return;
+
+    window.twemoji.parse(root, {
+      folder: 'svg',
+      ext: '.svg'
+    });
+  })();
+</script>
