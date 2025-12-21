@@ -42,9 +42,6 @@ h1,
 }
 
 a {
-  color: blue;
-  background-image: linear-gradient(to bottom, blue 75%, blue 75%);
-  text-shadow: -1px -1px 0 white, 1px -1px 0 white, -1px 1px 0 white, 1px 1px 0 white;
   background-size: 1px 1px;
   background-position: 0 96%;
   text-decoration: none;

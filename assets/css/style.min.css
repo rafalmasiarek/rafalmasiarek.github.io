@@ -65,9 +65,6 @@ p {
 }
 
 a {
-    color: #00f;
-    background-image: linear-gradient(to bottom, #00f 75%, #00f 75%);
-    text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;
     background-size: 1px 1px;
     background-position: 0 96%;
     text-decoration: none
@@ -1011,12 +1008,6 @@ img.loaded {
     transform: translateY(-1px);
     text-decoration: underline;
     text-underline-offset: 3px;
-}
-
-#d-listen .listen-dot {
-    margin: 0 10px;
-    opacity: 0.45;
-    user-select: none;
 }
 
 #d-listen .listen-spotify {
