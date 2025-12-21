@@ -1,7 +1,7 @@
 <script src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/dist/twemoji.min.js" crossorigin="anonymous"></script>
 
 {% if jekyll.environment == "production" %}
-<script src="{{ site.baseurl }}/assets/js/twemoji-windows.js?{{ site.time | date: '%s%N' }}" defer></script>
+<script src="{{ site.baseurl }}/assets/js/twemoji-windows.min.js?{{ site.time | date: '%s%N' }}" defer></script>
 <script src="{{ site.baseurl }}/assets/js/analytics-events.min.js?{{ site.time | date: '%s%N' }}" defer></script>
 {% else %}
 <script src="{{ site.baseurl }}/assets/js/twemoji-windows.js?{{ site.time | date: '%s%N' }}" defer></script>

@@ -5,7 +5,7 @@ canonical: "/vinyls/"
 {%- assign __site_abs = site.url | append: site.baseurl -%}
 {%- assign __canon = __site_abs | append: page.canonical -%}
 
-<script>
+<script data-cfasync="false">
   // Canonical override (JS updates too)
   (function () {
     var a = document.getElementById('canonical-link');
@@ -19,7 +19,7 @@ canonical: "/vinyls/"
 
 {{ content }}
 
-<script>
+<script data-cfasync="false">
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('{{ site.baseurl }}/sw-vinyls.js?{{ site.time | date: "%s%N" }}', { scope: '{{ site.baseurl }}/' })
