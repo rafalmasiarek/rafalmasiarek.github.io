@@ -31,8 +31,20 @@ layout: vinyls-shell
 
       <h4 class="text-muted" id="d-subtitle"></h4>
 
-      <!-- Listen links (Spotify • Apple) injected/filled by JS -->
-      <div id="d-listen" class="mt-2 d-none"></div>
+      <!-- Listen links (Spotify/Apple Music) -->
+      <div id="d-listen" class="d-none">
+        <span class="listen-label">Listen on</span>
+
+        <a id="d-spotify" class="listen-spotify" href="#" target="_blank" rel="noopener">
+          <i class="fa-brands fa-spotify"></i><span class="listen-text">Spotify</span>
+        </a>
+
+        <span class="listen-dot">•</span>
+
+        <a id="d-apple" class="listen-apple" href="#" target="_blank" rel="noopener">
+          <i class="fa-brands fa-apple"></i><span class="listen-text">Apple Music</span>
+        </a>
+      </div>
 
       <div id="d-score" class="mb-2 d-none">
         <strong>Score:</strong> <span id="d-stars"></span>
