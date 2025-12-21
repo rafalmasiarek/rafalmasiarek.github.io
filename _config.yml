@@ -18,9 +18,25 @@ collections:
     output: true
     permalink: /vinyls/:name/
 
+nav:
+  - title: Home
+    url: /
+  - title: Contact
+    url: /contact
+  - title: Legal
+    url: /terms-and-conditions
+  - title: Vinyls
+    url: /vinyls
+  - title: Projects
+    url: /projects
+
 socials:
-  github: "https://github.com/rafalmasiarek"
-  linkedin: "https://www.linkedin.com/in/rafa%C5%82-masiarek-b45699138"
+  - title: Github
+    url: "https://github.com/rafalmasiarek"
+    icon: "fab fa-github"
+  - title: Linkedin
+    url: "https://www.linkedin.com/in/rafal-masiarek/"
+    icon: "fab fa-linkedin-in"
 
 compress_html:
   ignore:

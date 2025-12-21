@@ -1,110 +1,35 @@
+/* =============================================================================
+   01) Reset / Base
+============================================================================= */
+
 *,
-*:before,
-*:after {
+:after,
+:before {
   margin: 0;
   padding: 0;
   border: none;
-  background-repeat: no-repeat;
+  background-repeat: no-repeat
 }
 
+/* =============================================================================
+   02) Typography / Page layout
+============================================================================= */
+
 body {
-  margin: 0;
+  margin: 0 auto;
   font-size: 100%;
   line-height: 1.5em;
-  background: white;
-  color: black;
-  margin: 0 auto;
+  background: #fff;
+  color: #000;
   padding-left: 1.5em;
   padding-right: 1.5em;
   max-width: 45em;
-  font-family: 'Roboto Mono';
+  font-family: 'Roboto Mono'
 }
 
 main {
   box-sizing: border-box;
-  padding: 1ch 0 2ch;
-}
-
-code {
-  background-color: #222;
-  color: #fff;
-  padding: 2px 3px;
-}
-
-h1 {
-  font-size: 1em;
-  font-weight: 700;
-}
-
-h1,
-.timestamp {
-  margin: 0;
-}
-
-a {
-  background-size: 1px 1px;
-  background-position: 0 96%;
-  text-decoration: none;
-}
-
-.heading a {
-  color: black;
-  background-image: linear-gradient(to bottom, black 75%, black 75%);
-}
-
-.heading {
-  margin: 0 0 2ch;
-  padding: 0;
-}
-
-article.txt p {
-  white-space: pre-wrap;
-}
-
-header p {
-  font: 20px/1.75em 'Roboto Mono';
-  margin: 1.5em 0;
-}
-
-.username a {
-  text-shadow: none;
-  background-image: none;
-  background-color: #333;
-  color: #EEE;
-  padding: 1ch;
-  border: 0;
-}
-
-.avatar-wrapper {
-  width: 300px;
-  height: 300px;
-  margin: 25px auto;
-  overflow: hidden;
-  border-radius: 50%;
-  position: relative;
-}
-
-.legal-disclaimer {
-  list-style: inherit;
-  list-style: initial;
-  list-style: revert;
-  list-style: revert-layer;
-  list-style: unset;
-}
-
-.legal-disclaimer ol {
-  font-family: "Roboto Mono", monospace;
-  font-optical-sizing: auto;
-  font-weight: 200;
-  font-style: normal;
-}
-
-hr {
-  border: 1px solid #ECECEC;
-}
-
-p {
-  margin: 1.5em 0;
+  padding: 1ch 0 2ch
 }
 
 h1,
@@ -113,98 +38,203 @@ h3,
 h4,
 h5,
 h6 {
-  font-size: 1em;
+  font-size: 1em
+}
+
+.alert-close,
+h1 {
+  font-weight: 700
+}
+
+.timestamp,
+h1 {
+  margin: 0
+}
+
+header p,
+p {
+  margin: 1.5em 0
+}
+
+header p {
+  font: 20px/1.75em 'Roboto Mono'
+}
+
+code {
+  background-color: #222;
+  color: #fff;
+  padding: 2px 3px
 }
 
 pre {
   padding: 1ch;
   background-color: #f4f4f4;
-  overflow-x: auto;
+  overflow-x: auto
 }
 
-ul,
-ol {
-  padding-left: 0;
-}
-
-li>ul,
-li>ol {
-  padding-left: 2ch;
+article.txt p {
+  white-space: pre-wrap
 }
 
 blockquote {
   font-style: italic;
-  margin: 1.5em 2ch;
+  margin: 1.5em 2ch
+}
+
+.blockquote {
+  font-style: italic;
+  border-left: 4px solid #ddd;
+  padding-left: 1rem;
+  color: #666;
 }
 
 img {
-  max-width: 100%;
+  max-width: 100%
+}
+
+hr {
+  border: 1px solid #ececec
+}
+
+/* =============================================================================
+   03) Links
+============================================================================= */
+
+a {
+  background-size: 1px 1px;
+  background-position: 0 96%;
+  text-decoration: none
+}
+
+.heading a {
+  color: #000;
+  background-image: linear-gradient(to bottom, #000 75%, #000 75%)
+}
+
+.heading {
+  margin: 0 0 2ch;
+  padding: 0
 }
 
 footer a {
-  color: lightgrey;
-  background-image: linear-gradient(to bottom, lightgrey 75%, lightgrey 75%);
+  color: #d3d3d3;
+  background-image: linear-gradient(to bottom, #d3d3d3 75%, #d3d3d3 75%)
 }
 
-input {
-  outline: none;
-  border: none;
+.lang-nav a:hover,
+.lang-nav a:visited,
+.lang-nav a:link,
+.lang-nav a:active {
+  color: unset;
+  background: none;
+  text-decoration: none !important;
+  text-decoration-color: transparent;
+  -webkit-box-shadow: none !important;
+  box-shadow: none !important;
 }
 
+.lang-nav img.emoji {
+  height: 1em;
+  width: 1em;
+  vertical-align: -0.15em;
+}
+
+/* =============================================================================
+   04) Lists
+============================================================================= */
+
+ol,
+ul {
+  padding-left: 0
+}
+
+li>ol,
+li>ul {
+  padding-left: 2ch
+}
+
+/* =============================================================================
+   05) Header / Identity
+============================================================================= */
+
+.username a {
+  text-shadow: none;
+  background-image: none;
+  background-color: #333;
+  color: #eee;
+  padding: 1ch;
+  border: 0
+}
+
+.avatar-wrapper {
+  width: 300px;
+  height: 300px;
+  margin: 25px auto;
+  overflow: hidden;
+  border-radius: 50%;
+  position: relative
+}
+
+/* =============================================================================
+   06) Navigation (global)
+============================================================================= */
+
+.navigation ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex
+}
+
+.navigation li {
+  flex: 3;
+  justify-content: center
+}
+
+.navigation .user {
+  flex: 1
+}
+
+/* =============================================================================
+   07) Forms (contact)
+============================================================================= */
+
+input,
 textarea {
-  outline: none;
-  border: none;
+  outline: 0;
+  border: none
 }
 
-textarea:focus,
-input:focus {
-  border-color: transparent !important;
+input:focus,
+textarea:focus {
+  border-color: transparent !important
 }
 
-input::-webkit-input-placeholder {
-  color: #999999;
-}
-
-input:-moz-placeholder {
-  color: #999999;
-}
-
-input::-moz-placeholder {
-  color: #999999;
-}
-
-input:-ms-input-placeholder {
-  color: #999999;
-}
-
-textarea::-webkit-input-placeholder {
-  color: #999999;
-}
-
-textarea:-moz-placeholder {
-  color: #999999;
-}
-
-textarea::-moz-placeholder {
-  color: #999999;
-}
-
+input::-webkit-input-placeholder,
+input:-moz-placeholder,
+input::-moz-placeholder,
+input:-ms-input-placeholder,
+textarea::-webkit-input-placeholder,
+textarea:-moz-placeholder,
+textarea::-moz-placeholder,
 textarea:-ms-input-placeholder {
-  color: #999999;
+  color: #999
 }
 
 button {
-  outline: none !important;
+  outline: 0 !important;
   border: none;
-  background: transparent;
+  background: 0 0
 }
 
+.alert-close,
 button:hover {
-  cursor: pointer;
+  cursor: pointer
 }
 
-.contact-form {
-  width: 100%;
+.contact-form,
+.input {
+  width: 100%
 }
 
 .wrap-input {
@@ -212,31 +242,124 @@ button:hover {
   position: relative;
   background-color: #fff;
   border: 1px solid #e6e6e6;
-  margin-bottom: 17px;
+  margin-bottom: 17px
 }
 
 .input {
   display: block;
-  width: 100%;
-  background: transparent;
-  font-family: 'Roboto Mono';
-  font-size: 15px;
-  color: #1b3815;
-  line-height: 1.2;
+  background: 0 0
 }
-
 
 input.input {
   height: 62px;
-  padding: 0 20px 0 23px;
+  padding: 0 20px 0 23px
 }
-
 
 textarea.input {
   min-height: 199px;
-  padding: 19px 20px 0 23px;
+  padding: 19px 20px 0 23px
 }
 
+.contact-form-btn,
+.input,
+.label-checkbox {
+  font-family: 'Roboto Mono';
+  line-height: 1.2
+}
+
+.input,
+.label-checkbox {
+  color: #1b3815;
+  font-size: 15px
+}
+
+.contact-form-checkbox {
+  padding-top: 12px;
+  padding-bottom: 28px
+}
+
+.input-checkbox {
+  display: none
+}
+
+.label-checkbox {
+  display: inline-block;
+  position: relative;
+  padding-left: 32px;
+  cursor: pointer;
+  margin: 0
+}
+
+.container-contact-form-btn,
+.label-checkbox::before {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -moz-box;
+  display: -ms-flexbox
+}
+
+.label-checkbox::before {
+  content: "\f00c";
+  font-family: FontAwesome;
+  font-size: 15px;
+  color: transparent;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border: 1px solid #e6e6e6;
+  background: #fff;
+  left: 0;
+  top: 50%;
+  -webkit-transform: translateY(-50%);
+  -moz-transform: translateY(-50%);
+  -ms-transform: translateY(-50%);
+  -o-transform: translateY(-50%);
+  transform: translateY(-50%)
+}
+
+.input-checkbox:checked+.label-checkbox::before {
+  color: #57b846
+}
+
+.container-contact-form-btn {
+  display: flex;
+  flex-wrap: wrap;
+  padding-top: 13px
+}
+
+.contact-form-btn {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -moz-box;
+  display: -ms-flexbox;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 5px 20px 0;
+  min-width: 160px;
+  height: 42px;
+  font-size: 14px;
+  color: #fff;
+  text-transform: uppercase;
+  -webkit-transition: .4s;
+  -o-transition: .4s;
+  -moz-transition: .4s;
+  transition: .4s
+}
+
+.btn-enable-on-input {
+  background-color: #57b846
+}
+
+.btn-disable-on-input,
+.btn-enable-on-input:hover {
+  background-color: #1b3815
+}
+
+/* Contact textarea counter */
 .textarea-wrapper {
   position: relative;
   display: inline-block;
@@ -263,113 +386,22 @@ textarea.input {
   color: rgba(200, 0, 0, .78)
 }
 
-.contact-form-checkbox {
-  padding-top: 12px;
-  padding-bottom: 28px;
+/* =============================================================================
+   08) Alerts
+============================================================================= */
+
+.alert,
+.alert-close:hover {
+  color: #000
 }
 
-.input-checkbox {
-  display: none;
-}
-
-.label-checkbox {
-  display: inline-block;
-  position: relative;
-  padding-left: 32px;
-  cursor: pointer;
-  font-family: 'Roboto Mono';
-  font-size: 15px;
-  color: #1b3815;
-  line-height: 1.2;
-  margin: 0;
-}
-
-.label-checkbox::before {
-  content: "\f00c";
-  font-family: FontAwesome;
-  font-size: 15px;
-  color: transparent;
-  display: -webkit-box;
-  display: -webkit-flex;
-  display: -moz-box;
-  display: -ms-flexbox;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: absolute;
-  width: 22px;
-  height: 22px;
-  border: 1px solid #e6e6e6;
-  background: #fff;
-  left: 0;
-  top: 50%;
-  -webkit-transform: translateY(-50%);
-  -moz-transform: translateY(-50%);
-  -ms-transform: translateY(-50%);
-  -o-transform: translateY(-50%);
-  transform: translateY(-50%);
-}
-
-.input-checkbox:checked+.label-checkbox::before {
-  color: #57b846;
-}
-
-.container-contact-form-btn {
-  display: -webkit-box;
-  display: -webkit-flex;
-  display: -moz-box;
-  display: -ms-flexbox;
-  display: flex;
-  flex-wrap: wrap;
-  padding-top: 13px;
-}
-
-.contact-form-btn {
-  display: -webkit-box;
-  display: -webkit-flex;
-  display: -moz-box;
-  display: -ms-flexbox;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 0 20px;
-  min-width: 160px;
-  height: 42px;
-
-  font-family: 'Roboto Mono';
-  font-size: 14px;
-  color: #fff;
-  line-height: 1.2;
-  text-transform: uppercase;
-  padding-top: 5px;
-
-  -webkit-transition: all 0.4s;
-  -o-transition: all 0.4s;
-  -moz-transition: all 0.4s;
-  transition: all 0.4s;
-}
-
-.btn-enable-on-input {
-  background-color: #57b846;
-}
-
-.btn-enable-on-input:hover {
-  background-color: #1b3815;
-}
-
-.btn-disable-on-input {
-  background-color: #1b3815;
-}
-
-/* Alerts for forms */
 .alert {
   background-color: #eee;
-  color: #000;
   border-radius: 4px;
   padding: 20px;
   margin-bottom: 15px;
   opacity: 1;
-  transition: opacity 0.4s;
+  transition: opacity .4s
 }
 
 .alert-close {
@@ -377,147 +409,107 @@ textarea.input {
   color: #bbb;
   float: right;
   font-size: 22px;
-  font-weight: bold;
-  line-height: 20px;
-  cursor: pointer;
+  line-height: 20px
 }
 
-.alert-close:hover {
-  color: #000;
+/* Alert color variants */
+.alert-bgray,
+.alert-blue,
+.alert-brown,
+.alert-cyan,
+.alert-green,
+.alert-indigo,
+.alert-orange,
+.alert-pink,
+.alert-purple,
+.alert-red,
+.alert-teal {
+  color: #fff !important
 }
 
-/* Alerts */
-.alert-red .alert-close,
+.alert-bgray .alert-close,
+.alert-blue .alert-close,
+.alert-brown .alert-close,
+.alert-cyan .alert-close,
+.alert-green .alert-close,
+.alert-indigo .alert-close,
+.alert-orange .alert-close,
 .alert-pink .alert-close,
 .alert-purple .alert-close,
-.alert-indigo .alert-close,
-.alert-blue .alert-close,
-.alert-cyan .alert-close,
-.alert-teal .alert-close,
-.alert-green .alert-close,
-.alert-orange .alert-close,
-.alert-brown .alert-close,
-.alert-bgray .alert-close {
-  color: #fff;
+.alert-red .alert-close,
+.alert-teal .alert-close {
+  color: #fff
 }
 
-/* Red */
 .alert-red {
-  background-color: #E57373 !important;
-  color: #fff !important;
+  background-color: #e57373 !important
 }
 
-/* Pink */
 .alert-pink {
-  background-color: #F06292 !important;
-  color: #fff !important;
+  background-color: #f06292 !important
 }
 
-/* Purple */
 .alert-purple {
-  background-color: #BA68C8 !important;
-  color: #fff !important;
+  background-color: #ba68c8 !important
 }
 
-/* Indigo */
 .alert-indigo {
-  background-color: #7986CB !important;
-  color: #fff !important;
+  background-color: #7986cb !important
 }
 
-/* Blue */
 .alert-blue {
-  background-color: #64B5F6 !important;
-  color: #fff !important;
+  background-color: #64b5f6 !important
 }
 
-/* Cyan */
 .alert-cyan {
-  background-color: #4DD0E1 !important;
-  color: #fff !important;
+  background-color: #4dd0e1 !important
 }
 
-/* Teal */
 .alert-teal {
-  background-color: #4DB6AC !important;
-  color: #fff !important;
+  background-color: #4db6ac !important
 }
 
-/* Green */
 .alert-green {
-  background-color: #81C784 !important;
-  color: #fff !important;
+  background-color: #81c784 !important
 }
 
-/* Orange */
 .alert-orange {
-  background-color: #FFB74D !important;
-  color: #fff !important;
+  background-color: #ffb74d !important
 }
 
-/* Brown */
 .alert-brown {
-  background-color: #A1887F !important;
-  color: #fff !important;
+  background-color: #a1887f !important
 }
 
-/* Blue gray */
 .alert-bgray {
-  background-color: #90A4AE !important;
-  color: #fff !important;
+  background-color: #90a4ae !important
 }
 
-.lang-nav a {
-  color: #ccc;
-  text-decoration: none;
+/* =============================================================================
+   09) Legal pages
+============================================================================= */
+
+.legal-disclaimer {
+  list-style: unset
 }
 
-
-.navigation ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
+.legal-disclaimer ol {
+  font-family: "Roboto Mono", monospace;
+  font-optical-sizing: auto;
+  font-weight: 200;
+  font-style: normal
 }
 
-.navigation li {
-  flex: 3;
-  justify-content: center;
-}
+/* =============================================================================
+   10) Hero + animation
+============================================================================= */
 
-.navigation .user {
-  flex: 1;
-}
-
-.gallery-item.hidden-until-loaded {
-  opacity: 0;
-  transform: scale(0.97);
-}
-
-.gallery-item.visible {
-  opacity: 1;
-  transform: scale(1);
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-
-.card-img-top {
-  transition: filter 0.4s ease-out, opacity 0.4s ease-out;
-  filter: blur(10px);
-  opacity: 0.5;
-}
-
-.card-img-top.loaded {
-  filter: blur(0);
-  opacity: 1;
-}
-
-/* hand waving by Jake Jarvis from https://jarv.is/notes/css-waving-hand-emoji/ */
 .hand-waving {
   animation-name: hand-waving-animation;
   animation-duration: 2.5s;
   animation-iteration-count: infinite;
   transform-origin: 70% 70%;
-  display: inline-block;
+  display: inline-block
 }
 
 .hero {
@@ -552,6 +544,36 @@ textarea.input {
   font-size: 1.5rem;
 }
 
+@keyframes hand-waving-animation {
+
+  0%,
+  100%,
+  60% {
+    transform: rotate(0deg)
+  }
+
+  10%,
+  30% {
+    transform: rotate(14deg)
+  }
+
+  20% {
+    transform: rotate(-8deg)
+  }
+
+  40% {
+    transform: rotate(-4deg)
+  }
+
+  50% {
+    transform: rotate(10deg)
+  }
+}
+
+/* =============================================================================
+   11) Projects
+============================================================================= */
+
 .project-card {
   transition: transform 0.2s;
 }
@@ -577,141 +599,112 @@ textarea.input {
   margin: 0.25rem;
 }
 
-/* Record grade "stamp" */
-.grade-badge {
-  display: inline-block;
-  padding: .35rem .6rem;
-  border-radius: 9999px;
-  /* pill */
+/* =============================================================================
+   12) Vinyl gallery / image loading
+============================================================================= */
+
+.gallery-item.hidden-until-loaded {
+  opacity: 0;
+  transform: scale(0.97);
+}
+
+.gallery-item.visible {
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.gallery-item {
+  opacity: 0;
+  transform: scale(0.98);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.gallery-item.visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.card-img-top {
+  transition: filter 0.4s ease-out, opacity 0.4s ease-out;
+  filter: blur(10px);
+  opacity: 0.5;
+}
+
+.card-img-top.loaded {
+  filter: blur(0);
+  opacity: 1;
+}
+
+img[data-src] {
+  filter: blur(20px);
+  transition: filter 0.3s ease;
+}
+
+img.loaded {
+  filter: blur(0);
+}
+
+/* =============================================================================
+   13) Licenses table
+============================================================================= */
+
+.licenses-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 2em 0;
+  font-size: 0.95em;
+  background: #fff;
+  font-weight: 200;
+}
+
+.licenses-table th,
+.licenses-table td {
+  border: 1px solid #ccc;
+  padding: 10px 12px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.licenses-table th {
+  background: #f5f5f5;
   font-weight: 600;
-  font-size: .85rem;
-  border: 2px solid currentColor;
-  text-transform: uppercase;
-  letter-spacing: .05em;
-  line-height: 1;
 }
 
-/* Color variants */
-.grade-poor {
-  color: #8a2a2a;
-  background: rgba(138, 42, 42, .08);
+.licenses-table tr:nth-child(even) {
+  background: #fafafa;
 }
 
-.grade-good {
-  color: #8a6400;
-  background: rgba(138, 100, 0, .08);
+.licenses-table tr:hover {
+  background: #f0f8ff;
 }
 
-.grade-gplus {
-  color: #6f6a00;
-  background: rgba(111, 106, 0, .08);
+.pkg-name {
+  text-align: left;
+  white-space: nowrap;
 }
 
-.grade-vg {
-  color: #0b5ed7;
-  background: rgba(13, 110, 253, .08);
+.pkg-name a {
+  color: #0073e6;
+  text-decoration: none;
+  font-weight: 500;
 }
 
-.grade-vgplus {
-  color: #0a58ca;
-  background: rgba(10, 88, 202, .08);
+.pkg-name a:hover .external-link-arrow {
+  transform: translateX(2px);
 }
 
-.grade-nm {
-  color: #157347;
-  background: rgba(21, 115, 71, .08);
+.external-link-arrow {
+  font-size: 0.8em;
+  margin-left: 4px;
+  transition: transform 0.2s ease;
+  opacity: 0.7;
 }
 
-.grade-m {
-  color: #146c43;
-  background: rgba(20, 108, 67, .10);
-}
+/* =============================================================================
+   14) Vinyl detail (cover, tracklist, listen links)
+============================================================================= */
 
-@keyframes hand-waving-animation {
-  0% {
-    transform: rotate(0.0deg)
-  }
-
-  10% {
-    transform: rotate(14.0deg)
-  }
-
-  20% {
-    transform: rotate(-8.0deg)
-  }
-
-  30% {
-    transform: rotate(14.0deg)
-  }
-
-  40% {
-    transform: rotate(-4.0deg)
-  }
-
-  50% {
-    transform: rotate(10.0deg)
-  }
-
-  60% {
-    transform: rotate(0.0deg)
-  }
-
-  100% {
-    transform: rotate(0.0deg)
-  }
-}
-
-@media screen and (min-width:1367px) {
-  hr {
-    border: 4px solid #ECECEC;
-  }
-}
-
-@media all and (max-width: 1000px) {
-  .navigation ul {
-    flex-wrap: wrap;
-  }
-
-  .navigation li {
-    flex: 1 1 50%;
-  }
-
-  .navigation .user {
-    flex: 1 1 33.33%;
-  }
-}
-
-@media all and (max-width: 480px) {
-  .navigation li {
-    flex-basis: 100%;
-  }
-
-  .navigation .user {
-    flex-basis: 50%;
-  }
-}
-
-@media (min-width: 1024px) {
-  body {
-    max-width: 70em;
-  }
-}
-
-@media (min-width: 1200px) {
-  .hero {
-    max-height: 800px;
-  }
-
-  .hero img.logo {
-    max-width: 600px;
-  }
-
-  .hero.shrink {
-    max-height: 200px;
-  }
-}
-
-/* Cover fade-in */
 #d-cover {
   opacity: 0;
   transition: opacity .2s ease;
@@ -776,32 +769,24 @@ textarea.input {
 
 /* Detail: Listen links (Spotify / Apple Music) */
 #d-listen {
-  margin-top: .35rem;
-  font-size: .8rem;
-  font-weight: 400;
-  color: rgba(0, 0, 0, .55);
-}
-
-#d-listen .listen-label {
-  margin-right: .35rem;
-  font-size: .8rem;
-  color: rgba(0, 0, 0, .45);
+  font-size: 0.95rem;
 }
 
 #d-listen a {
   text-decoration: none;
-  font-weight: 400;
-  opacity: .9;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.95;
+  transition: opacity .15s ease, transform .15s ease, text-decoration-color .15s ease;
 }
 
 #d-listen a:hover {
-  text-decoration: underline;
   opacity: 1;
-}
-
-#d-listen .listen-dot {
-  margin: 0 .45rem;
-  color: rgba(0, 0, 0, .35);
+  transform: translateY(-1px);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 #d-listen .listen-spotify {
@@ -812,32 +797,315 @@ textarea.input {
   color: #ff4e6b;
 }
 
-#d-listen i {
-  margin-right: .3rem;
-  font-size: 1.05em;
-  vertical-align: -0.08em;
+#d-listen i.fa-brands {
+  font-size: 1.15em;
 }
 
-/* Mobile: icons-first, ultra subtle */
-@media (max-width: 576px) {
-  #d-listen {
-    font-size: .75rem;
+/* =============================================================================
+   15) Vinyl grade badge
+============================================================================= */
+
+/* Record grade "stamp" */
+.grade-badge {
+  display: inline-block;
+  padding: .35rem .6rem;
+  border-radius: 9999px;
+  /* pill */
+  font-weight: 600;
+  font-size: .85rem;
+  border: 2px solid currentColor;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  line-height: 1;
+}
+
+/* Color variants */
+.grade-poor {
+  color: #8a2a2a;
+  background: rgba(138, 42, 42, .08);
+}
+
+.grade-good {
+  color: #8a6400;
+  background: rgba(138, 100, 0, .08);
+}
+
+.grade-gplus {
+  color: #6f6a00;
+  background: rgba(111, 106, 0, .08);
+}
+
+.grade-vg {
+  color: #0b5ed7;
+  background: rgba(13, 110, 253, .08);
+}
+
+.grade-vgplus {
+  color: #0a58ca;
+  background: rgba(10, 88, 202, .08);
+}
+
+.grade-nm {
+  color: #157347;
+  background: rgba(21, 115, 71, .08);
+}
+
+.grade-m {
+  color: #146c43;
+  background: rgba(20, 108, 67, .10);
+}
+
+/* =============================================================================
+   16) SSH Access Helper
+============================================================================= */
+
+.ssh-gen__grid {
+  display: grid;
+  grid-template-columns: 2fr 2fr;
+  gap: 1.5em;
+  align-items: flex-start;
+}
+
+.ssh-gen__group {
+  margin-bottom: 1.2em;
+}
+
+.ssh-gen__legend {
+  font-size: 0.72em;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #777;
+  margin-bottom: 0.4em;
+}
+
+.ssh-gen__option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5em;
+  margin: 0.15em 0;
+  padding: 0.3em 0.4em;
+  border-radius: 4px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.ssh-gen__option input[type="radio"],
+.ssh-gen__option input[type="checkbox"] {
+  margin-top: 0.1em;
+  cursor: pointer;
+}
+
+.ssh-gen__option:hover {
+  background: #f4f4f4;
+  border-color: #e0e0e0;
+}
+
+.ssh-gen__option-title {
+  font-size: 0.9em;
+  font-weight: 600;
+  color: #222;
+}
+
+.ssh-gen__hint {
+  font-size: 0.78em;
+  color: #666;
+}
+
+.ssh-gen__inline {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  font-size: 0.85em;
+}
+
+.ssh-gen__inline input {
+  font-family: 'Roboto Mono', monospace;
+  padding: 0.25em 0.4em;
+  font-size: 0.85em;
+  border: 1px solid #ddd;
+  width: 8em;
+  background: #fff;
+}
+
+.ssh-gen__inline input:focus {
+  border-color: #000;
+}
+
+.ssh-gen__note {
+  font-size: 0.72em;
+  color: #777;
+  margin-top: 0.2em;
+}
+
+.ssh-gen__panel {
+  padding: 0.9em 0.9em 0.8em;
+  border-radius: 4px;
+  border: 1px solid #e0e0e0;
+  background: #fff;
+}
+
+.ssh-gen__panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5em;
+  margin-bottom: 0.4em;
+  font-size: 0.78em;
+}
+
+.ssh-gen__panel-label {
+  color: #999;
+  font-size: 0.72em;
+}
+
+.ssh-gen__command-box {
+  position: relative;
+}
+
+.ssh-gen__output {
+  width: 100%;
+  min-height: 70px;
+  max-height: 140px;
+  padding: 0.5em 4.4em 0.5em 0.5em;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.8em;
+  background: #222;
+  color: #fff;
+  border-radius: 3px;
+  border: none;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.ssh-gen__copy-btn {
+  position: absolute;
+  right: 0.4em;
+  bottom: 0.4em;
+  padding: 0.15em 0.5em;
+  font-size: 0.7em;
+  border-radius: 3px;
+  border: 1px solid #ddd;
+  background: #fafafa;
+  color: #000;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ssh-gen__copy-btn:hover {
+  background: #000;
+  color: #fff;
+  border-color: #000;
+}
+
+.ssh-gen__status {
+  margin-top: 0.35em;
+  font-size: 0.72em;
+  color: #555;
+}
+
+/* =============================================================================
+   17) Footer spacing + "navbar" feel (append-only overrides)
+============================================================================= */
+
+/* Give the page some breathing room so the footer doesn't sit on the viewport edge */
+body {
+  padding-bottom: clamp(18px, 3vw, 40px);
+}
+
+/* Footer box spacing */
+footer {
+  margin-top: clamp(24px, 4vw, 56px);
+  padding-top: clamp(10px, 2vw, 20px);
+  padding-bottom: clamp(14px, 3vw, 28px);
+}
+
+/* Footer navigation layout */
+footer .navigation ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Make li actually center its content */
+footer .navigation li {
+  flex: 0 1 auto;
+  display: flex;
+  justify-content: center;
+}
+
+/* Increase touch target and give a subtle "nav item" shape */
+footer .navigation a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+}
+
+/* =============================================================================
+   18) Media queries
+============================================================================= */
+
+@media screen and (min-width:1367px) {
+  hr {
+    border: 4px solid #ececec
+  }
+}
+
+@media all and (max-width:1000px) {
+  .navigation ul {
+    flex-wrap: wrap
   }
 
-  #d-listen .listen-label {
-    display: none;
+  .navigation li {
+    flex: 1 1 50%
   }
 
-  #d-listen .listen-text {
-    display: none;
+  .navigation .user {
+    flex: 1 1 33.33%
+  }
+}
+
+@media all and (max-width:480px) {
+  .navigation li {
+    flex-basis: 100%
   }
 
-  #d-listen i {
-    margin-right: 0;
-    font-size: 1.15em;
+  .navigation .user {
+    flex-basis: 50%
   }
 
-  #d-listen .listen-dot {
-    margin: 0 .35rem;
+  footer .navigation ul {
+    justify-content: flex-start;
+  }
+}
+
+@media (min-width: 1024px) {
+  body {
+    max-width: 70em;
+  }
+}
+
+@media (min-width: 1200px) {
+  .hero {
+    max-height: 800px;
+  }
+
+  .hero img.logo {
+    max-width: 600px;
+  }
+
+  .hero.shrink {
+    max-height: 200px;
+  }
+}
+
+/* SSH helper mobile */
+@media (max-width: 720px) {
+  .ssh-gen__grid {
+    grid-template-columns: 1fr;
   }
 }

@@ -1,103 +1,29 @@
 ---
-layout: compress
+layout: base
+canonical: "/vinyls/"
 ---
 {%- assign __site_abs = site.url | append: site.baseurl -%}
-<!DOCTYPE html>
-<html lang="en">
+{%- assign __canon = __site_abs | append: page.canonical -%}
 
-<head>
-  <meta charset="utf-8">
-  <meta name="robots" content="noindex, nofollow">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, shrink-to-fit=no">
+<script>
+  // Canonical override (JS updates too)
+  (function () {
+    var a = document.getElementById('canonical-link');
+    if (a) a.href = "{{ __canon }}";
+  })();
 
-  <title>
-    {% if page.title %}
-    {% if page.title != 'About me' %}
-    {{ page.title }} -
-    {% endif %}
-    {% endif %}
-    {{ site.title }}
-  </title>
+  window.__SITE_BASE__ = "{{ __site_abs }}";
+  window.__VINYLS_API__ = "{{ __site_abs }}/api/v1/vinyls";
+  window.__VINYLS_PER_PAGE__ = "{{ site.vinyls_per_page | default: 9 }}";
+</script>
 
-  <link id="canonical-link" rel="canonical" href="{{ __site_abs }}/vinyls/">
-  <meta id="meta-desc" name="description"
-    content="{% if page.description %}{{ page.description | truncate: 160 }}{% else %}Browse my vinyl record collection.{% endif %}">
+{{ content }}
 
-  <meta itemprop="description" name="description"
-    content="{% if page.description %}{{ page.description | truncate: 160 }}{% else %}Browse my vinyl record collection.{% endif %}">
-
-  <link rel="preconnect" href="https://i.discogs.com" crossorigin>
-  <link rel="preconnect" href="{{ site.url }}" crossorigin>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@100..700&display=swap" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="{{ site.baseurl }}/assets/css/style.min.css?{{ site.time | date: '%s%N' }}" rel="stylesheet">
-  <link href="{{ site.baseurl }}/assets/css/instafilters.min.css?v0.1.4" rel="stylesheet">
-
-  <script>
-    window.__SITE_BASE__ = "{{ __site_abs }}";
-    window.__VINYLS_API__ = "{{ __site_abs }}/api/v1/vinyls";
-    window.__VINYLS_PER_PAGE__ = "{{ site.vinyls_per_page | default: 9 }}";
-  </script>
-
-  <script src="https://kit.fontawesome.com/cc759ba0dc.js" crossorigin="anonymous"></script>
-</head>
-
-<body>
-  <header>
-    <p class="username">
-      <a href="{{ site.baseurl }}/" target="_self">{{ site.title }}</a>{% if page.icon %} <i
-        class="{{ page.icon }}"></i>{% endif %}
-    </p>
-  </header>
-
-  <div class="content" id="container">
-    {{ content }}
-  </div>
-
-  <footer>
-    <nav class="navigation">
-      <ul>
-        {% if page.title != 'About me' %}
-        <li><a href="{{ site.baseurl }}/" style="border:0">Home</a></li>
-        {% endif %}
-        {% if page.title != 'Contact' %}
-        <li><a href="{{ site.baseurl }}/contact" style="border:0">Contact</a></li>
-        {% endif %}
-        {% if page.title != 'Legal Disclaimer' %}
-        <li><a href="{{ site.baseurl }}//terms-and-conditions" style="border:0">Legal</a></li>
-        {% endif %}
-        {% if page.title != 'My Vinyl Collection' %}
-        <li><a href="{{ site.baseurl }}/vinyls" style="border:0">Vinyls</a></li>
-        {% endif %}
-        {% if page.title != 'Projects' %}
-        <li><a href="{{ site.baseurl }}/projects" style="border:0">Projects</a></li>
-        {% endif %}
-        <li>
-          <a href="{{ site.socials.github }}" style="border:0;text-decoration:none" target="_blank">
-            <i class="fab fa-github"></i> Github
-          </a>
-        </li>
-        <li>
-          <a href="{{ site.socials.linkedin }}" style="border:0;text-decoration:none" target="_blank">
-            <i class="fab fa-linkedin-in"></i> Linkedin
-          </a>
-        </li>
-      </ul>
-    </nav>
-    <br>
-  </footer>
-
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('{{ site.baseurl }}/sw-vinyls.js?{{ site.time | date: "%s%N" }}', { scope: '{{ site.baseurl }}/' })
-          .catch(err => console.warn('SW register failed', err));
-      });
-    }
-  </script>
-</body>
-
-</html>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('{{ site.baseurl }}/sw-vinyls.js?{{ site.time | date: "%s%N" }}', { scope: '{{ site.baseurl }}/' })
+        .catch(err => console.warn('SW register failed', err));
+    });
+  }
+</script>

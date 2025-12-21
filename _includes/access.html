@@ -113,4 +113,8 @@
     </div>
 </div>
 
-<script src="/assets/js/access-helper.js?{{ site.time | date: '%s%N' }}"></script>
+{% if jekyll.environment == "production" %}
+<script src="{{ site.baseurl }}/assets/js/access-helper.min.js?{{ site.time | date: '%s%N' }}"></script>
+{% else %}
+<script src="{{ site.baseurl }}/assets/js/access-helper.js?{{ site.time | date: '%s%N' }}"></script>
+{% endif %}
