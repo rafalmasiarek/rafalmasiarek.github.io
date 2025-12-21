@@ -47,22 +47,6 @@
     return s.trim();
   }
 
-  function ensureListenLinksUnderSubtitle() {
-    // If you added it in HTML already, just return it.
-    const existing = document.getElementById('d-listen');
-    if (existing) return existing;
-
-    // Otherwise create it under subtitle (fallback).
-    const sub = document.getElementById('d-subtitle');
-    if (!sub) return null;
-
-    const div = document.createElement('div');
-    div.id = 'd-listen';
-    div.className = 'd-none';
-    sub.insertAdjacentElement('afterend', div);
-    return div;
-  }
-
   function pickListenUrls(detail, title, artist) {
     // Accept multiple future shapes:
     // - listen_on: { apple_music, spotify }
@@ -106,52 +90,45 @@
   }
 
   function setListenLinks(detail) {
-    const wrap = ensureListenLinksUnderSubtitle();
-    if (!wrap) return;
+    const wrap = document.getElementById('d-listen');
+    const aS = document.getElementById('d-spotify');
+    const aA = document.getElementById('d-apple');
+    if (!wrap || !aS || !aA) return;
 
-    const title = detail?.title || '';
-    const artist = detail?.artist || '';
+    const title = (detail?.title || '').trim();
+    const artist = (detail?.artist || '').trim();
 
     const { spotifyUrl, appleUrl } = pickListenUrls(detail, title, artist);
 
+    // If we can't build anything (edge-case only), hide
     if (!spotifyUrl && !appleUrl) {
       wrap.classList.add('d-none');
-      wrap.innerHTML = '';
+      aS.href = '#';
+      aA.href = '#';
       return;
     }
 
-    wrap.innerHTML = '';
-
-    const label = document.createElement('span');
-    label.className = 'listen-label';
-    label.textContent = 'Listen on ';
-    wrap.appendChild(label);
-
+    // Always set fallbacks (or API-provided)
     if (spotifyUrl) {
-      const aS = document.createElement('a');
       aS.href = spotifyUrl;
-      aS.target = '_blank';
-      aS.rel = 'noopener';
-      aS.className = 'listen-spotify';
-      aS.innerHTML = '<i class="fa-brands fa-spotify"></i><!--span class="listen-text">Spotify</span-->';
-      wrap.appendChild(aS);
-    }
-
-    if (spotifyUrl && appleUrl) {
-      const sep = document.createElement('span');
-      sep.className = 'listen-dot';
-      sep.textContent = '•';
-      wrap.appendChild(sep);
+      aS.classList.remove('d-none');
+    } else {
+      aS.classList.add('d-none');
+      aS.href = '#';
     }
 
     if (appleUrl) {
-      const aA = document.createElement('a');
       aA.href = appleUrl;
-      aA.target = '_blank';
-      aA.rel = 'noopener';
-      aA.className = 'listen-apple';
-      aA.innerHTML = '<i class="fa-brands fa-apple"></i><!--span class="listen-text">Apple Music</span-->';
-      wrap.appendChild(aA);
+      aA.classList.remove('d-none');
+    } else {
+      aA.classList.add('d-none');
+      aA.href = '#';
+    }
+
+    // Show/hide separator dot depending on both links
+    const dot = wrap.querySelector('.listen-dot');
+    if (dot) {
+      dot.style.display = (spotifyUrl && appleUrl) ? '' : 'none';
     }
 
     wrap.classList.remove('d-none');
@@ -368,7 +345,7 @@
     }
 
     // 3) Listen links under authors line
-    setListenLinks(title, artist);
+    setListenLinks(v);
 
     // Notes + tracklist (tracklist rendered by loader helper)
     if (typeof window.__renderNotes === 'function') {
