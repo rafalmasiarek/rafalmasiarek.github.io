@@ -76,34 +76,32 @@
       detail?.listenLinks ||
       null;
 
+    const clean = (u) =>
+      typeof u === 'string' && u.trim() ? u.trim() : null;
+
     const spotify =
-      (obj && (obj.spotify || obj.Spotify || obj['spotify-url'] || obj.spotify_url)) || null;
+      clean(obj?.spotify || obj?.Spotify || obj?.spotify_url);
 
     const apple =
-      (obj &&
-        (obj.apple_music ||
-          obj.appleMusic ||
-          obj['apple-music'] ||
-          obj.apple ||
-          obj.apple_url ||
-          obj['apple-url'])) ||
-      null;
+      clean(
+        obj?.apple_music ||
+        obj?.appleMusic ||
+        obj?.['apple-music'] ||
+        obj?.apple
+      );
 
-    const clean = (u) => (typeof u === 'string' && u.trim() ? u.trim() : null);
-
-    const pickedSpotify = clean(spotify);
-    const pickedApple = clean(apple);
-
-    // Fallback search URLs
-    const q = encodeURIComponent(`${artist || ''} ${title || ''}`.trim());
-    const fallbackSpotify = `https://open.spotify.com/search/${q}/albums`;
-    const fallbackApple = `https://music.apple.com/search?term=${q}`;
+    // Build fallback query ONLY if we have data
+    const query = `${artist || ''} ${title || ''}`.trim();
+    const hasQuery = query.length > 0;
 
     return {
-      spotifyUrl: pickedSpotify || fallbackSpotify,
-      appleUrl: pickedApple || fallbackApple,
-      usedFallbackSpotify: !pickedSpotify,
-      usedFallbackApple: !pickedApple,
+      spotifyUrl: spotify || (hasQuery
+        ? `https://open.spotify.com/search/${encodeURIComponent(query)}/albums`
+        : null),
+
+      appleUrl: apple || (hasQuery
+        ? `https://music.apple.com/search?term=${encodeURIComponent(query)}`
+        : null),
     };
   }
 
@@ -116,34 +114,45 @@
 
     const { spotifyUrl, appleUrl } = pickListenUrls(detail, title, artist);
 
+    if (!spotifyUrl && !appleUrl) {
+      wrap.classList.add('d-none');
+      wrap.innerHTML = '';
+      return;
+    }
+
     wrap.innerHTML = '';
 
     const label = document.createElement('span');
     label.className = 'listen-label';
-    label.textContent = 'Listen on';
+    label.textContent = 'Listen on ';
     wrap.appendChild(label);
 
-    const aS = document.createElement('a');
-    aS.href = spotifyUrl;
-    aS.target = '_blank';
-    aS.rel = 'noopener';
-    aS.className = 'listen-spotify';
-    aS.innerHTML = '<i class="fa-brands fa-spotify"></i><span class="listen-text">Spotify</span>';
+    if (spotifyUrl) {
+      const aS = document.createElement('a');
+      aS.href = spotifyUrl;
+      aS.target = '_blank';
+      aS.rel = 'noopener';
+      aS.className = 'listen-spotify';
+      aS.innerHTML = '<i class="fa-brands fa-spotify"></i><!--span class="listen-text">Spotify</span-->';
+      wrap.appendChild(aS);
+    }
 
-    const sep = document.createElement('span');
-    sep.className = 'listen-dot';
-    sep.textContent = '•';
+    if (spotifyUrl && appleUrl) {
+      const sep = document.createElement('span');
+      sep.className = 'listen-dot';
+      sep.textContent = '•';
+      wrap.appendChild(sep);
+    }
 
-    const aA = document.createElement('a');
-    aA.href = appleUrl;
-    aA.target = '_blank';
-    aA.rel = 'noopener';
-    aA.className = 'listen-apple';
-    aA.innerHTML = '<i class="fa-brands fa-apple"></i><span class="listen-text">Apple Music</span>';
-
-    wrap.appendChild(aS);
-    wrap.appendChild(sep);
-    wrap.appendChild(aA);
+    if (appleUrl) {
+      const aA = document.createElement('a');
+      aA.href = appleUrl;
+      aA.target = '_blank';
+      aA.rel = 'noopener';
+      aA.className = 'listen-apple';
+      aA.innerHTML = '<i class="fa-brands fa-apple"></i><!--span class="listen-text">Apple Music</span-->';
+      wrap.appendChild(aA);
+    }
 
     wrap.classList.remove('d-none');
   }
