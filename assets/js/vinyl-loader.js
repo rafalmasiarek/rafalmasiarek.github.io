@@ -481,7 +481,7 @@
   document.addEventListener('DOMContentLoaded', () => {
     const collapseEl = document.getElementById('vinyl-tags');
     if (collapseEl && window.bootstrap?.Collapse) {
-      const bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseEl);
+      const bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false });
       bsCollapse.hide();
     }
 
@@ -499,15 +499,16 @@
         const artist = e.target.getAttribute('data-artist');
         if (artist === activeArtist) window.__vinylsClearFilter();
         else window.__vinylsSetFilter(artist);
+
+        // Hide artist map on small screens after selecting
+        const collapseEl2 = document.getElementById('vinyl-tags');
+        if (collapseEl2 && window.bootstrap?.Collapse && window.matchMedia('(max-width: 767.98px)').matches) {
+          bootstrap.Collapse.getOrCreateInstance(collapseEl2, { toggle: false }).hide();
+        }
       }
 
       if (e.target.id === 'toggle-tags-btn' && collapseEl && window.bootstrap?.Collapse) {
-        bootstrap.Collapse.getOrCreateInstance(collapseEl).toggle();
-      }
-
-      if (e.target.id === 'close-tags-btn' && collapseEl && window.bootstrap?.Collapse) {
-        window.__vinylsClearFilter();
-        bootstrap.Collapse.getOrCreateInstance(collapseEl).hide();
+        bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false }).toggle();
       }
     });
   });
