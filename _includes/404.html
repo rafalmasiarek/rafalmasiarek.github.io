@@ -1,20 +1,35 @@
-<style type="text/css" media="screen">
-    .container {
-      margin: 10px auto;
-      max-width: 600px;
-      text-align: center;
+<div class="container">
+  <h1>404</h1>
+
+  <p><strong>Page not found :(</strong></p>
+  <p>The requested page could not be found.</p>
+</div>
+
+<script>
+  (function () {
+    // URL that returned 404
+    var notFoundUrl = location.pathname + location.search + location.hash;
+
+    // Where user came from (may be empty due to privacy / referrer-policy)
+    var ref = document.referrer || '';
+
+    // GA4 via gtag
+    if (typeof gtag === 'function') {
+      gtag('event', 'page_not_found', {
+        page_location: location.href,
+        page_path: notFoundUrl,
+        page_referrer: ref
+      });
     }
-    h1 {
-      margin: 30px 0;
-      font-size: 4em;
-      line-height: 1;
-      letter-spacing: -1px;
+
+    // Plausible (if you use it)
+    if (window.plausible) {
+      plausible('404', { props: { path: notFoundUrl, referrer: ref } });
     }
-  </style>
-  
-  <div class="container">
-    <h1>404</h1>
-  
-    <p><strong>Page not found :(</strong></p>
-    <p>The requested page could not be found.</p>
-  </div>
+
+    // Umami (if you use it)
+    if (window.umami && typeof umami.track === 'function') {
+      umami.track('404', { path: notFoundUrl, referrer: ref });
+    }
+  })();
+</script>

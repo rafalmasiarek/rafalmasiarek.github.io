@@ -1,0 +1,29 @@
+# Serve precompressed .br files when available and the client supports Brotli.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # CSS
+  RewriteCond %{HTTP:Accept-Encoding} br
+  RewriteCond %{REQUEST_FILENAME}.br -s
+  RewriteRule ^(.+)\.css$ $1.css.br [QSA,L]
+
+  # JS
+  RewriteCond %{HTTP:Accept-Encoding} br
+  RewriteCond %{REQUEST_FILENAME}.br -s
+  RewriteRule ^(.+)\.js$ $1.js.br [QSA,L]
+</IfModule>
+
+<IfModule mod_headers.c>
+  <FilesMatch "\.(css|js)\.br$">
+    Header set Content-Encoding br
+    Header append Vary Accept-Encoding
+  </FilesMatch>
+</IfModule>
+
+# Ensure correct MIME types for the rewritten files
+<IfModule mod_mime.c>
+  AddType text/css .css.br
+  AddType application/javascript .js.br
+</IfModule>
+
+ErrorDocument 404 /404.html
