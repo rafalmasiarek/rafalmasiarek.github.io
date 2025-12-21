@@ -48,51 +48,98 @@
   }
 
   function ensureListenLinksUnderSubtitle() {
-    // Creates:
-    // <div id="d-listen"> [spotify] • [apple] </div>
-    const sub = byId('d-subtitle');
+    // If you added it in HTML already, just return it.
+    const existing = document.getElementById('d-listen');
+    if (existing) return existing;
+
+    // Otherwise create it under subtitle (fallback).
+    const sub = document.getElementById('d-subtitle');
     if (!sub) return null;
 
-    let wrap = byId('d-listen');
-    if (!wrap) {
-      wrap = document.createElement('div');
-      wrap.id = 'd-listen';
-      wrap.className = 'mt-2 d-none';
-      sub.insertAdjacentElement('afterend', wrap);
-    }
-    return wrap;
+    const div = document.createElement('div');
+    div.id = 'd-listen';
+    div.className = 'd-none';
+    sub.insertAdjacentElement('afterend', div);
+    return div;
   }
 
-  function setListenLinks(title, artist) {
+  function pickListenUrls(detail, title, artist) {
+    // Accept multiple future shapes:
+    // - listen_on: { apple_music, spotify }
+    // - listenOn: { appleMusic, spotify }
+    // - listen_on: { "apple-music", spotify }
+    // - listen: { apple_music, spotify } etc.
+    const obj =
+      detail?.listen_on ||
+      detail?.listenOn ||
+      detail?.listen ||
+      detail?.listenLinks ||
+      null;
+
+    const spotify =
+      (obj && (obj.spotify || obj.Spotify || obj['spotify-url'] || obj.spotify_url)) || null;
+
+    const apple =
+      (obj &&
+        (obj.apple_music ||
+          obj.appleMusic ||
+          obj['apple-music'] ||
+          obj.apple ||
+          obj.apple_url ||
+          obj['apple-url'])) ||
+      null;
+
+    const clean = (u) => (typeof u === 'string' && u.trim() ? u.trim() : null);
+
+    const pickedSpotify = clean(spotify);
+    const pickedApple = clean(apple);
+
+    // Fallback search URLs
+    const q = encodeURIComponent(`${artist || ''} ${title || ''}`.trim());
+    const fallbackSpotify = `https://open.spotify.com/search/${q}/albums`;
+    const fallbackApple = `https://music.apple.com/search?term=${q}`;
+
+    return {
+      spotifyUrl: pickedSpotify || fallbackSpotify,
+      appleUrl: pickedApple || fallbackApple,
+      usedFallbackSpotify: !pickedSpotify,
+      usedFallbackApple: !pickedApple,
+    };
+  }
+
+  function setListenLinks(detail) {
     const wrap = ensureListenLinksUnderSubtitle();
     if (!wrap) return;
 
-    const q = encodeURIComponent(`${artist || ''} ${title || ''}`.trim());
-    const spotifyUrl = `https://open.spotify.com/search/${q}`;
-    const appleUrl = `https://music.apple.com/search?term=${q}`;
+    const title = detail?.title || '';
+    const artist = detail?.artist || '';
 
-    // Render (with colors + FA icons + bullet U+2022)
+    const { spotifyUrl, appleUrl } = pickListenUrls(detail, title, artist);
+
     wrap.innerHTML = '';
+
+    const label = document.createElement('span');
+    label.className = 'listen-label';
+    label.textContent = 'Listen on';
+    wrap.appendChild(label);
 
     const aS = document.createElement('a');
     aS.href = spotifyUrl;
     aS.target = '_blank';
     aS.rel = 'noopener';
-    aS.style.color = '#1DB954';
-    aS.className = 'text-decoration-none';
-    aS.innerHTML = '<i class="fa-brands fa-spotify"></i> Play on Spotify';
+    aS.className = 'listen-spotify';
+    aS.innerHTML = '<i class="fa-brands fa-spotify"></i><span class="listen-text">Spotify</span>';
 
     const sep = document.createElement('span');
-    sep.className = 'mx-2 text-muted';
-    sep.textContent = '•'; // U+2022
+    sep.className = 'listen-dot';
+    sep.textContent = '•';
 
     const aA = document.createElement('a');
     aA.href = appleUrl;
     aA.target = '_blank';
     aA.rel = 'noopener';
-    aA.style.color = '#ff4e6b';
-    aA.className = 'text-decoration-none';
-    aA.innerHTML = '<i class="fa-brands fa-apple"></i> Play on Apple Music';
+    aA.className = 'listen-apple';
+    aA.innerHTML = '<i class="fa-brands fa-apple"></i><span class="listen-text">Apple Music</span>';
 
     wrap.appendChild(aS);
     wrap.appendChild(sep);

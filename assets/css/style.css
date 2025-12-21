@@ -779,30 +779,32 @@ textarea.input {
 
 /* Detail: Listen links (Spotify / Apple Music) */
 #d-listen {
-  font-size: 0.95rem;
+  margin-top: .35rem;
+  font-size: .8rem;
+  font-weight: 400;
+  color: rgba(0, 0, 0, .55);
+}
+
+#d-listen .listen-label {
+  margin-right: .35rem;
+  font-size: .8rem;
+  color: rgba(0, 0, 0, .45);
 }
 
 #d-listen a {
   text-decoration: none;
-  font-weight: 600;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  opacity: 0.95;
-  transition: opacity .15s ease, transform .15s ease, text-decoration-color .15s ease;
+  font-weight: 400;
+  opacity: .9;
 }
 
 #d-listen a:hover {
-  opacity: 1;
-  transform: translateY(-1px);
   text-decoration: underline;
-  text-underline-offset: 3px;
+  opacity: 1;
 }
 
 #d-listen .listen-dot {
-  margin: 0 10px;
-  opacity: 0.45;
-  user-select: none;
+  margin: 0 .45rem;
+  color: rgba(0, 0, 0, .35);
 }
 
 #d-listen .listen-spotify {
@@ -813,6 +815,32 @@ textarea.input {
   color: #ff4e6b;
 }
 
-#d-listen i.fa-brands {
-  font-size: 1.15em;
+#d-listen i {
+  margin-right: .3rem;
+  font-size: 1.05em;
+  vertical-align: -0.08em;
+}
+
+/* Mobile: icons-first, ultra subtle */
+@media (max-width: 576px) {
+  #d-listen {
+    font-size: .75rem;
+  }
+
+  #d-listen .listen-label {
+    display: none;
+  }
+
+  #d-listen .listen-text {
+    display: none;
+  }
+
+  #d-listen i {
+    margin-right: 0;
+    font-size: 1.15em;
+  }
+
+  #d-listen .listen-dot {
+    margin: 0 .35rem;
+  }
 }
