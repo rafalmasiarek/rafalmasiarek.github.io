@@ -1,5 +1,8 @@
 // assets/js/vinyl-router.js
 (function () {
+  'use strict';
+
+  // ---- Guards ----
   if (!window.__VINYLS_API__ || !window.__VINYLS_API__.trim()) {
     console.error('VINYLS: Missing window.__VINYLS_API__');
   }
@@ -7,14 +10,13 @@
     console.error('VINYLS: Missing window.__SITE_BASE__');
   }
 
-  const API_LIST = window.__VINYLS_API__.trim().replace(/\/+$/, '');
-  const SITE_BASE = window.__SITE_BASE__.trim().replace(/\/+$/, '');
+  const API_LIST = String(window.__VINYLS_API__ || '').trim().replace(/\/+$/, '');
+  const SITE_BASE = String(window.__SITE_BASE__ || '').trim().replace(/\/+$/, '');
   const VINYLS_ABS = SITE_BASE + '/vinyls';
   const PLACEHOLDER_COVER = 'https://placehold.co/600x600?text=No+cover';
 
   let __restoreScrollY = 0;
   let __restoreSlug = null;
-
   let __resetFilterOnBack = false;
 
   function slugFromHash() {
@@ -23,21 +25,26 @@
 
   // ---- Head/meta & JSON-LD ----
   function setListHead() {
-    document.title = `My Vinyl Collection – ${document.querySelector('header .username a')?.textContent || ''}`;
+    const siteName = document.querySelector('header .username a')?.textContent || '';
+    document.title = `My Vinyl Collection – ${siteName}`;
+
     const meta = document.getElementById('meta-desc');
     if (meta) meta.setAttribute('content', 'Browse my vinyl record collection.');
+
     const canonical = document.getElementById('canonical-link');
     if (canonical) canonical.href = `${VINYLS_ABS}/`;
+
     [...document.querySelectorAll('script[data-jsonld="album"],script[data-jsonld="breadcrumbs"]')].forEach(n => n.remove());
   }
 
   function setDetailHead(v) {
     const siteName = document.querySelector('header .username a')?.textContent || 'Vinyls';
-    const title = v.title || 'Untitled';
-    const artist = v.artist || 'Unknown';
+    const title = v?.title || 'Untitled';
+    const artist = v?.artist || 'Unknown';
+
     document.title = `${title} – ${artist} | ${siteName}`;
 
-    const desc = `${title} by ${artist}${v.year ? `, released ${v.year}` : ''}. View details from my vinyl collection.`;
+    const desc = `${title} by ${artist}${v?.year ? `, released ${v.year}` : ''}. View details from my vinyl collection.`;
     const meta = document.getElementById('meta-desc');
     if (meta) meta.setAttribute('content', desc);
 
@@ -50,23 +57,25 @@
 
   function injectAlbumJsonLd(v) {
     [...document.querySelectorAll('script[data-jsonld="album"]')].forEach(n => n.remove());
+
     const s = document.createElement('script');
     s.type = 'application/ld+json';
     s.setAttribute('data-jsonld', 'album');
     s.textContent = JSON.stringify({
       '@context': 'https://schema.org',
       '@type': 'MusicAlbum',
-      name: v.title || 'Untitled',
-      byArtist: v.artist ? { '@type': 'MusicGroup', name: v.artist } : undefined,
-      image: v.cover || undefined,
-      datePublished: v.year ? String(v.year) : undefined,
-      url: `${VINYLS_ABS}/#/${encodeURIComponent(v.slug)}`
+      name: v?.title || 'Untitled',
+      byArtist: v?.artist ? { '@type': 'MusicGroup', name: v.artist } : undefined,
+      image: v?.cover || undefined,
+      datePublished: v?.year ? String(v.year) : undefined,
+      url: `${VINYLS_ABS}/#/${encodeURIComponent(v?.slug || '')}`,
     });
     document.head.appendChild(s);
   }
 
   function injectBreadcrumbsJsonLd(v) {
     [...document.querySelectorAll('script[data-jsonld="breadcrumbs"]')].forEach(n => n.remove());
+
     const s = document.createElement('script');
     s.type = 'application/ld+json';
     s.setAttribute('data-jsonld', 'breadcrumbs');
@@ -76,8 +85,8 @@
       itemListElement: [
         { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_BASE + '/' },
         { '@type': 'ListItem', position: 2, name: 'Vinyls', item: `${VINYLS_ABS}/` },
-        { '@type': 'ListItem', position: 3, name: v.title || 'Record', item: `${VINYLS_ABS}/#/${encodeURIComponent(v.slug)}` }
-      ]
+        { '@type': 'ListItem', position: 3, name: v?.title || 'Record', item: `${VINYLS_ABS}/#/${encodeURIComponent(v?.slug || '')}` },
+      ],
     });
     document.head.appendChild(s);
   }
@@ -90,25 +99,27 @@
         const p = await r.json();
         if (p && p.data) return p.data;
       }
-    } catch { }
+    } catch { /* ignore */ }
+
     if (Array.isArray(window.allVinyls) && window.allVinyls.length) {
       return window.allVinyls.find(x => x.slug === slug);
     }
+
     const r2 = await fetch(API_LIST, { credentials: 'omit' });
     const p2 = await r2.json();
     const list = (p2 && p2.data) || [];
     return list.find(x => x.slug === slug);
   }
 
-  // ---- UI (with image preload & race guard) ----
-
-  // UI
+  // ---- UI ----
   function showList() {
-    document.getElementById('vinyl-detail').classList.add('d-none');
-    document.getElementById('list-panel').classList.remove('d-none');
-    document.getElementById('vinyl-tags').classList.remove('d-none');
-    document.getElementById('toggle-tags-btn').classList.remove('d-none');
+    document.getElementById('vinyl-detail')?.classList.add('d-none');
+    document.getElementById('list-panel')?.classList.remove('d-none');
+    document.getElementById('vinyl-tags')?.classList.remove('d-none');
+    document.getElementById('toggle-tags-btn')?.classList.remove('d-none');
+
     setListHead();
+
     if (window.attachScroll) window.attachScroll();
 
     // If a filter was active when entering detail, reset it now (do not restore old scroll in this case)
@@ -120,12 +131,13 @@
 
     if (__restoreScrollY && Number.isFinite(__restoreScrollY)) {
       window.scrollTo({ top: __restoreScrollY, behavior: 'auto' });
+
       if (__restoreSlug) {
-        const anchor = document.querySelector(`a.card-link[href="#/${CSS.escape(__restoreSlug)}"]`);
+        const href = `#/${encodeURIComponent(__restoreSlug)}`;
+        const anchor = document.querySelector(`a.card-link[href="${CSS.escape(href)}"]`);
         if (anchor) anchor.focus({ preventScroll: true });
       }
 
-      // Clear after use
       __restoreScrollY = 0;
       __restoreSlug = null;
     }
@@ -141,60 +153,67 @@
     if (window.detachScroll) window.detachScroll();
 
     // Panels
-    document.getElementById('vinyl-detail').classList.remove('d-none');
-    document.getElementById('list-panel').classList.add('d-none');
-    document.getElementById('vinyl-tags').classList.add('d-none');
-    document.getElementById('toggle-tags-btn').classList.add('d-none');
+    document.getElementById('vinyl-detail')?.classList.remove('d-none');
+    document.getElementById('list-panel')?.classList.add('d-none');
+    document.getElementById('vinyl-tags')?.classList.add('d-none');
+    document.getElementById('toggle-tags-btn')?.classList.add('d-none');
 
     // Request token (race guard)
     const reqId = ++__detailReqSeq;
 
-    // Reset cover to placeholder and clear texts to avoid showing stale content
+    // Reset cover & texts to avoid stale content
     const imgEl = document.getElementById('d-cover');
-    imgEl.classList.remove('is-loaded');  // rely on CSS to fade-in when loaded
-    imgEl.src = PLACEHOLDER_COVER;
-    imgEl.alt = '';
-
-    document.getElementById('d-title').textContent = '';
-    document.getElementById('d-subtitle').textContent = '';
-    document.getElementById('d-review')?.classList.add('d-none');
-    document.getElementById('d-description')?.classList.add('d-none');
-    document.getElementById('d-notes')?.classList.add('d-none');
-    document.getElementById('d-score')?.classList.add('d-none'); // keep score hidden until rendered
-
-    // Fetch data
-    const v = await fetchBySlug(slug);
-    if (!v) {
-      if (__detailReqSeq !== reqId) return;
-      document.getElementById('d-title').textContent = 'Not found';
+    if (imgEl) {
+      imgEl.classList.remove('is-loaded');
       imgEl.src = PLACEHOLDER_COVER;
-      imgEl.alt = 'No cover';
-      imgEl.classList.add('is-loaded');
+      imgEl.alt = '';
+    }
+
+    const byId = (id) => document.getElementById(id);
+    byId('d-title') && (byId('d-title').textContent = '');
+    byId('d-subtitle') && (byId('d-subtitle').textContent = '');
+    byId('d-review')?.classList.add('d-none');
+    byId('d-description')?.classList.add('d-none');
+    byId('d-notes')?.classList.add('d-none');
+    byId('d-score')?.classList.add('d-none');
+
+    // Fetch
+    const v = await fetchBySlug(slug);
+
+    if (__detailReqSeq !== reqId) return;
+
+    if (!v) {
+      byId('d-title') && (byId('d-title').textContent = 'Not found');
+      if (imgEl) {
+        imgEl.src = PLACEHOLDER_COVER;
+        imgEl.alt = 'No cover';
+        imgEl.classList.add('is-loaded');
+      }
       return;
     }
-    if (__detailReqSeq !== reqId) return;
 
     const title = v.title || 'Untitled';
     const artist = v.artist || 'Unknown';
     const yearText = v.year ? ` (${v.year})` : '';
-    document.getElementById('d-title').textContent = title;
-    document.getElementById('d-subtitle').textContent = `${artist}${yearText}`;
+
+    byId('d-title') && (byId('d-title').textContent = title);
+    byId('d-subtitle') && (byId('d-subtitle').textContent = `${artist}${yearText}`);
 
     if (typeof window.__renderNotes === 'function') {
       window.__renderNotes(v);
     }
 
+    // Inline grade badge (reuses loader mapping)
     (function addInlineGrade(detail) {
-      const subEl = document.getElementById('d-subtitle');
+      const subEl = byId('d-subtitle');
       if (!subEl || typeof window.__getGradeInfo !== 'function') return;
-      // Remove previous inline grade if re-rendering
+
       subEl.querySelector('.inline-grade')?.remove();
 
       const info = window.__getGradeInfo(detail?.rating);
       if (!info) return;
 
       const span = document.createElement('span');
-      // Reuse the same badge style and color variant; small left margin
       span.className = `grade-badge ${info.cls} inline-grade ms-2`;
       span.textContent = info.short;
       subEl.appendChild(span);
@@ -202,24 +221,34 @@
 
     // Score (stars) – optional personal score
     (function renderScoreStars(detail) {
-      const wrap = document.getElementById('d-score');
-      const starsEl = document.getElementById('d-stars');
+      const wrap = byId('d-score');
+      const starsEl = byId('d-stars');
       const n = Number(detail?.score);
       if (!Number.isFinite(n) || !wrap || !starsEl) return;
-      const full = Math.max(0, Math.min(5, Math.round(n))); // clamp 0..5
+
+      const full = Math.max(0, Math.min(5, Math.round(n)));
       let stars = '';
       for (let i = 1; i <= 5; i++) stars += i <= full ? '★ ' : '☆ ';
       starsEl.textContent = stars.trim();
       wrap.classList.remove('d-none');
     })(v);
 
-    const rev = document.getElementById('d-review');
-    if (v.review) { rev.querySelector('p').textContent = v.review; rev.classList.remove('d-none'); }
-    else { rev.classList.add('d-none'); }
+    const rev = byId('d-review');
+    if (rev && v.review) {
+      const p = rev.querySelector('p');
+      if (p) p.textContent = v.review;
+      rev.classList.remove('d-none');
+    } else {
+      rev?.classList.add('d-none');
+    }
 
-    const desc = document.getElementById('d-description');
-    if (v.description) { desc.textContent = v.description; desc.classList.remove('d-none'); }
-    else { desc.classList.add('d-none'); }
+    const desc = byId('d-description');
+    if (desc && v.description) {
+      desc.textContent = v.description;
+      desc.classList.remove('d-none');
+    } else {
+      desc?.classList.add('d-none');
+    }
 
     // SEO
     setDetailHead(v);
@@ -230,23 +259,25 @@
     pre.decoding = 'async';
     pre.onload = () => {
       if (__detailReqSeq !== reqId) return;
+      if (!imgEl) return;
       imgEl.src = nextSrc;
       imgEl.alt = title;
       imgEl.classList.add('is-loaded');
     };
     pre.onerror = () => {
       if (__detailReqSeq !== reqId) return;
+      if (!imgEl) return;
       imgEl.src = PLACEHOLDER_COVER;
       imgEl.alt = 'No cover';
       imgEl.classList.add('is-loaded');
     };
     pre.src = nextSrc;
 
-    // Normalize hash and scroll
+    // Normalize hash & scroll
     const want = '#/' + encodeURIComponent(slug);
     if (location.hash !== want) history.replaceState(null, '', want);
 
-    window.scrollTo({ top: 0, behavior: 'instant' });
+    window.scrollTo({ top: 0, behavior: 'auto' });
   }
 
   // ---- Router ----
@@ -273,16 +304,17 @@
         const m = href.match(/^#\/(.+)$/);
         __restoreSlug = m ? decodeURIComponent(m[1]) : null;
       }
-    }, true); // capture to run before hashchange navigation
+    }, true);
 
     // Clicking a filter while in DETAIL -> go to list URL and enable that filter
     document.addEventListener('click', (e) => {
+      if (!(e.target instanceof Element)) return;
       if (e.target.matches('[data-artist]')) {
-        const detailVisible = !document.getElementById('vinyl-detail').classList.contains('d-none');
+        const detailVisible = !document.getElementById('vinyl-detail')?.classList.contains('d-none');
         if (detailVisible) {
           e.preventDefault();
           const artist = e.target.getAttribute('data-artist');
-          history.pushState(null, '', `${VINYLS_ABS}/`); // back to list
+          history.pushState(null, '', `${VINYLS_ABS}/`);
           if (window.__vinylsSetFilter) window.__vinylsSetFilter(artist);
           if (window.attachScroll) window.attachScroll();
           route();
