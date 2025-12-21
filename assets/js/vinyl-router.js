@@ -23,6 +23,84 @@
     return (location.hash || '').replace(/^#\/?/, '') || null;
   }
 
+  // ---- Helpers ----
+  function byId(id) {
+    return document.getElementById(id);
+  }
+
+  function buildOtherArtistsText(arr) {
+    // Rule from user:
+    // - only if artists.length > 1
+    // - and first element has non-empty "join"
+    if (!Array.isArray(arr) || arr.length <= 1) return '';
+    const firstJoin = (arr[0] && typeof arr[0].join === 'string') ? arr[0].join.trim() : '';
+    if (!firstJoin) return '';
+
+    let s = firstJoin;
+    for (let i = 1; i < arr.length; i++) {
+      const a = arr[i] || {};
+      const name = (typeof a.name === 'string') ? a.name.trim() : '';
+      if (!name) continue;
+      const join = (typeof a.join === 'string') ? a.join.trim() : '';
+      s += ' ' + name + (join ? ' ' + join : '');
+    }
+    return s.trim();
+  }
+
+  function ensureListenLinksUnderSubtitle() {
+    // Creates:
+    // <div id="d-listen"> [spotify] • [apple] </div>
+    const sub = byId('d-subtitle');
+    if (!sub) return null;
+
+    let wrap = byId('d-listen');
+    if (!wrap) {
+      wrap = document.createElement('div');
+      wrap.id = 'd-listen';
+      wrap.className = 'mt-2 d-none';
+      sub.insertAdjacentElement('afterend', wrap);
+    }
+    return wrap;
+  }
+
+  function setListenLinks(title, artist) {
+    const wrap = ensureListenLinksUnderSubtitle();
+    if (!wrap) return;
+
+    const q = encodeURIComponent(`${artist || ''} ${title || ''}`.trim());
+    const spotifyUrl = `https://open.spotify.com/search/${q}`;
+    const appleUrl = `https://music.apple.com/search?term=${q}`;
+
+    // Render (with colors + FA icons + bullet U+2022)
+    wrap.innerHTML = '';
+
+    const aS = document.createElement('a');
+    aS.href = spotifyUrl;
+    aS.target = '_blank';
+    aS.rel = 'noopener';
+    aS.style.color = '#1DB954';
+    aS.className = 'text-decoration-none';
+    aS.innerHTML = '<i class="fa-brands fa-spotify"></i> Play on Spotify';
+
+    const sep = document.createElement('span');
+    sep.className = 'mx-2 text-muted';
+    sep.textContent = '•'; // U+2022
+
+    const aA = document.createElement('a');
+    aA.href = appleUrl;
+    aA.target = '_blank';
+    aA.rel = 'noopener';
+    aA.style.color = '#ff4e6b';
+    aA.className = 'text-decoration-none';
+    aA.innerHTML = '<i class="fa-brands fa-apple"></i> Play on Apple Music';
+
+    wrap.appendChild(aS);
+    wrap.appendChild(sep);
+    wrap.appendChild(aA);
+
+    wrap.classList.remove('d-none');
+  }
+
   // ---- Head/meta & JSON-LD ----
   function setListHead() {
     const siteName = document.querySelector('header .username a')?.textContent || '';
@@ -113,16 +191,15 @@
 
   // ---- UI ----
   function showList() {
-    document.getElementById('vinyl-detail')?.classList.add('d-none');
-    document.getElementById('list-panel')?.classList.remove('d-none');
-    document.getElementById('vinyl-tags')?.classList.remove('d-none');
-    document.getElementById('toggle-tags-btn')?.classList.remove('d-none');
+    byId('vinyl-detail')?.classList.add('d-none');
+    byId('list-panel')?.classList.remove('d-none');
+    byId('vinyl-tags')?.classList.remove('d-none');
+    byId('toggle-tags-btn')?.classList.remove('d-none');
 
     setListHead();
 
     if (window.attachScroll) window.attachScroll();
 
-    // If a filter was active when entering detail, reset it now (do not restore old scroll in this case)
     if (__resetFilterOnBack) {
       __resetFilterOnBack = false;
       if (window.__vinylsClearFilter) window.__vinylsClearFilter();
@@ -146,44 +223,43 @@
   let __detailReqSeq = 0;
 
   async function showDetail(slug) {
-    // If a filter button is currently active, mark that we must reset on return
     __resetFilterOnBack = !!document.querySelector('[data-artist].active');
 
-    // Detach infinite scroll while in detail
     if (window.detachScroll) window.detachScroll();
 
-    // Panels
-    document.getElementById('vinyl-detail')?.classList.remove('d-none');
-    document.getElementById('list-panel')?.classList.add('d-none');
-    document.getElementById('vinyl-tags')?.classList.add('d-none');
-    document.getElementById('toggle-tags-btn')?.classList.add('d-none');
+    byId('vinyl-detail')?.classList.remove('d-none');
+    byId('list-panel')?.classList.add('d-none');
+    byId('vinyl-tags')?.classList.add('d-none');
+    byId('toggle-tags-btn')?.classList.add('d-none');
 
-    // Request token (race guard)
     const reqId = ++__detailReqSeq;
 
     // Reset cover & texts to avoid stale content
-    const imgEl = document.getElementById('d-cover');
+    const imgEl = byId('d-cover');
     if (imgEl) {
       imgEl.classList.remove('is-loaded');
       imgEl.src = PLACEHOLDER_COVER;
       imgEl.alt = '';
     }
 
-    const byId = (id) => document.getElementById(id);
-    byId('d-title') && (byId('d-title').textContent = '');
-    byId('d-subtitle') && (byId('d-subtitle').textContent = '');
+    const titleEl = byId('d-title');
+    const subEl = byId('d-subtitle');
+
+    if (titleEl) titleEl.textContent = '';
+    if (subEl) subEl.textContent = '';
+
     byId('d-review')?.classList.add('d-none');
     byId('d-description')?.classList.add('d-none');
     byId('d-notes')?.classList.add('d-none');
     byId('d-score')?.classList.add('d-none');
+    byId('d-tracklist')?.classList.add('d-none');
+    byId('d-listen')?.classList.add('d-none');
 
-    // Fetch
     const v = await fetchBySlug(slug);
-
     if (__detailReqSeq !== reqId) return;
 
     if (!v) {
-      byId('d-title') && (byId('d-title').textContent = 'Not found');
+      if (titleEl) titleEl.textContent = 'Not found';
       if (imgEl) {
         imgEl.src = PLACEHOLDER_COVER;
         imgEl.alt = 'No cover';
@@ -194,30 +270,54 @@
 
     const title = v.title || 'Untitled';
     const artist = v.artist || 'Unknown';
-    const yearText = v.year ? ` (${v.year})` : '';
 
-    byId('d-title') && (byId('d-title').textContent = title);
-    byId('d-subtitle') && (byId('d-subtitle').textContent = `${artist}${yearText}`);
+    // 1) Title line: Title + (Year) + Grade badge (moved here)
+    if (titleEl) {
+      titleEl.textContent = title;
 
+      // Year next to title
+      if (v.year) {
+        const y = document.createElement('span');
+        y.className = 'ms-2 text-muted';
+        y.style.fontSize = '0.65em';
+        y.textContent = `(${v.year})`;
+        titleEl.appendChild(y);
+      }
+
+      // Grade next to title (uses loader mapping)
+      if (typeof window.__getGradeInfo === 'function') {
+        const info = window.__getGradeInfo(v?.rating);
+        if (info) {
+          const b = document.createElement('span');
+          b.className = `grade-badge ${info.cls} ms-2 align-baseline`;
+          b.style.fontSize = '0.65em';
+          b.textContent = info.short;
+          titleEl.appendChild(b);
+        }
+      }
+    }
+
+    // 2) Subtitle line: main artist + (optional) other artists string smaller/grey
+    if (subEl) {
+      subEl.textContent = artist;
+
+      const extra = buildOtherArtistsText(v.artists);
+      if (extra) {
+        const s = document.createElement('span');
+        s.className = 'ms-2 text-muted';
+        s.style.fontSize = '0.85em';
+        s.textContent = extra;
+        subEl.appendChild(s);
+      }
+    }
+
+    // 3) Listen links under authors line
+    setListenLinks(title, artist);
+
+    // Notes + tracklist (tracklist rendered by loader helper)
     if (typeof window.__renderNotes === 'function') {
       window.__renderNotes(v);
     }
-
-    // Inline grade badge (reuses loader mapping)
-    (function addInlineGrade(detail) {
-      const subEl = byId('d-subtitle');
-      if (!subEl || typeof window.__getGradeInfo !== 'function') return;
-
-      subEl.querySelector('.inline-grade')?.remove();
-
-      const info = window.__getGradeInfo(detail?.rating);
-      if (!info) return;
-
-      const span = document.createElement('span');
-      span.className = `grade-badge ${info.cls} inline-grade ms-2`;
-      span.textContent = info.short;
-      subEl.appendChild(span);
-    })(v);
 
     // Score (stars) – optional personal score
     (function renderScoreStars(detail) {
@@ -253,7 +353,7 @@
     // SEO
     setDetailHead(v);
 
-    // Preload detail cover, then swap
+    // Preload cover, then swap
     const nextSrc = v.cover || PLACEHOLDER_COVER;
     const pre = new Image();
     pre.decoding = 'async';
@@ -273,7 +373,6 @@
     };
     pre.src = nextSrc;
 
-    // Normalize hash & scroll
     const want = '#/' + encodeURIComponent(slug);
     if (location.hash !== want) history.replaceState(null, '', want);
 
@@ -288,14 +387,12 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    // Back to list
-    document.getElementById('back-to-list')?.addEventListener('click', (e) => {
+    byId('back-to-list')?.addEventListener('click', (e) => {
       e.preventDefault();
       history.pushState(null, '', `${VINYLS_ABS}/`);
       route();
     });
 
-    // Store scroll position & slug when clicking a card on the list
     document.addEventListener('click', (e) => {
       const link = e.target.closest && e.target.closest('a.card-link');
       if (link) {
@@ -306,11 +403,10 @@
       }
     }, true);
 
-    // Clicking a filter while in DETAIL -> go to list URL and enable that filter
     document.addEventListener('click', (e) => {
       if (!(e.target instanceof Element)) return;
       if (e.target.matches('[data-artist]')) {
-        const detailVisible = !document.getElementById('vinyl-detail')?.classList.contains('d-none');
+        const detailVisible = !byId('vinyl-detail')?.classList.contains('d-none');
         if (detailVisible) {
           e.preventDefault();
           const artist = e.target.getAttribute('data-artist');

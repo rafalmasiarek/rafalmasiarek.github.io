@@ -23,36 +23,8 @@
   let jsonLdInjected = false;
   let __scrollAttached = false;
 
-  const __artistSet = new Set();   // used only if server doesn't provide facets
-  let __facetsLoaded = false;      // becomes true if API returns facets
-
-  // Prefetch infra
-  const connection = navigator.connection || navigator.webkitConnection || navigator.mozConnection;
-  const isSlow = connection && (connection.saveData || /2g/.test(connection.effectiveType || ''));
-
-  const prefetchInFlight = new Map();
-  const preloadedImages = new Set();
-
-  function prefetchJSON(url) {
-    if (prefetchInFlight.has(url)) return prefetchInFlight.get(url);
-    const p = fetch(url, { credentials: 'omit', cache: 'force-cache' })
-      .catch(() => null)
-      .finally(() => prefetchInFlight.delete(url));
-    prefetchInFlight.set(url, p);
-    return p;
-  }
-
-  function prefetchImage(url) {
-    if (!url || preloadedImages.has(url)) return Promise.resolve();
-    return new Promise(resolve => {
-      const img = new Image();
-      img.decoding = 'async';
-      img.loading = 'eager';
-      img.fetchPriority = 'low';
-      img.onload = img.onerror = () => { preloadedImages.add(url); resolve(); };
-      img.src = url;
-    });
-  }
+  const __artistSet = new Set();
+  let __facetsLoaded = false;
 
   // Scroll mgmt
   function onScroll() {
@@ -68,7 +40,7 @@
   window.attachScroll = attachScroll;
   window.detachScroll = detachScroll;
 
-  // SEO: emit ItemList only on first page (limit size)
+  // SEO: emit ItemList only on first page
   function injectListJsonLd(items, pageOffset = 0) {
     if (jsonLdInjected || !Array.isArray(items) || !items.length) return;
     const s = document.createElement('script');
@@ -86,17 +58,6 @@
     document.head.appendChild(s);
     jsonLdInjected = true;
   }
-
-  // IO warm-up
-  const io = 'IntersectionObserver' in window ? new IntersectionObserver((entries) => {
-    for (const e of entries) {
-      if (!e.isIntersecting) continue;
-      const imgEl = e.target.querySelector('img[data-src]');
-      const warmSrc = imgEl && imgEl.getAttribute('data-src');
-      if (warmSrc) prefetchImage(warmSrc);
-      io.unobserve(e.target);
-    }
-  }, { rootMargin: '300px' }) : null;
 
   // Filters UI from facets
   function renderArtistTags(facets) {
@@ -118,8 +79,8 @@
     try {
       const u = new URL(API_LIST, location.origin);
       u.searchParams.set('page', '1');
-      u.searchParams.set('per_page', '1');   // tiny payload
-      u.searchParams.set('facets', '1');     // ask for facets if API supports it
+      u.searchParams.set('per_page', '1');
+      u.searchParams.set('facets', '1');
       const r = await fetch(u.toString(), { credentials: 'omit' });
       const p = await r.json();
       const artists = p?.facets?.artists;
@@ -128,7 +89,7 @@
         renderArtistTags({ artists });
       }
     } catch {
-      // ignore; fallback (progressive) will fill as pages arrive
+      // ignore; fallback will fill as pages arrive
     }
   }
 
@@ -148,7 +109,6 @@
     }
   }
 
-  // Build API URL for a page
   function buildPageUrl(page, artist) {
     const u = new URL(API_LIST, location.origin);
     u.searchParams.set('page', String(page));
@@ -157,7 +117,7 @@
     return u.toString();
   }
 
-  // Hydrate images with preload
+  // Hydrate images
   function hydrateImages(container, threshold = 0.5) {
     const images = container.querySelectorAll('img[data-src]');
     const total = images.length;
@@ -201,35 +161,6 @@
     });
   }
 
-  function addCardPrefetchHandlers(linkEl, vinyl) {
-    if (!linkEl) return;
-    const detailUrl = `${API_LIST}/${encodeURIComponent(vinyl.slug)}`;
-    let scheduled = false;
-
-    const handler = () => {
-      if (scheduled) return;
-      scheduled = true;
-      prefetchJSON(detailUrl);
-      if (vinyl.cover) prefetchImage(vinyl.cover);
-    };
-
-    linkEl.addEventListener('mouseenter', handler, { passive: true });
-    linkEl.addEventListener('touchstart', handler, { passive: true });
-    linkEl.addEventListener('focus', handler, { passive: true, capture: true });
-  }
-
-  function prefetchNextPage(page, artist) {
-    if (isSlow) return;
-    const url = buildPageUrl(page, artist);
-    fetch(url, { credentials: 'omit' })
-      .then(r => r.json())
-      .then(p => {
-        const items = p?.data || [];
-        items.forEach(v => v?.cover && prefetchImage(v.cover));
-      })
-      .catch(() => { /* ignore */ });
-  }
-
   function resetListState() {
     currentPage = 1;
     hasMore = true;
@@ -245,7 +176,6 @@
   }
 
   function buildCardEl(v) {
-    // NOTE: No HTML injection; we use textContent everywhere.
     const col = document.createElement('div');
     col.className = 'col-md-4';
 
@@ -267,13 +197,23 @@
     const body = document.createElement('div');
     body.className = 'card-body';
 
+    // 1) Card title: Title + (Year) moved next to title
     const h5 = document.createElement('h5');
     h5.className = 'card-title';
     h5.textContent = v.title || '';
 
+    if (v.year) {
+      const y = document.createElement('span');
+      y.className = 'ms-2 text-muted';
+      y.style.fontSize = '0.85em';
+      y.textContent = `(${v.year})`;
+      h5.appendChild(y);
+    }
+
+    // Subtitle: artist only
     const p = document.createElement('p');
     p.className = 'card-text';
-    p.textContent = `${v.artist || 'Unknown'}${v.year ? ` (${v.year})` : ''}`;
+    p.textContent = (v.artist || 'Unknown');
 
     body.appendChild(h5);
     body.appendChild(p);
@@ -330,13 +270,9 @@
           return;
         }
 
-        const added = [];
         for (const v of list) {
-          const { col, link, card } = buildCardEl(v);
+          const { col } = buildCardEl(v);
           grid.appendChild(col);
-          addCardPrefetchHandlers(link, v);
-          if (io) io.observe(card);
-          added.push(col);
         }
 
         if (!jsonLdInjected && currentPage === 1) injectListJsonLd(list, 0);
@@ -349,7 +285,6 @@
           }
 
           if (hasMore) {
-            prefetchNextPage(currentPage + 1, activeArtist);
             currentPage += 1;
           } else {
             detachScroll();
@@ -413,8 +348,97 @@
     return nearest != null ? GRADE_MAP.get(nearest) : null;
   }
 
+  // ---- Detail helpers (notes + tracklist under notes) ----
+  function ensureTracklistContainer() {
+    // Ensure a container exists under #d-notes
+    const notes = document.getElementById('d-notes');
+    if (!notes) return null;
+
+    let t = document.getElementById('d-tracklist');
+    if (!t) {
+      t = document.createElement('div');
+      t.id = 'd-tracklist';
+      t.className = 'mt-3 d-none';
+      notes.insertAdjacentElement('afterend', t);
+    }
+    return t;
+  }
+
+  function sideFromPos(pos) {
+    // A1, B2, C3... => 'A', 'B', 'C'
+    if (!pos || typeof pos !== 'string') return '';
+    const m = pos.trim().match(/^([A-Z]+)/i);
+    return m ? m[1].toUpperCase() : '';
+  }
+
+  function renderTracklist(detail) {
+    const t = ensureTracklistContainer();
+    if (!t) return;
+
+    const tracks = Array.isArray(detail?.tracks) ? detail.tracks : [];
+    t.innerHTML = '';
+
+    if (!tracks.length) {
+      t.classList.add('d-none');
+      return;
+    }
+
+    let prevSide = '';
+    for (let i = 0; i < tracks.length; i++) {
+      const tr = tracks[i] || {};
+      const pos = (typeof tr.pos === 'string') ? tr.pos.trim() : '';
+      const title = (typeof tr.title === 'string') ? tr.title.trim() : '';
+      const duration = (typeof tr.duration === 'string') ? tr.duration.trim() : '';
+
+      if (!title && !pos) continue;
+
+      const side = sideFromPos(pos);
+      if (prevSide && side && side !== prevSide) {
+        const gap = document.createElement('div');
+        gap.className = 'track-gap';
+        t.appendChild(gap);
+      }
+      if (side) prevSide = side;
+
+      const row = document.createElement('div');
+      row.className = 'track-row';
+
+      const left = document.createElement('div');
+      left.className = 'track-left';
+
+      const titleEl = document.createElement('span');
+      titleEl.className = 'track-title';
+      titleEl.textContent = title || 'Untitled';
+
+      left.appendChild(titleEl);
+
+      if (duration) {
+        const dur = document.createElement('span');
+        dur.className = 'ms-2 text-muted';
+        dur.style.fontSize = '0.85em';
+        dur.textContent = duration;
+        left.appendChild(dur);
+      }
+
+      const dots = document.createElement('div');
+      dots.className = 'track-dots';
+
+      const right = document.createElement('div');
+      right.className = 'track-pos';
+      right.textContent = pos;
+
+      row.appendChild(left);
+      row.appendChild(dots);
+      row.appendChild(right);
+
+      t.appendChild(row);
+    }
+
+    t.classList.remove('d-none');
+  }
+
   function renderNotes(detail) {
-    // Render personal notes directly into the <p id="d-notes"> element.
+    // Notes into #d-notes, then tracklist under it.
     const el = document.getElementById('d-notes');
     if (!el) return;
 
@@ -426,6 +450,8 @@
       el.textContent = '';
       el.classList.add('d-none');
     }
+
+    renderTracklist(detail);
   }
 
   window.__getGradeInfo = getGradeInfo;
@@ -449,11 +475,6 @@
     resetListState();
     attachScroll();
     loadMore();
-  };
-
-  window.__vinylsClearFilterSoft = function () {
-    activeArtist = null;
-    document.querySelectorAll('[data-artist]').forEach(b => b.classList.remove('active'));
   };
 
   // Init

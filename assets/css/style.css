@@ -45,7 +45,6 @@ a {
   color: blue;
   background-image: linear-gradient(to bottom, blue 75%, blue 75%);
   text-shadow: -1px -1px 0 white, 1px -1px 0 white, -1px 1px 0 white, 1px 1px 0 white;
-  background-repeat: repeat-x;
   background-size: 1px 1px;
   background-position: 0 96%;
   text-decoration: none;
@@ -713,4 +712,107 @@ textarea.input {
   .hero.shrink {
     max-height: 200px;
   }
+}
+
+/* Cover fade-in */
+#d-cover {
+  opacity: 0;
+  transition: opacity .2s ease;
+}
+
+#d-cover.is-loaded {
+  opacity: 1;
+}
+
+/* TOC-like tracklist */
+#d-tracklist .track-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  line-height: 1.35;
+  margin: 4px 0;
+}
+
+#d-tracklist .track-left {
+  display: inline-flex;
+  align-items: baseline;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+#d-tracklist .track-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 56ch;
+}
+
+#d-tracklist .track-duration {
+  font-size: 0.85em;
+  opacity: 0.7;
+  margin-left: 10px;
+}
+
+#d-tracklist .track-dots {
+  flex: 1 1 auto;
+  border-bottom: 1px dotted rgba(0, 0, 0, .35);
+  transform: translateY(-2px);
+}
+
+#d-tracklist .track-pos {
+  flex: 0 0 auto;
+  min-width: 3.5ch;
+  text-align: right;
+}
+
+#d-tracklist .track-gap {
+  margin-top: 14px;
+  /* spacing between sides/discs */
+}
+
+/* Detail: other artists appended to subtitle */
+#d-subtitle .d-other-artists {
+  font-size: 0.9em;
+  opacity: 0.7;
+  margin-left: 8px;
+}
+
+/* Detail: Listen links (Spotify / Apple Music) */
+#d-listen {
+  font-size: 0.95rem;
+}
+
+#d-listen a {
+  text-decoration: none;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.95;
+  transition: opacity .15s ease, transform .15s ease, text-decoration-color .15s ease;
+}
+
+#d-listen a:hover {
+  opacity: 1;
+  transform: translateY(-1px);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+#d-listen .listen-dot {
+  margin: 0 10px;
+  opacity: 0.45;
+  user-select: none;
+}
+
+#d-listen .listen-spotify {
+  color: #1DB954;
+}
+
+#d-listen .listen-apple {
+  color: #ff4e6b;
+}
+
+#d-listen i.fa-brands {
+  font-size: 1.15em;
 }
