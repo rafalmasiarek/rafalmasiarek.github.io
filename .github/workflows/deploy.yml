@@ -29,25 +29,101 @@ jobs:
 
       - name: Install dependencies
         run: |
+          set -euo pipefail
           gem install bundler
           bundle config set path 'vendor/bundle'
           bundle install --jobs 4 --retry 3
+
+      # --------------------------
+      # Minify assets (wildcards)
+      # --------------------------
+      - name: Set up Node.js (for minifiers)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install minifiers
+        run: |
+          set -euo pipefail
+          npm i -g terser clean-css-cli
+
+      - name: Minify JS (assets/js/*.js -> *.min.js)
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+
+          for f in assets/js/*.js; do
+            case "$f" in
+              *.min.js)
+                echo "Skipping already minified: $f"
+                ;;
+              *)
+                out="${f%.js}.min.js"
+                echo "Minifying $f -> $out"
+                terser "$f" -c -m --comments false -o "$out"
+                ;;
+            esac
+          done
+
+      - name: Minify CSS (assets/css/*.css -> *.min.css)
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+
+          for f in assets/css/*.css; do
+            case "$f" in
+              *.min.css)
+                echo "Skipping already minified: $f"
+                ;;
+              *)
+                out="${f%.css}.min.css"
+                echo "Minifying $f -> $out"
+                cleancss -O2 -o "$out" "$f"
+                ;;
+            esac
+          done
 
       - name: Build Jekyll site
         run: bundle exec jekyll build
         env:
           JEKYLL_ENV: production
 
+      # --------------------------
+      # Precompress _site (gzip + brotli)
+      # --------------------------
+      - name: Install brotli
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y brotli
+
+      - name: Precompress assets in _site (gzip + brotli)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          find _site -type f \( \
+              -name "*.html" -o -name "*.css" -o -name "*.js" -o -name "*.json" -o -name "*.svg" -o -name "*.xml" -o -name "*.txt" \
+            \) -print0 | while IFS= read -r -d '' f; do
+              gzip -kf -9 "$f"
+              brotli -fk -q 11 "$f"
+            done
+
       - name: Setup SSH key
         run: |
-          set -e
+          set -euo pipefail
           mkdir -p ~/.ssh
           echo "${{ secrets.RSYNC_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -p ${{ secrets.RSYNC_SSH_PORT }} -H ${{ secrets.RSYNC_HOST }} >> ~/.ssh/known_hosts
 
       - name: Generate rsync-exclude.txt from remote markers
+        shell: bash
         run: |
+          set -euo pipefail
+
           ssh -p ${{ secrets.RSYNC_SSH_PORT }} ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }} "\
             find '${{ secrets.RSYNC_DEST_PATH }}' -type f -name '.cicd-pipeline-exclude' \
             -exec dirname {} \;" \
@@ -56,7 +132,10 @@ jobs:
           echo "${{ secrets.RSYNC_EXCLUDES }}" >> rsync-exclude.txt
 
       - name: Deploy via rsync
+        shell: bash
         run: |
+          set -euo pipefail
+
           rsync -avz \
             -e "ssh -p ${{ secrets.RSYNC_SSH_PORT }}" \
             --delete \

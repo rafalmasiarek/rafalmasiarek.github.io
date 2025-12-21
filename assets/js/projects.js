@@ -47,7 +47,12 @@ function createCard(repo) {
             <p class="card-text">${repo.description || 'No description provided.'}</p>
           </div>
           <div class="card-footer bg-white border-top-0">
-            <a href="${repo.html_url}" target="_blank" class="btn btn-outline-primary btn-sm">View on <i class="fab fa-github"></i> Github</a>
+            <a href="${repo.html_url}" target="_blank" class="btn btn-outline-primary btn-sm"
+               data-track="project"
+               data-project="${repo.name}"
+               data-owner="${repo.owner && repo.owner.login ? repo.owner.login : ''}">
+               View on <i class="fab fa-github"></i> Github
+            </a>
           </div>
         </div>
       `;
@@ -132,5 +137,20 @@ window.addEventListener('load', () => {
         hasShrunk = true;
     }
 });
+
+document.addEventListener('click', function (e) {
+    if (!(e.target instanceof Element)) return;
+
+    var a = e.target.closest('a[data-track="project"]');
+    if (!a) return;
+
+    if (typeof window.track === 'function') {
+        window.track('project_click', {
+            project: a.getAttribute('data-project') || '',
+            owner: a.getAttribute('data-owner') || '',
+            href: a.getAttribute('href') || ''
+        });
+    }
+}, true);
 
 loadProjects();

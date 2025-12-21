@@ -1,0 +1,24 @@
+{%- if jekyll.environment == "production" and site.analytics -%}
+
+{%- if site.analytics.umami and site.analytics.umami.enabled -%}
+<script defer src="{{ site.analytics.umami.src }}" data-website-id="{{ site.analytics.umami.website_id }}" {%- if
+    site.analytics.umami.domains and site.analytics.umami.domains !="" -%}
+    data-domains="{{ site.analytics.umami.domains }}" {%- endif -%} {%- if site.analytics.umami.auto_track==false -%}
+    data-auto-track="false" {%- endif -%}></script>
+{%- endif -%}
+
+{%- if site.analytics.ga4 and site.analytics.ga4.enabled and site.analytics.ga4.measurement_id -%}
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ site.analytics.ga4.measurement_id }}"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+
+    // Basic config (no ads features here)
+    gtag('config', '{{ site.analytics.ga4.measurement_id }}', {
+        anonymize_ip: true
+    });
+</script>
+{%- endif -%}
+
+{%- endif -%}

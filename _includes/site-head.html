@@ -1,0 +1,39 @@
+{%- assign __site_abs = site.url | append: site.baseurl -%}
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, shrink-to-fit=no">
+
+<title>
+  {% if page.title %}
+  {% if page.title != 'About me' %}
+  {{ page.title }} -
+  {% endif %}
+  {% endif %}
+  {{ site.title }}
+</title>
+
+<meta id="meta-desc" name="description"
+  content="{% if page.description %}{{ page.description | truncate: 160 }}{% else %}{{ site.description | truncate: 160 }}{% endif %}">
+
+<meta itemprop="description" name="description"
+  content="{% if page.description %}{{ page.description | truncate: 160 }}{% else %}{{ site.description | truncate: 160 }}{% endif %}">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@100..700&display=swap" rel="stylesheet">
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+{% if jekyll.environment == "production" %}
+<link href="{{ site.baseurl }}/assets/css/style.min.css?{{ site.time | date: '%s%N' }}" rel="stylesheet">
+{% else %}
+<link href="{{ site.baseurl }}/assets/css/style.css?{{ site.time | date: '%s%N' }}" rel="stylesheet">
+{% endif %}
+<link href="{{ site.baseurl }}/assets/css/instafilters.min.css?v0.1.4" rel="stylesheet">
+
+<script src="https://kit.fontawesome.com/cc759ba0dc.js" crossorigin="anonymous"></script>
+
+{%- if page.canonical -%}
+<link id="canonical-link" rel="canonical" href="{{ page.canonical }}">
+{%- else -%}
+<link id="canonical-link" rel="canonical" href="{{ __site_abs }}{{ page.url }}">
+{%- endif -%}

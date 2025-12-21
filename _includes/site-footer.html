@@ -1,0 +1,56 @@
+<footer>
+  <nav class="navigation">
+    <ul>
+      {%- assign current_raw = page.url | replace: "index.html", "" | replace: "//", "/" -%}
+      {%- assign current_parts = current_raw | split: "/" -%}
+      {%- capture current_norm -%}
+      {%- for p in current_parts -%}
+      {%- if p != "" -%}/{{ p }}{%- endif -%}
+      {%- endfor -%}
+      {%- endcapture -%}
+      {%- assign current_norm = current_norm | strip -%}
+      {%- if current_norm == "" -%}{%- assign current_norm = "/" -%}{%- endif -%}
+      {%- assign current_abs = current_norm | prepend: site.baseurl | replace: "//", "/" -%}
+
+      {%- assign nav_items = site.nav | default: empty -%}
+      {%- for item in nav_items -%}
+      {%- assign is_hidden = item.hidden | default: item.nav_hidden -%}
+
+      {%- assign item_raw = item.url | default: "" | replace: "index.html", "" | replace: "//", "/" -%}
+      {%- assign item_parts = item_raw | split: "/" -%}
+      {%- capture item_norm -%}
+      {%- for p in item_parts -%}
+      {%- if p != "" -%}/{{ p }}{%- endif -%}
+      {%- endfor -%}
+      {%- endcapture -%}
+      {%- assign item_norm = item_norm | strip -%}
+      {%- if item_norm == "" -%}{%- assign item_norm = "/" -%}{%- endif -%}
+      {%- assign item_abs = item_norm | prepend: site.baseurl | replace: "//", "/" -%}
+
+      {%- if is_hidden != true and item.title and item_abs != current_abs -%}
+      <li>
+        <a href="{{ item_abs }}" style="border:0" data-track="nav" data-nav-title="{{ item.title | escape }}"
+          data-nav-path="{{ item_norm | escape }}">
+          {%- if item.icon and item.icon != "" -%}<i class="{{ item.icon }}"></i>{%- endif -%}
+          {{ item.title }}
+        </a>
+      </li>
+      {%- endif -%}
+      {%- endfor -%}
+
+      {%- assign socials = site.socials | default: empty -%}
+      {%- for s in socials -%}
+      {%- assign is_hidden = s.hidden | default: s.nav_hidden -%}
+      {%- if is_hidden != true and s.url and s.title -%}
+      <li>
+        <a href="{{ s.url }}" style="border:0;text-decoration:none" target="_blank" rel="noopener" data-track="social"
+          data-social="{{ s.title | downcase | escape }}">
+          {%- if s.icon and s.icon != "" -%}<i class="{{ s.icon }}"></i>{%- endif -%}
+          {{ s.title }}
+        </a>
+      </li>
+      {%- endif -%}
+      {%- endfor -%}
+    </ul>
+  </nav>
+</footer>

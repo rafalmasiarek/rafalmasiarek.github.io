@@ -1,5 +1,6 @@
 .DS_Store
 
+# Basic
 _site
 .vagrant
 .sass-cache
@@ -12,12 +13,23 @@ vendor
 *.lock
 !Gemfile.lock
 
+# Vinyls data
 _vinyls/*
 !_vinyls/.gitkeep
 !_vinyls/*.md.overwrite
 
+# Vinyls Covers
 assets/vinyl_covers/*
 !assets/vinyl_covers/.gitkeep
 !assets/vinyl_covers/*.overwrite.jpg
 
+# Minified build artifacts (generated in CI)
+assets/js/*.min.js
+assets/css/*.min.css
+
+# Precompressed variants (if you ever generate them locally)
+assets/**/*.gz
+assets/**/*.br
+
+# ENV
 bin/.env

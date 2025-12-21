@@ -1,5 +1,5 @@
 ---
-layout: default-bootstrap
+layout: base
 ---
 
 <div class="hero" id="hero">
@@ -15,4 +15,8 @@ layout: default-bootstrap
     </div>
 </div>
 
-<script src="/assets/js/projects.js?{{ site.time | date: '%s%N' }}"></script>
+{% if jekyll.environment == "production" %}
+<script src="{{ site.baseurl }}/assets/js/projects.min.js?{{ site.time | date: '%s%N' }}"></script>
+{% else %}
+<script src="{{ site.baseurl }}/assets/js/projects.js?{{ site.time | date: '%s%N' }}"></script>
+{% endif %}
