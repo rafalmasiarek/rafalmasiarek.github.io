@@ -6,7 +6,6 @@ canonical: "/vinyls/"
 {%- assign __canon = __site_abs | append: page.canonical -%}
 
 <script data-cfasync="false">
-  // Canonical override (JS updates too)
   (function () {
     var a = document.getElementById('canonical-link');
     if (a) a.href = "{{ __canon }}";
