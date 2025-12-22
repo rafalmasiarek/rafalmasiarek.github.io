@@ -1,17 +1,12 @@
 <script>
     window.track = function (name, props) {
         try {
-            // Umami
             if (typeof window.umami === 'function') {
                 window.umami(name, props || {});
             }
-
-            // GA4
             if (typeof window.gtag === 'function') {
                 window.gtag('event', name, props || {});
             }
-        } catch (e) {
-            // no-op
-        }
+        } catch (e) { }
     };
 </script>
