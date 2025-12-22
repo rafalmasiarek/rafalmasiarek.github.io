@@ -1,7 +1,7 @@
 <main class="nf">
   <h1>404</h1>
 
-  <p><strong>Page not found 😢</strong></p>
+  <p><strong>Page not found <span class="d-emoji">😢</span></strong></p>
   <p>The requested page could not be found.</p>
 </main>
 
@@ -41,17 +41,5 @@
     if (window.umami && typeof umami.track === 'function') {
       umami.track('404', { path: notFoundUrl, referrer: ref });
     }
-  })();
-
-  (function () {
-    'use strict';
-
-    if (!/Windows/i.test(navigator.userAgent)) return;
-    if (!window.twemoji || typeof window.twemoji.parse !== 'function') return;
-
-    var root = document.querySelector('main');
-    if (!root) return;
-
-    window.twemoji.parse(root, { folder: 'svg', ext: '.svg' });
   })();
 </script>

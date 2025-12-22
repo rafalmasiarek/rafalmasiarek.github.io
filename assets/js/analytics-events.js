@@ -1,4 +1,18 @@
 // assets/js/analytics-events.js
+/*!
+ *
+ * analytics-events.js
+ *
+ * Contact Form Frontend Script
+ * Copyright (c) 2025 Rafał Masiarek. All rights reserved.
+ *
+ * This file is proprietary and confidential. Unauthorized copying,
+ * distribution, modification, or use of this file, in whole or in part,
+ * is strictly prohibited without prior written permission of the author.
+ *
+ * Licensed for internal use only. No license is granted to copy,
+ * sublicense, or redistribute this code.
+ */
 (function () {
     'use strict';
 

@@ -1,3 +1,18 @@
+// assets/js/access-helper.js
+/*!
+ *
+ * contactform_v2.js
+ *
+ * Contact Form Frontend Script
+ * Copyright (c) 2025 Rafał Masiarek. All rights reserved.
+ *
+ * This file is proprietary and confidential. Unauthorized copying,
+ * distribution, modification, or use of this file, in whole or in part,
+ * is strictly prohibited without prior written permission of the author.
+ *
+ * Licensed for internal use only. No license is granted to copy,
+ * sublicense, or redistribute this code.
+ */
 (function () {
     const BASE_URL = 'https://access.masiarek.pl/v1';
     const EVENTS_BASE = 'https://events.masiarek.pl';
@@ -113,7 +128,7 @@
         if (alertBox) alertBox.style.display = 'none';
     }
 
-   if (alertClose) {
+    if (alertClose) {
         alertClose.addEventListener('click', function () {
             hideAlert();
             closeStream();
