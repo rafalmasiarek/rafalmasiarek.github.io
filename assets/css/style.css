@@ -96,6 +96,12 @@ hr {
   border: 1px solid #ececec
 }
 
+.win-twemoji img {
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.15em;
+}
+
 /* =============================================================================
    03) Links
 ============================================================================= */
@@ -131,12 +137,6 @@ footer a {
   text-decoration-color: transparent;
   -webkit-box-shadow: none !important;
   box-shadow: none !important;
-}
-
-.lang-nav img.emoji {
-  height: 1em;
-  width: 1em;
-  vertical-align: -0.15em;
 }
 
 /* =============================================================================

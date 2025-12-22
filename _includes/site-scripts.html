@@ -1,5 +1,7 @@
 {% if jekyll.environment == "production" %}
 <script src="{{ site.baseurl }}/assets/js/analytics-events.min.js?{{ site.time | date: '%s%N' }}" defer></script>
+<script src="{{ site.baseurl }}/assets/js/twemoji-windows.min.js?{{ site.time | date: '%s%N' }}"></script>
 {% else %}
 <script src="{{ site.baseurl }}/assets/js/analytics-events.js?{{ site.time | date: '%s%N' }}" defer></script>
+<script src="{{ site.baseurl }}/assets/js/twemoji-windows.js?{{ site.time | date: '%s%N' }}"></script>
 {% endif %}
