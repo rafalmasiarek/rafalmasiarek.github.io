@@ -1015,8 +1015,6 @@ body {
 
 /* Footer box spacing */
 footer {
-  margin-top: clamp(24px, 4vw, 56px);
-  padding-top: clamp(10px, 2vw, 20px);
   padding-bottom: clamp(14px, 3vw, 28px);
 }
 
