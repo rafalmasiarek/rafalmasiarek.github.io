@@ -1,10 +1,31 @@
-<main>
+<main class="nf">
   <h1>404</h1>
 
   <p><strong>Page not found 😢</strong></p>
   <p>The requested page could not be found.</p>
 </main>
 
+<style>
+  main.nf {
+    max-width: 720px;
+    min-height: 70vh;
+    display: grid;
+    place-items: center;
+    margin: 0 auto;
+    /* center container */
+    padding: 6rem 1.25rem;
+    text-align: center;
+    /* center text */
+  }
+
+  main.nf h1 {
+    font-size: clamp(3rem, 6vw, 5rem);
+    margin: 0 0 1rem;
+    line-height: 1;
+  }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/dist/twemoji.min.js" crossorigin="anonymous"></script>
 <script data-cfasync="false">
   (function () {
     var notFoundUrl = location.pathname + location.search + location.hash;
@@ -26,15 +47,11 @@
     'use strict';
 
     if (!/Windows/i.test(navigator.userAgent)) return;
-
     if (!window.twemoji || typeof window.twemoji.parse !== 'function') return;
 
     var root = document.querySelector('main');
     if (!root) return;
 
-    window.twemoji.parse(root, {
-      folder: 'svg',
-      ext: '.svg'
-    });
+    window.twemoji.parse(root, { folder: 'svg', ext: '.svg' });
   })();
 </script>
