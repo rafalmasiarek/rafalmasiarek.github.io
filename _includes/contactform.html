@@ -1,45 +1,59 @@
 <div id="contact-form-alert" class="alert" style="display: none"></div>
-<form class="contact-form" id="contact-form" data-csrf-container="contactform_main" method="POST">
+<form class="contact-form" id="contact-form" data-csrf-container="contactform_main" data-prefill="1"
+    data-prefill-overwrite="0" method="POST">
+
     <div class="wrap-input">
-        <input class="input" id="contact-form-nameInput" type="text" name="name" placeholder="Full Name" required
-            autocomplete="off">
+        <input class="input" id="contact-form-nameInput" type="text" name="name" data-prefill-key="name"
+            placeholder="Full Name" required autocomplete="off">
     </div>
 
     <div class="wrap-input">
-        <input class="input" id="contact-form-replyToInput" type="email" name="email" placeholder="Email" required
-            autocomplete="off">
+        <input class="input" id="contact-form-replyToInput" type="email" name="email" data-prefill-key="email"
+            placeholder="Email" required autocomplete="off">
     </div>
 
     <div class="wrap-input">
-        <input class="input" id="contact-form-subjectInput" name="subject" placeholder="Message subject" required
-            autocomplete="off">
+        <input class="input" id="contact-form-subjectInput" type="text" name="subject" data-prefill-key="subject"
+            placeholder="Message subject" required autocomplete="off">
     </div>
 
     <div class="wrap-input">
-        <textarea class="input" id="contact-form-messageInput" name="message" maxlength="600" placeholder="Your Message"
-            required autocomplete="off"></textarea>
+        <textarea class="input" id="contact-form-messageInput" name="message" data-prefill-key="message" maxlength="600"
+            placeholder="Your Message" required autocomplete="off"></textarea>
     </div>
+
     {% if jekyll.environment == "production" %}
     <input type="hidden" id="g-recaptcha-sitekey" value="{{ site.recaptcha_site_key }}">
     <input type="hidden" name="g-recaptcha-response" id="contact-form-recaptcha-token">
     {% endif %}
+
     <input type="hidden" name="cf_request_id" id="cf_request_id">
     <input type="hidden" name="csrf_token" id="csrf_token">
     <input type="hidden" name="csrf_container" value="contactform_main">
 
     <div class="container-contact-form-btn">
-        <button class="contact-form-btn btn-enable-on-input" id="contact-form-btn">
+        <button class="contact-form-btn btn-enable-on-input" id="contact-form-btn" type="submit">
             <i class="fas fa-paper-plane"></i> &nbsp; Send Email
         </button>
     </div>
 </form>
+
 {% if jekyll.environment == "production" %}
 <script src="https://www.google.com/recaptcha/api.js?render={{ site.recaptcha_site_key }}" async defer
     data-cfasync="false"></script>
-{% endif %}
-
-{% if jekyll.environment == "production" %}
+<script src="{{ site.baseurl }}/assets/js/form-prefill.min.js?{{ site.time | date: '%s%N' }}"></script>
 <script src="{{ site.baseurl }}/assets/js/contactform_v2.min.js?{{ site.time | date: '%s%N' }}"></script>
 {% else %}
+<script src="{{ site.baseurl }}/assets/js/form-prefill.js?{{ site.time | date: '%s%N' }}"></script>
 <script src="{{ site.baseurl }}/assets/js/contactform_v2.js?{{ site.time | date: '%s%N' }}"></script>
 {% endif %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+
+        FormPrefill.init({
+            fieldLimits: {
+                message: 600
+            }
+        });
+    });
+</script>
