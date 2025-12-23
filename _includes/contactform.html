@@ -22,16 +22,15 @@
             placeholder="Your Message" required autocomplete="off"></textarea>
     </div>
 
-    <div class="wrap-input">
-        <label style="display:flex; gap:10px; align-items:center; font-size: 14px;">
-            <input type="checkbox" id="contact-form-encrypted" name="encrypted" value="1">
-            Encrypted (PGP)
-        </label>
+    <label style="display:flex; gap:10px; align-items:center; font-size: 14px;">
+        <input type="checkbox" id="contact-form-encrypted" name="encrypted" value="1">
+        Encrypted (PGP)
+    </label>
 
+    <div class="wrap-input">
         <div id="contact-form-pgp-wrap" style="display:none; margin-top:10px;">
             <textarea class="input" id="contact-form-replyPgpInput" name="reply_pgp" rows="6"
-                placeholder="Paste your PGP public key here (required for encrypted messages)&#10;-----BEGIN PGP PUBLIC KEY BLOCK-----"
-                autocomplete="off"></textarea>
+                placeholder="Your PGP public key here" autocomplete="off"></textarea>
             <div id="contact-form-pgp-status" style="font-size: 12px; opacity: .8; margin-top:6px;"></div>
         </div>
     </div>
