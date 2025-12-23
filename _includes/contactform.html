@@ -22,6 +22,20 @@
             placeholder="Your Message" required autocomplete="off"></textarea>
     </div>
 
+    <div class="wrap-input">
+        <label style="display:flex; gap:10px; align-items:center; font-size: 14px;">
+            <input type="checkbox" id="contact-form-encrypted" name="encrypted" value="1">
+            Encrypted (PGP)
+        </label>
+
+        <div id="contact-form-pgp-wrap" style="display:none; margin-top:10px;">
+            <textarea class="input" id="contact-form-replyPgpInput" name="reply_pgp" rows="6"
+                placeholder="Paste your PGP public key here (required for encrypted messages)&#10;-----BEGIN PGP PUBLIC KEY BLOCK-----"
+                autocomplete="off"></textarea>
+            <div id="contact-form-pgp-status" style="font-size: 12px; opacity: .8; margin-top:6px;"></div>
+        </div>
+    </div>
+
     {% if jekyll.environment == "production" %}
     <input type="hidden" id="g-recaptcha-sitekey" value="{{ site.recaptcha_site_key }}">
     <input type="hidden" name="g-recaptcha-response" id="contact-form-recaptcha-token">
@@ -42,9 +56,11 @@
 <script src="https://www.google.com/recaptcha/api.js?render={{ site.recaptcha_site_key }}" async defer
     data-cfasync="false"></script>
 <script src="{{ site.baseurl }}/assets/js/form-prefill.min.js?{{ site.time | date: '%s%N' }}"></script>
+<script src="https://unpkg.com/openpgp@5/dist/openpgp.min.js" defer></script>
 <script src="{{ site.baseurl }}/assets/js/contactform_v2.min.js?{{ site.time | date: '%s%N' }}"></script>
 {% else %}
 <script src="{{ site.baseurl }}/assets/js/form-prefill.js?{{ site.time | date: '%s%N' }}"></script>
+<script src="https://unpkg.com/openpgp@5/dist/openpgp.js" defer></script>
 <script src="{{ site.baseurl }}/assets/js/contactform_v2.js?{{ site.time | date: '%s%N' }}"></script>
 {% endif %}
 <script>
