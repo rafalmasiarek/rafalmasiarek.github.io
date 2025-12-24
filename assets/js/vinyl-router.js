@@ -42,6 +42,72 @@
     return document.getElementById(id);
   }
 
+
+  function buildContactUrlForVinyl(detail) {
+    const title = (detail?.title || 'Unknown').trim();
+    const artist = (detail?.artist || 'Unknown').trim();
+
+    const qp = 'af_';
+
+    const discogsId = (detail?.discogs_id ?? detail?.discogsId ?? '').toString().trim();
+    const discogsLabel = discogsId ? ` (Discogs ID #${discogsId})` : '';
+
+    const subject = `Ask about a record: ${artist} - ${title}${discogsLabel}`;
+    const message =
+      `Hi,\n` +
+      `I'd like to ask a question / make an offer about your record: ${artist} - ${title}.\n\n` +
+      `Link: ${VINYLS_ABS}/#/${encodeURIComponent(detail?.slug || '')}\n`;
+
+    const url = new URL(SITE_BASE + '/contact', window.location.origin);
+
+    // ---- Default: flat params (simple, explicit) ----
+    url.searchParams.set(qp + 'subject', subject);
+    url.searchParams.set(qp + 'message', message);
+    url.searchParams.set(qp + 'vinyl', `${artist} - ${title}`);
+
+    /*
+    const recordUrl = `${VINYLS_ABS}/#/${encodeURIComponent(detail?.slug || '')}`;
+  
+    const payloadObj = {
+      vars: {
+        title,
+        artist,
+        discogs_id: discogsId,
+        url: recordUrl,
+        vinyl: `${artist} - ${title}`,
+      },
+      fields: {
+        subject: `Ask about a record: {{vinyl}}${discogsId ? ' (Discogs ID #{{discogs_id}})' : ''}`,
+        message:
+          "Hi,\n" +
+          "I'd like to ask a question / make an offer about your record: {{vinyl}}.\n\n" +
+          "Link: {{url}}\n",
+        vinyl: "{{vinyl}}",
+      },
+    };
+  
+    const json = JSON.stringify(payloadObj);
+  
+    const b64url = (function toBase64UrlUtf8(s) {
+      const bytes = new TextEncoder().encode(s);
+      let bin = '';
+      for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+      const b64 = btoa(bin);
+      return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+    })(json);
+  
+    url.searchParams.set(qp + 'payload', b64url);
+    */
+
+    return url.toString();
+  }
+
+  function updateAskButton(detail) {
+    const a = byId('ask-about-vinyl');
+    if (!a) return;
+    a.href = buildContactUrlForVinyl(detail);
+  }
+
   function buildOtherArtistsText(arr) {
     // Rule from user:
     // - only if artists.length > 1
@@ -308,6 +374,9 @@
       }
       return;
     }
+
+    // NEW: update "Ask about this record" link for contact form prefill
+    updateAskButton(v);
 
     const title = v.title || 'Untitled';
     const artist = v.artist || 'Unknown';
