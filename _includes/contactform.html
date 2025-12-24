@@ -54,17 +54,19 @@
 {% if jekyll.environment == "production" %}
 <script src="https://www.google.com/recaptcha/api.js?render={{ site.recaptcha_site_key }}" async defer
     data-cfasync="false"></script>
-<script src="{{ site.baseurl }}/assets/js/form-prefill.min.js?{{ site.time | date: '%s%N' }}"></script>
+<script src="{{ site.baseurl }}/assets/js/form-prefill.min.js?{{ site.time | date: '%s%N' }}"
+    data-cfasync="false"></script>
 <script src="https://unpkg.com/openpgp@5/dist/openpgp.min.js" defer></script>
 <script src="{{ site.baseurl }}/assets/js/contactform_v2.min.js?{{ site.time | date: '%s%N' }}"></script>
 {% else %}
-<script src="{{ site.baseurl }}/assets/js/form-prefill.js?{{ site.time | date: '%s%N' }}"></script>
+<script src="{{ site.baseurl }}/assets/js/form-prefill.js?{{ site.time | date: '%s%N' }}" data-cfasync="false"></script>
 <script src="https://unpkg.com/openpgp@5/dist/openpgp.js" defer></script>
 <script src="{{ site.baseurl }}/assets/js/contactform_v2.js?{{ site.time | date: '%s%N' }}"></script>
 {% endif %}
-<script>
+<script data-cfasync="false">
     document.addEventListener('DOMContentLoaded', function () {
-
-        FormPrefill.init();
+        if (window.FormPrefill && typeof window.FormPrefill.init === 'function') {
+            window.FormPrefill.init();
+        }
     });
 </script>
