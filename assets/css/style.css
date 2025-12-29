@@ -767,6 +767,35 @@ img.loaded {
   margin-left: 8px;
 }
 
+/* Vinyl artist count badge tweak */
+#artist-buttons .btn .badge {
+  min-width: 1.35em;
+  /* keeps it circular for 1–2 digits */
+  height: 1.35em;
+  padding: 0;
+  /* ignore bootstrap padding */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 0.72em;
+  font-weight: 600;
+  line-height: 1;
+  border-radius: 999px;
+  /* circle/pill */
+  opacity: 0.9;
+
+  /* optional: a tiny outline so it pops on light backgrounds */
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08) inset;
+}
+
+/* Slightly nicer spacing between label and badge */
+#artist-buttons .btn .badge {
+  margin-left: 0.45rem !important;
+  /* override bootstrap ms-2 if needed */
+}
+
+
 /* Detail: Listen links (Spotify / Apple Music) */
 #d-listen {
   font-size: 0.95rem;
