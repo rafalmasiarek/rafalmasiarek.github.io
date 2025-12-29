@@ -38,7 +38,135 @@
   let __scrollAttached = false;
 
   const __artistSet = new Set();
+  const __artistCounts = new Map();
   let __facetsLoaded = false;
+
+  let __preferArtistCounts = (function () {
+    const v = window.__VINYLS_PREFER_ARTIST_COUNTS__;
+    if (v === undefined || v === null) return true;
+    if (typeof v === 'boolean') return v;
+    if (typeof v === 'number') return v !== 0;
+    if (typeof v === 'string') {
+      const s = v.trim().toLowerCase();
+      if (['1', 'true', 'yes', 'on'].includes(s)) return true;
+      if (['0', 'false', 'no', 'off', ''].includes(s)) return false;
+    }
+    return true;
+  })();
+
+  let __lastFacets = null;
+
+  function __facetFormat(value) {
+    if (Array.isArray(value)) {
+      if (value.length === 0) return 'list';
+      const first = value[0];
+      if (first && typeof first === 'object') return 'pairs';
+      return 'list';
+    }
+    if (value && typeof value === 'object') return 'counts';
+    return 'unknown';
+  }
+
+  function __normalizeFacetArtists(raw, preferCounts) {
+    const fmt = __facetFormat(raw);
+
+    if (fmt === 'list') {
+      return {
+        format: 'list',
+        items: (raw || [])
+          .filter(v => typeof v === 'string' && v.trim() !== '')
+          .map(label => ({ label, count: null }))
+      };
+    }
+
+    if (fmt === 'pairs') {
+      const pairs = (raw || [])
+        .map(it => {
+          if (!it || typeof it !== 'object') return null;
+          const label = (typeof it.label === 'string' ? it.label : (typeof it.name === 'string' ? it.name : '')).trim();
+          const count = Number(it.count);
+          if (!label) return null;
+          if (Number.isFinite(count)) return { label, count };
+          return { label, count: null };
+        })
+        .filter(Boolean);
+
+      if (!preferCounts) {
+        return { format: 'list', items: pairs.map(p => ({ label: p.label, count: null })) };
+      }
+
+      return {
+        format: 'pairs',
+        items: pairs
+          .filter(p => p.count !== null)
+          .sort((a, b) => (b.count || 0) - (a.count || 0))
+      };
+    }
+
+    if (fmt === 'counts') {
+      const entries = Object.entries(raw || {})
+        .filter(([k, v]) => typeof k === 'string' && k.trim() !== '' && Number.isFinite(Number(v)))
+        .map(([label, count]) => ({ label, count: Number(count) }));
+
+      if (!preferCounts) {
+        return { format: 'list', items: entries.map(e => ({ label: e.label, count: null })) };
+      }
+
+      return {
+        format: 'counts',
+        items: entries.sort((a, b) => (b.count || 0) - (a.count || 0))
+      };
+    }
+
+    return { format: 'unknown', items: [] };
+  }
+
+  function __pickArtistsFacet(facets, preferCounts) {
+    if (!facets) return null;
+
+    const candidates = [
+      facets.artists_count,   // optional legacy/alt key
+      facets.artist_counts,   // NEW (recommended): { "Artist": 12, ... }
+      facets.artists          // legacy: ["Artist", ...]
+    ];
+
+    if (preferCounts) {
+      for (const c of candidates) {
+        const fmt = __facetFormat(c);
+        if (fmt === 'counts' || fmt === 'pairs') return c;
+      }
+      for (const c of candidates) {
+        const fmt = __facetFormat(c);
+        if (fmt === 'list') return c;
+      }
+      return null;
+    }
+
+    // prefer list (rollback-friendly)
+    for (const c of candidates) {
+      const fmt = __facetFormat(c);
+      if (fmt === 'list') return c;
+      if (fmt === 'counts') return Object.keys(c || {});
+      if (fmt === 'pairs') {
+        return (c || [])
+          .map(x => (x && (x.label || x.name)) ? String(x.label || x.name) : '')
+          .filter(Boolean);
+      }
+    }
+
+    return null;
+  }
+
+  window.__vinylsSetPreferArtistCounts = function (v) {
+    __preferArtistCounts = !!v;
+
+    const facets = __lastFacets || {
+      artists: Array.from(__artistSet).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' })),
+      artist_counts: Object.fromEntries(__artistCounts.entries()),
+    };
+
+    renderArtistTags(facets);
+  };
 
   // Scroll mgmt
   function onScroll() {
@@ -75,16 +203,36 @@
 
   // Filters UI from facets
   function renderArtistTags(facets) {
-    const artists = Array.isArray(facets?.artists) ? facets.artists : [];
     const tagContainer = document.getElementById('artist-buttons');
     if (!tagContainer) return;
 
+    __lastFacets = facets || null;
+
+    const raw = __pickArtistsFacet(facets, __preferArtistCounts);
+    const norm = __normalizeFacetArtists(raw, __preferArtistCounts);
+
+    const artists = norm.items;
+
     tagContainer.innerHTML = '';
-    for (const artist of artists) {
+
+    for (const it of artists) {
+      const artist = it.label;
+
       const b = document.createElement('button');
-      b.className = 'btn btn-outline-secondary btn-sm me-2 mb-2';
+      b.className = 'btn btn-outline-secondary btn-sm me-2 mb-2 d-inline-flex align-items-center';
       b.setAttribute('data-artist', artist);
-      b.textContent = artist;
+
+      const label = document.createElement('span');
+      label.textContent = artist;
+      b.appendChild(label);
+
+      if (it.count !== null && Number.isFinite(it.count) && it.count > 0) {
+        const badge = document.createElement('span');
+        badge.className = 'badge rounded-pill bg-secondary ms-2';
+        badge.textContent = String(it.count);
+        b.appendChild(badge);
+      }
+
       tagContainer.appendChild(b);
     }
   }
@@ -95,12 +243,17 @@
       u.searchParams.set('page', '1');
       u.searchParams.set('per_page', '1');
       u.searchParams.set('facets', '1');
+
       const r = await fetch(u.toString(), { credentials: 'omit' });
       const p = await r.json();
-      const artists = p?.facets?.artists;
-      if (Array.isArray(artists) && artists.length) {
+
+      const facets = p?.facets;
+      const raw = __pickArtistsFacet(facets, __preferArtistCounts);
+      const norm = __normalizeFacetArtists(raw, __preferArtistCounts);
+
+      if (norm.items.length) {
         __facetsLoaded = true;
-        renderArtistTags({ artists });
+        renderArtistTags(facets);
       }
     } catch {
       // ignore; fallback will fill as pages arrive
@@ -109,16 +262,25 @@
 
   function updateArtistTagsFromBatch(list) {
     if (__facetsLoaded) return;
+
     let changed = false;
+
     for (const v of list || []) {
-      if (v?.artist && !__artistSet.has(v.artist)) {
-        __artistSet.add(v.artist);
+      const a = v?.artist;
+      if (!a) continue;
+
+      __artistCounts.set(a, (__artistCounts.get(a) || 0) + 1);
+
+      if (!__artistSet.has(a)) {
+        __artistSet.add(a);
         changed = true;
       }
     }
-    if (changed) {
+
+    if (changed || (list && list.length)) {
       renderArtistTags({
-        artists: Array.from(__artistSet).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+        artists: Array.from(__artistSet).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' })),
+        artist_counts: Object.fromEntries(__artistCounts.entries()),
       });
     }
   }
@@ -186,7 +348,10 @@
     const grid = document.getElementById('vinyl-grid');
     if (grid) grid.innerHTML = '';
 
-    if (!__facetsLoaded) __artistSet.clear();
+    if (!__facetsLoaded) {
+      __artistSet.clear();
+      __artistCounts.clear();
+    }
   }
 
   function buildCardEl(v) {
@@ -211,7 +376,6 @@
     const body = document.createElement('div');
     body.className = 'card-body';
 
-    // 1) Card title: Title + (Year) moved next to title
     const h5 = document.createElement('h5');
     h5.className = 'card-title';
     h5.textContent = v.title || '';
@@ -224,7 +388,6 @@
       h5.appendChild(y);
     }
 
-    // Subtitle: artist only
     const p = document.createElement('p');
     p.className = 'card-text';
     p.textContent = (v.artist || 'Unknown');
@@ -258,7 +421,10 @@
         const pg = payload?.pagination;
 
         if (currentPage === 1) {
-          if (facets?.artists?.length) {
+          const raw = __pickArtistsFacet(facets, __preferArtistCounts);
+          const norm = __normalizeFacetArtists(raw, __preferArtistCounts);
+
+          if (norm.items.length) {
             __facetsLoaded = true;
             renderArtistTags(facets);
           } else {
@@ -364,7 +530,6 @@
 
   // ---- Detail helpers (notes + tracklist under notes) ----
   function ensureTracklistContainer() {
-    // Ensure a container exists under #d-notes
     const notes = document.getElementById('d-notes');
     if (!notes) return null;
 
@@ -379,7 +544,6 @@
   }
 
   function sideFromPos(pos) {
-    // A1, B2, C3... => 'A', 'B', 'C'
     if (!pos || typeof pos !== 'string') return '';
     const m = pos.trim().match(/^([A-Z]+)/i);
     return m ? m[1].toUpperCase() : '';
@@ -423,7 +587,6 @@
       const titleEl = document.createElement('span');
       titleEl.className = 'track-title';
       titleEl.textContent = title || 'Untitled';
-
       left.appendChild(titleEl);
 
       if (duration) {
@@ -452,7 +615,6 @@
   }
 
   function renderNotes(detail) {
-    // Notes into #d-notes, then tracklist under it.
     const el = document.getElementById('d-notes');
     if (!el) return;
 
@@ -506,11 +668,13 @@
     document.addEventListener('click', e => {
       if (!(e.target instanceof Element)) return;
 
-      if (e.target.matches('[data-artist]')) {
+      // FIX: support clicks on inner spans/badges inside the button
+      const artistBtn = e.target.closest?.('[data-artist]');
+      if (artistBtn) {
         const detailVisible = !document.getElementById('vinyl-detail')?.classList.contains('d-none');
         if (detailVisible) return;
 
-        const artist = e.target.getAttribute('data-artist');
+        const artist = artistBtn.getAttribute('data-artist');
         if (artist === activeArtist) window.__vinylsClearFilter();
         else window.__vinylsSetFilter(artist);
 
@@ -519,6 +683,7 @@
         if (collapseEl2 && window.bootstrap?.Collapse && window.matchMedia('(max-width: 767.98px)').matches) {
           bootstrap.Collapse.getOrCreateInstance(collapseEl2, { toggle: false }).hide();
         }
+        return;
       }
 
       if (e.target.id === 'toggle-tags-btn' && collapseEl && window.bootstrap?.Collapse) {
