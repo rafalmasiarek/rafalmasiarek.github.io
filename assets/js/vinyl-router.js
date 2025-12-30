@@ -40,7 +40,6 @@
   let __restoreScrollY = 0;
   let __restoreSlug = null;
 
-  // NEW: pending artist filter to apply after returning from detail to list
   let __pendingArtist = null;
 
   function slugFromHash() {
