@@ -39,16 +39,14 @@
 
   let __restoreScrollY = 0;
   let __restoreSlug = null;
-  let __resetFilterOnBack = false;
 
-  // NEW (minimal): pending filter to apply after returning to list
+  // NEW: pending artist filter to apply after returning from detail to list
   let __pendingArtist = null;
 
   function slugFromHash() {
     return (location.hash || '').replace(/^#\/?/, '') || null;
   }
 
-  // ---- Helpers ----
   function byId(id) {
     return document.getElementById(id);
   }
@@ -172,7 +170,6 @@
     wrap.classList.remove('d-none');
   }
 
-  // ---- Head/meta & JSON-LD ----
   function setListHead() {
     const siteName = document.querySelector('header .username a')?.textContent || '';
     document.title = `My Vinyl Collection – ${siteName}`;
@@ -240,7 +237,6 @@
     document.head.appendChild(s);
   }
 
-  // ---- Data ----
   async function fetchBySlug(slug) {
     try {
       const r = await fetch(`${API_LIST}/${encodeURIComponent(slug)}`, { credentials: 'omit' });
@@ -260,7 +256,6 @@
     return list.find(x => x.slug === slug);
   }
 
-  // ---- UI ----
   function showList() {
     byId('vinyl-detail')?.classList.add('d-none');
     byId('list-panel')?.classList.remove('d-none');
@@ -271,23 +266,14 @@
 
     if (window.attachScroll) window.attachScroll();
 
-    // NEW (minimal): apply pending filter AFTER the list view is shown and route finished
     if (__pendingArtist) {
       const a = __pendingArtist;
       __pendingArtist = null;
 
-      // delay 1 tick to avoid being overwritten by route()/showList() order
       setTimeout(() => {
         if (window.__vinylsSetFilter) window.__vinylsSetFilter(a);
       }, 0);
 
-      // Do not also run reset/scroll restore logic in the same pass
-      return;
-    }
-
-    if (__resetFilterOnBack) {
-      __resetFilterOnBack = false;
-      if (window.__vinylsClearFilter) window.__vinylsClearFilter();
       return;
     }
 
@@ -308,8 +294,6 @@
   let __detailReqSeq = 0;
 
   async function showDetail(slug) {
-    __resetFilterOnBack = !!document.querySelector('[data-artist].active');
-
     if (window.detachScroll) window.detachScroll();
 
     byId('vinyl-detail')?.classList.remove('d-none');
@@ -456,7 +440,6 @@
     window.scrollTo({ top: 0, behavior: 'auto' });
   }
 
-  // ---- Router ----
   function route() {
     const slug = slugFromHash();
     if (slug) showDetail(slug);
@@ -490,6 +473,7 @@
       if (!detailVisible) return;
 
       e.preventDefault();
+      e.stopPropagation();
 
       const artist = btn.getAttribute('data-artist');
       if (!artist) return;
