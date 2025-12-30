@@ -10,7 +10,7 @@
  * - Fetches a single record by slug and populates the detail UI
  * - Manages scroll restoration when returning from detail to list
  * - Updates meta tags (title/description/canonical) and injects JSON-LD
- * - Coordinates filter application when switching from detail back to list
+ * - Coordinates "apply artist filter" when switching from detail back to list
  *
  * Copyright (c) 2025 Rafał Masiarek. All rights reserved.
  *
