@@ -672,7 +672,10 @@
       const artistBtn = e.target.closest?.('[data-artist]');
       if (artistBtn) {
         const detailVisible = !document.getElementById('vinyl-detail')?.classList.contains('d-none');
-        if (detailVisible) return;
+        if (detailVisible) {
+          const back = document.getElementById('back-to-list');
+          if (back && typeof back.click === 'function') back.click();
+        }
 
         const artist = artistBtn.getAttribute('data-artist');
         if (artist === activeArtist) window.__vinylsClearFilter();
