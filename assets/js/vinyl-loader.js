@@ -1,9 +1,16 @@
 // assets/js/vinyl-loader.js
 /*!
  *
- * contactform_v2.js
+ * vinyl-loader.js
  *
- * Contact Form Frontend Script
+ * Vinyl Collection - List/Filter Loader
+ *
+ * Responsibilities:
+ * - Loads paginated vinyl list from the API (infinite scroll)
+ * - Renders the grid of cards and hydrates cover images
+ * - Builds and handles artist filter buttons (facets or inferred counts)
+ * - Exposes small helpers used by the router (grades, notes/tracklist rendering)
+ *
  * Copyright (c) 2025 Rafał Masiarek. All rights reserved.
  *
  * This file is proprietary and confidential. Unauthorized copying,
@@ -665,23 +672,25 @@
     attachScroll();
     loadMore();
 
+    // NOTE: Minimal change here:
+    // - When a filter is clicked on DETAIL view, we only navigate back.
+    // - The actual filtering is applied by the router to avoid race with route().
     document.addEventListener('click', e => {
       if (!(e.target instanceof Element)) return;
 
-      // FIX: support clicks on inner spans/badges inside the button
       const artistBtn = e.target.closest?.('[data-artist]');
       if (artistBtn) {
         const detailVisible = !document.getElementById('vinyl-detail')?.classList.contains('d-none');
         if (detailVisible) {
           const back = document.getElementById('back-to-list');
           if (back && typeof back.click === 'function') back.click();
+          return;
         }
 
         const artist = artistBtn.getAttribute('data-artist');
         if (artist === activeArtist) window.__vinylsClearFilter();
         else window.__vinylsSetFilter(artist);
 
-        // Hide artist map on small screens after selecting
         const collapseEl2 = document.getElementById('vinyl-tags');
         if (collapseEl2 && window.bootstrap?.Collapse && window.matchMedia('(max-width: 767.98px)').matches) {
           bootstrap.Collapse.getOrCreateInstance(collapseEl2, { toggle: false }).hide();
