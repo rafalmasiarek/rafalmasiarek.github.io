@@ -1,9 +1,17 @@
 // assets/js/vinyl-router.js
 /*!
  *
- * contactform_v2.js
+ * vinyl-router.js
  *
- * Contact Form Frontend Script
+ * Vinyl Collection - Hash Router / Detail View Controller
+ *
+ * Responsibilities:
+ * - Routes between list view (#/) and detail view (#/slug)
+ * - Fetches a single record by slug and populates the detail UI
+ * - Manages scroll restoration when returning from detail to list
+ * - Updates meta tags (title/description/canonical) and injects JSON-LD
+ * - Coordinates filter application when switching from detail back to list
+ *
  * Copyright (c) 2025 Rafał Masiarek. All rights reserved.
  *
  * This file is proprietary and confidential. Unauthorized copying,
@@ -33,6 +41,9 @@
   let __restoreSlug = null;
   let __resetFilterOnBack = false;
 
+  // NEW (minimal): pending filter to apply after returning to list
+  let __pendingArtist = null;
+
   function slugFromHash() {
     return (location.hash || '').replace(/^#\/?/, '') || null;
   }
@@ -41,7 +52,6 @@
   function byId(id) {
     return document.getElementById(id);
   }
-
 
   function buildContactUrlForVinyl(detail) {
     const title = (detail?.title || 'Unknown').trim();
@@ -60,44 +70,9 @@
 
     const url = new URL(SITE_BASE + '/contact', window.location.origin);
 
-    // ---- Default: flat params (simple, explicit) ----
     url.searchParams.set(qp + 'subject', subject);
     url.searchParams.set(qp + 'message', message);
     url.searchParams.set(qp + 'vinyl', `${artist} - ${title}`);
-
-    /*
-    const recordUrl = `${VINYLS_ABS}/#/${encodeURIComponent(detail?.slug || '')}`;
-  
-    const payloadObj = {
-      vars: {
-        title,
-        artist,
-        discogs_id: discogsId,
-        url: recordUrl,
-        vinyl: `${artist} - ${title}`,
-      },
-      fields: {
-        subject: `Ask about a record: {{vinyl}}${discogsId ? ' (Discogs ID #{{discogs_id}})' : ''}`,
-        message:
-          "Hi,\n" +
-          "I'd like to ask a question / make an offer about your record: {{vinyl}}.\n\n" +
-          "Link: {{url}}\n",
-        vinyl: "{{vinyl}}",
-      },
-    };
-  
-    const json = JSON.stringify(payloadObj);
-  
-    const b64url = (function toBase64UrlUtf8(s) {
-      const bytes = new TextEncoder().encode(s);
-      let bin = '';
-      for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
-      const b64 = btoa(bin);
-      return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
-    })(json);
-  
-    url.searchParams.set(qp + 'payload', b64url);
-    */
 
     return url.toString();
   }
@@ -109,9 +84,6 @@
   }
 
   function buildOtherArtistsText(arr) {
-    // Rule from user:
-    // - only if artists.length > 1
-    // - and first element has non-empty "join"
     if (!Array.isArray(arr) || arr.length <= 1) return '';
     const firstJoin = (arr[0] && typeof arr[0].join === 'string') ? arr[0].join.trim() : '';
     if (!firstJoin) return '';
@@ -128,11 +100,6 @@
   }
 
   function pickListenUrls(detail, title, artist) {
-    // Accept multiple future shapes:
-    // - listen_on: { apple_music, spotify }
-    // - listenOn: { appleMusic, spotify }
-    // - listen_on: { "apple-music", spotify }
-    // - listen: { apple_music, spotify } etc.
     const obj =
       detail?.listen_on ||
       detail?.listenOn ||
@@ -154,7 +121,6 @@
         obj?.apple
       );
 
-    // Build fallback query ONLY if we have data
     const query = `${artist || ''} ${title || ''}`.trim();
     const hasQuery = query.length > 0;
 
@@ -180,7 +146,6 @@
 
     const { spotifyUrl, appleUrl } = pickListenUrls(detail, title, artist);
 
-    // If we can't build anything (edge-case only), hide
     if (!spotifyUrl && !appleUrl) {
       wrap.classList.add('d-none');
       aS.href = '#';
@@ -188,7 +153,6 @@
       return;
     }
 
-    // Always set fallbacks (or API-provided)
     if (spotifyUrl) {
       aS.href = spotifyUrl;
       aS.classList.remove('d-none');
@@ -307,6 +271,20 @@
 
     if (window.attachScroll) window.attachScroll();
 
+    // NEW (minimal): apply pending filter AFTER the list view is shown and route finished
+    if (__pendingArtist) {
+      const a = __pendingArtist;
+      __pendingArtist = null;
+
+      // delay 1 tick to avoid being overwritten by route()/showList() order
+      setTimeout(() => {
+        if (window.__vinylsSetFilter) window.__vinylsSetFilter(a);
+      }, 0);
+
+      // Do not also run reset/scroll restore logic in the same pass
+      return;
+    }
+
     if (__resetFilterOnBack) {
       __resetFilterOnBack = false;
       if (window.__vinylsClearFilter) window.__vinylsClearFilter();
@@ -341,7 +319,6 @@
 
     const reqId = ++__detailReqSeq;
 
-    // Reset cover & texts to avoid stale content
     const imgEl = byId('d-cover');
     if (imgEl) {
       imgEl.classList.remove('is-loaded');
@@ -375,17 +352,14 @@
       return;
     }
 
-    // NEW: update "Ask about this record" link for contact form prefill
     updateAskButton(v);
 
     const title = v.title || 'Untitled';
     const artist = v.artist || 'Unknown';
 
-    // 1) Title line: Title + (Year) + Grade badge (moved here)
     if (titleEl) {
       titleEl.textContent = title;
 
-      // Year next to title
       if (v.year) {
         const y = document.createElement('span');
         y.className = 'ms-2 text-muted';
@@ -394,7 +368,6 @@
         titleEl.appendChild(y);
       }
 
-      // Grade next to title (uses loader mapping)
       if (typeof window.__getGradeInfo === 'function') {
         const info = window.__getGradeInfo(v?.rating);
         if (info) {
@@ -407,7 +380,6 @@
       }
     }
 
-    // 2) Subtitle line: main artist + (optional) other artists string smaller/grey
     if (subEl) {
       subEl.textContent = artist;
 
@@ -421,15 +393,12 @@
       }
     }
 
-    // 3) Listen links under authors line
     setListenLinks(v);
 
-    // Notes + tracklist (tracklist rendered by loader helper)
     if (typeof window.__renderNotes === 'function') {
       window.__renderNotes(v);
     }
 
-    // Score (stars) – optional personal score
     (function renderScoreStars(detail) {
       const wrap = byId('d-score');
       const starsEl = byId('d-stars');
@@ -460,10 +429,8 @@
       desc?.classList.add('d-none');
     }
 
-    // SEO
     setDetailHead(v);
 
-    // Preload cover, then swap
     const nextSrc = v.cover || PLACEHOLDER_COVER;
     const pre = new Image();
     pre.decoding = 'async';
@@ -515,17 +482,22 @@
 
     document.addEventListener('click', (e) => {
       if (!(e.target instanceof Element)) return;
-      if (e.target.matches('[data-artist]')) {
-        const detailVisible = !byId('vinyl-detail')?.classList.contains('d-none');
-        if (detailVisible) {
-          e.preventDefault();
-          const artist = e.target.getAttribute('data-artist');
-          history.pushState(null, '', `${VINYLS_ABS}/`);
-          if (window.__vinylsSetFilter) window.__vinylsSetFilter(artist);
-          if (window.attachScroll) window.attachScroll();
-          route();
-        }
-      }
+
+      const btn = e.target.closest && e.target.closest('[data-artist]');
+      if (!btn) return;
+
+      const detailVisible = !byId('vinyl-detail')?.classList.contains('d-none');
+      if (!detailVisible) return;
+
+      e.preventDefault();
+
+      const artist = btn.getAttribute('data-artist');
+      if (!artist) return;
+
+      __pendingArtist = artist;
+
+      history.pushState(null, '', `${VINYLS_ABS}/`);
+      route();
     });
 
     window.addEventListener('hashchange', route);
