@@ -132,9 +132,9 @@
     if (!facets) return null;
 
     const candidates = [
-      facets.artists_count,   // optional legacy/alt key
-      facets.artist_counts,   // NEW (recommended): { "Artist": 12, ... }
-      facets.artists          // legacy: ["Artist", ...]
+      facets.artists_count,
+      facets.artist_counts,
+      facets.artists
     ];
 
     if (preferCounts) {
@@ -149,7 +149,6 @@
       return null;
     }
 
-    // prefer list (rollback-friendly)
     for (const c of candidates) {
       const fmt = __facetFormat(c);
       if (fmt === 'list') return c;
@@ -175,7 +174,6 @@
     renderArtistTags(facets);
   };
 
-  // Scroll mgmt
   function onScroll() {
     const nearBottom = window.scrollY + window.innerHeight >= document.body.offsetHeight - 100;
     if (!loading && hasMore && nearBottom) loadMore();
@@ -189,7 +187,6 @@
   window.attachScroll = attachScroll;
   window.detachScroll = detachScroll;
 
-  // SEO: emit ItemList only on first page
   function injectListJsonLd(items, pageOffset = 0) {
     if (jsonLdInjected || !Array.isArray(items) || !items.length) return;
     const s = document.createElement('script');
@@ -208,7 +205,6 @@
     jsonLdInjected = true;
   }
 
-  // Filters UI from facets
   function renderArtistTags(facets) {
     const tagContainer = document.getElementById('artist-buttons');
     if (!tagContainer) return;
@@ -263,7 +259,7 @@
         renderArtistTags(facets);
       }
     } catch {
-      // ignore; fallback will fill as pages arrive
+      // ignore
     }
   }
 
@@ -300,7 +296,6 @@
     return u.toString();
   }
 
-  // Hydrate images
   function hydrateImages(container, threshold = 0.5) {
     const images = container.querySelectorAll('img[data-src]');
     const total = images.length;
@@ -497,7 +492,6 @@
       });
   }
 
-  // ---- Grade helpers (used by router) ----
   const GRADE_MAP = new Map([
     [1, { short: 'P', cls: 'grade-poor' }],
     [2, { short: 'G', cls: 'grade-good' }],
@@ -535,7 +529,6 @@
     return nearest != null ? GRADE_MAP.get(nearest) : null;
   }
 
-  // ---- Detail helpers (notes + tracklist under notes) ----
   function ensureTracklistContainer() {
     const notes = document.getElementById('d-notes');
     if (!notes) return null;
@@ -640,7 +633,6 @@
   window.__getGradeInfo = getGradeInfo;
   window.__renderNotes = renderNotes;
 
-  // Public API for router
   window.__vinylsClearFilter = function () {
     activeArtist = null;
     document.querySelectorAll('[data-artist]').forEach(b => b.classList.remove('active'));
@@ -660,7 +652,6 @@
     loadMore();
   };
 
-  // Init
   document.addEventListener('DOMContentLoaded', () => {
     const collapseEl = document.getElementById('vinyl-tags');
     if (collapseEl && window.bootstrap?.Collapse) {
@@ -672,9 +663,6 @@
     attachScroll();
     loadMore();
 
-    // NOTE: Minimal change here:
-    // - When a filter is clicked on DETAIL view, we only navigate back.
-    // - The actual filtering is applied by the router to avoid race with route().
     document.addEventListener('click', e => {
       if (!(e.target instanceof Element)) return;
 
@@ -682,8 +670,6 @@
       if (artistBtn) {
         const detailVisible = !document.getElementById('vinyl-detail')?.classList.contains('d-none');
         if (detailVisible) {
-          const back = document.getElementById('back-to-list');
-          if (back && typeof back.click === 'function') back.click();
           return;
         }
 
