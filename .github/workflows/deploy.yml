@@ -38,7 +38,7 @@ jobs:
       # Minify assets (wildcards)
       # --------------------------
       - name: Set up Node.js (for minifiers)
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "20"
 
