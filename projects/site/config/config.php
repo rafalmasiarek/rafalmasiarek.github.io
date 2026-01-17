@@ -33,8 +33,8 @@ $cfg['url'] = $siteUrl !== ''
     ? rtrim($siteUrl, '/') . $baseurl . '/projects'
     : null;
 
-// Optionally: keep original site url too
 $cfg['jekyll_site_url'] = $siteUrl;
+$cfg['home'] = 'projects';
 
 // Return as Kirby options (top-level)
 return $cfg;
