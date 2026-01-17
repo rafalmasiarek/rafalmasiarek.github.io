@@ -1,11 +1,18 @@
-<?php snippet('header') ?>
+<?php
 
-<main class="container">
-  <h1><?= esc($page->title()) ?></h1>
+declare(strict_types=1);
+ob_start();
+?>
+<main>
+  <article class="md">
+    <header class="heading">
+      <h1 class="title"><?= htmlspecialchars($page->title()->value(), ENT_QUOTES, 'UTF-8') ?></h1>
+    </header>
 
-  <article>
     <?= $page->text()->kt() ?>
   </article>
 </main>
+<?php
 
-<?php snippet('footer') ?>
+$content = ob_get_clean();
+snippet('layout', ['content' => $content]);
