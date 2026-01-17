@@ -1,6 +1,17 @@
 .DS_Store
 
-# Basic
+# Kirby runtime
+projects/content/
+projects/media/
+projects/storage/
+projects/cache/
+projects/logs/
+
+# Kirby Panel
+projects/site/accounts/
+projects/site/sessions/
+
+# Jekyll Basic
 _site
 .vagrant
 .sass-cache

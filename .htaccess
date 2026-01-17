@@ -2,6 +2,12 @@
 <IfModule mod_rewrite.c>
   RewriteEngine On
 
+  # ----------------------------
+  # Kirby under /projects
+  # ----------------------------
+  # If request is /projects or /projects/*, let Kirby handle it.
+  RewriteRule ^projects(/.*)?$ /projects/index.php [QSA,L]
+
   # CSS
   RewriteCond %{HTTP:Accept-Encoding} br
   RewriteCond %{REQUEST_FILENAME}.br -s
