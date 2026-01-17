@@ -1,0 +1,22 @@
+title: Project
+icon: file-text
+
+tabs:
+  content:
+    label: Content
+    fields:
+      date:
+        label: Date
+        type: date
+        default: today
+        required: true
+
+      description:
+        label: Description
+        type: textarea
+        size: small
+
+      text:
+        label: Content
+        type: textarea
+        size: large

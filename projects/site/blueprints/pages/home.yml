@@ -1,0 +1,36 @@
+title: Home
+icon: list
+
+options:
+  changeSlug: false
+  changeStatus: true
+  changeTitle: true
+  delete: false
+  duplicate: false
+
+tabs:
+  content:
+    label: Content
+    fields:
+      intro:
+        label: Intro (optional)
+        type: textarea
+        size: small
+
+  projects:
+    label: Items
+    sections:
+      listed:
+        headline: Listed projects
+        type: pages
+        status: listed
+        template: project
+        sortBy: date desc
+        create: project
+
+      drafts:
+        headline: Drafts
+        type: pages
+        status: draft
+        template: project
+        create: project

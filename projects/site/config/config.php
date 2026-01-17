@@ -34,7 +34,6 @@ $cfg['url'] = $siteUrl !== ''
     : null;
 
 $cfg['jekyll_site_url'] = $siteUrl;
-$cfg['home'] = 'projects';
 
 // Return as Kirby options (top-level)
 return $cfg;
