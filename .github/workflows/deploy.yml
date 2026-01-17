@@ -123,19 +123,17 @@ jobs:
       # --------------------------
       # Precompress _site (gzip + brotli)
       # --------------------------
-      - name: Install brotli
-        run: |
-          set -euo pipefail
-          sudo apt-get update
-          sudo apt-get install -y brotli
-
       - name: Precompress assets in _site (gzip + brotli)
         shell: bash
         run: |
           set -euo pipefail
 
-          find _site -type f \( \
-              -name "*.html" -o -name "*.css" -o -name "*.js" -o -name "*.json" -o -name "*.svg" -o -name "*.xml" -o -name "*.txt" -o -name ".htaccess" \
+          # Compress only the static Jekyll output, never Kirby (/projects) and never dotfiles (e.g. .htaccess)
+          find _site -type f \
+            ! -path "_site/projects/*" \
+            ! -name ".*" \
+            \( \
+              -name "*.html" -o -name "*.css" -o -name "*.js" -o -name "*.json" -o -name "*.svg" -o -name "*.xml" -o -name "*.txt" \
             \) -print0 | while IFS= read -r -d '' f; do
               gzip -kf -9 "$f"
               brotli -fk -q 11 "$f"
@@ -160,6 +158,13 @@ jobs:
           | sed "s|^${{ secrets.RSYNC_DEST_PATH }}/*||; s|$|/|" > rsync-exclude.txt
 
           echo "${{ secrets.RSYNC_EXCLUDES }}" >> rsync-exclude.txt
+
+      - name: Debug rsync excludes
+        run: |
+          set -euo pipefail
+          echo "---- rsync-exclude.txt ----"
+          cat rsync-exclude.txt
+          echo "---------------------------"
 
       - name: Deploy via rsync
         shell: bash
