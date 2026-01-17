@@ -1,4 +1,6 @@
 <?php
+// projects/site/snippets/site-head.php
+
 declare(strict_types=1);
 
 $siteTitle = (string)option('title');
@@ -22,10 +24,16 @@ $descField = $page->content()->get('description');
 $desc = $descField->isNotEmpty() ? (string)$descField->value() : $siteDesc;
 $desc = mb_substr($desc, 0, 160);
 
+
+$docroot = dirname(__DIR__, 4);
+$verFile = $docroot . '/_asset_version.txt';
+$assetVer = is_file($verFile) ? trim((string)file_get_contents($verFile)) : '';
+$assetVerQ = $assetVer !== '' ? ('?v=' . rawurlencode($assetVer)) : '';
+
 $canonicalField = $page->content()->get('canonical');
 $canonical = $canonicalField->isNotEmpty()
     ? (string)$canonicalField->value()
-    : rtrim($siteUrl, '/') . $baseurl . $page->url();
+    : rtrim($siteUrl, '/') . $baseurl . '/' . ltrim($page->uri(), '/');
 ?>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
@@ -43,9 +51,9 @@ $canonical = $canonicalField->isNotEmpty()
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
 <?php if ((string)getenv('APP_ENV') === 'production'): ?>
-<link href="<?= $baseurl ?>/assets/css/style.min.css?<?= time() ?>" rel="stylesheet">
+    <link href="<?= $baseurl ?>/assets/css/style.min.css<?= $assetVerQ ?>" rel="stylesheet">
 <?php else: ?>
-<link href="<?= $baseurl ?>/assets/css/style.css?<?= time() ?>" rel="stylesheet">
+    <link href="<?= $baseurl ?>/assets/css/style.css<?= $assetVerQ ?>" rel="stylesheet">
 <?php endif; ?>
 
 <link href="<?= $baseurl ?>/assets/css/instafilters.min.css?v0.1.4" rel="stylesheet">
