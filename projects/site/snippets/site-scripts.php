@@ -1,4 +1,6 @@
 <?php
+// projects/site/snippets/site-scripts.php
+
 declare(strict_types=1);
 
 $baseurl = (string)option('baseurl');
@@ -10,12 +12,17 @@ if ($baseurl === '' || $baseurl === '/') {
 }
 
 $isProd = ((string)getenv('APP_ENV') === 'production');
-$ts = (string)time();
+
+
+$docroot = dirname(__DIR__, 4);
+$verFile = $docroot . '/_asset_version.txt';
+$assetVer = is_file($verFile) ? trim((string)file_get_contents($verFile)) : '';
+$assetVerQ = $assetVer !== '' ? ('?v=' . rawurlencode($assetVer)) : '';
 ?>
 <?php if ($isProd): ?>
-<script src="<?= $baseurl ?>/assets/js/analytics-events.min.js?<?= $ts ?>" defer></script>
-<script src="<?= $baseurl ?>/assets/js/twemoji-windows.min.js?<?= $ts ?>"></script>
+    <script src="<?= $baseurl ?>/assets/js/analytics-events.min.js<?= $assetVerQ ?>" defer></script>
+    <script src="<?= $baseurl ?>/assets/js/twemoji-windows.min.js<?= $assetVerQ ?>"></script>
 <?php else: ?>
-<script src="<?= $baseurl ?>/assets/js/analytics-events.js?<?= $ts ?>" defer></script>
-<script src="<?= $baseurl ?>/assets/js/twemoji-windows.js?<?= $ts ?>"></script>
+    <script src="<?= $baseurl ?>/assets/js/analytics-events.js<?= $assetVerQ ?>" defer></script>
+    <script src="<?= $baseurl ?>/assets/js/twemoji-windows.js<?= $assetVerQ ?>"></script>
 <?php endif; ?>
