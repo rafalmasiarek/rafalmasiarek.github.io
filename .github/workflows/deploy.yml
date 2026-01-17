@@ -152,12 +152,17 @@ jobs:
         run: |
           set -euo pipefail
 
-          ssh -p ${{ secrets.RSYNC_SSH_PORT }} ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }} "\
-            find '${{ secrets.RSYNC_DEST_PATH }}' -type f -name '.cicd-pipeline-exclude' \
-            -exec dirname {} \;" \
-          | sed "s|^${{ secrets.RSYNC_DEST_PATH }}/*||; s|$|/|" > rsync-exclude.txt
+          ssh -p ${{ secrets.RSYNC_SSH_PORT }} \
+            ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }} \
+            "cd '${{ secrets.RSYNC_DEST_PATH }}' && \
+             find . -type f -name '.cicd-pipeline-exclude' -print0 \
+             | xargs -0 -n1 dirname \
+             | sed 's|^\./|/|; s|$|/|' \
+             | sort -u" > rsync-exclude.txt
 
-          echo "${{ secrets.RSYNC_EXCLUDES }}" >> rsync-exclude.txt
+          if [ -n "${{ secrets.RSYNC_EXCLUDES }}" ]; then
+            echo "${{ secrets.RSYNC_EXCLUDES }}" >> rsync-exclude.txt
+          fi
 
       - name: Debug rsync excludes
         run: |
