@@ -27,7 +27,9 @@ nav:
     url: /terms-and-conditions
   - title: Vinyls
     url: /vinyls
-  - title: I❤️OPENSOURCE
+  - title: Projects
+    url: /projects
+  - title: I ❤️ OPENSOURCE
     url: /i-love-opensource
 
 socials:
@@ -48,8 +50,11 @@ compress_html:
   startings: [html, head, body]
 
 include:
+  - .htaccess
+  - _config.yml
   - sw-vinyls.js
   - projects
+  - "projects/**/.*"
 
 exclude:
   - "**/*.md.overwrite"

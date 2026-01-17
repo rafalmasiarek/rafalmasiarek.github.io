@@ -1,4 +1,8 @@
-# Serve precompressed .br files when available and the client supports Brotli.
+# Block access to Jekyll config and any backups/variants
+<FilesMatch "^_config\.ya?ml(\..*)?$">
+  Require all denied
+</FilesMatch>
+
 <IfModule mod_rewrite.c>
   RewriteEngine On
 

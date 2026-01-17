@@ -88,10 +88,37 @@ jobs:
             esac
           done
 
+      # --------------------------
+      # Cache-bust asset versioning
+      # --------------------------
+      - name: Generate asset version (shared)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # One "source of truth" for this deploy:
+          VER="${GITHUB_SHA}"
+
+          # For Jekyll (Liquid can read site.data.*)
+          mkdir -p _data
+          printf "version: %s\n" "${VER}" > _data/asset_version.yml
+
       - name: Build Jekyll site
         run: bundle exec jekyll build
         env:
           JEKYLL_ENV: production
+
+      # Make sure dotfiles & config needed at runtime exist in _site so rsync won't delete them on remote
+      - name: Stage runtime files into _site
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Expose asset version to Kirby on the remote (docroot/_asset_version.txt)
+          printf "%s" "${GITHUB_SHA}" > _site/_asset_version.txt
+
+          # Ensure root .htaccess is deployed (Jekyll may omit dotfiles)
+          cp -f .htaccess _site/.htaccess
 
       # --------------------------
       # Precompress _site (gzip + brotli)
@@ -108,7 +135,7 @@ jobs:
           set -euo pipefail
 
           find _site -type f \( \
-              -name "*.html" -o -name "*.css" -o -name "*.js" -o -name "*.json" -o -name "*.svg" -o -name "*.xml" -o -name "*.txt" \
+              -name "*.html" -o -name "*.css" -o -name "*.js" -o -name "*.json" -o -name "*.svg" -o -name "*.xml" -o -name "*.txt" -o -name ".htaccess" \
             \) -print0 | while IFS= read -r -d '' f; do
               gzip -kf -9 "$f"
               brotli -fk -q 11 "$f"
