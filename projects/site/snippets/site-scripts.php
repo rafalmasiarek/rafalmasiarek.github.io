@@ -21,8 +21,8 @@ $assetVerQ = $assetVer !== '' ? ('?v=' . rawurlencode($assetVer)) : '';
 ?>
 <?php if ($isProd): ?>
     <script src="<?= $baseurl ?>/assets/js/analytics-events.min.js<?= $assetVerQ ?>" defer></script>
-    <script src="<?= $baseurl ?>/assets/js/twemoji-windows.min.js<?= $assetVerQ ?>"></script>
+    <script src="https://cdn.masiarek.pl/twemoji-windows/@latest/twemoji-windows.min.js" defer></script>
 <?php else: ?>
     <script src="<?= $baseurl ?>/assets/js/analytics-events.js<?= $assetVerQ ?>" defer></script>
-    <script src="<?= $baseurl ?>/assets/js/twemoji-windows.js<?= $assetVerQ ?>"></script>
+    <script src="https://cdn.masiarek.pl/twemoji-windows/@latest/twemoji-windows.js<?= $assetVerQ ?>" defer></script>
 <?php endif; ?>

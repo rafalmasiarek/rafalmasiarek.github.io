@@ -1,8 +1,8 @@
 {% if jekyll.environment == "production" %}
-<script src="{{ site.baseurl }}/assets/js/analytics-events.min.js?v={{ site.data.asset_version.version }}"
-    defer></script>
-<script src="{{ site.baseurl }}/assets/js/twemoji-windows.min.js?v={{ site.data.asset_version.version }}"></script>
+
+<script src="{{ site.baseurl }}/assets/js/analytics-events.min.js?v={{ site.data.asset_version.version }}" defer></script>
+<script src="https://cdn.masiarek.pl/twemoji-windows/@latest/twemoji-windows.min.js?v={{ site.data.asset_version.version }}" defer></script>
 {% else %}
 <script src="{{ site.baseurl }}/assets/js/analytics-events.js?v={{ site.data.asset_version.version }}" defer></script>
-<script src="{{ site.baseurl }}/assets/js/twemoji-windows.js?v={{ site.data.asset_version.version }}"></script>
+<script src="https://cdn.masiarek.pl/twemoji-windows/@latest/twemoji-windows.js?v={{ site.data.asset_version.version }}" defer></script>
 {% endif %}
