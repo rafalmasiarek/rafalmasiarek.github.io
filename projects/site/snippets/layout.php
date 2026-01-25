@@ -23,7 +23,7 @@ declare(strict_types=1);
 
   <?php snippet('site-footer') ?>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.masiarek.pl/bootstrap/v5.3.8/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous" defer></script>
 
   <?php snippet('site-analytics') ?>
   <?php snippet('analytics-helper') ?>
