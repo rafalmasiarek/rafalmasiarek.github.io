@@ -1038,10 +1038,7 @@ img.loaded {
 ============================================================================= */
 
 .keys__grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5em;
-  align-items: flex-start;
+  display: block;
 }
 
 .keys__panel {
@@ -1049,6 +1046,7 @@ img.loaded {
   border-radius: 4px;
   border: 1px solid #e0e0e0;
   background: #fff;
+  margin-bottom: 1.5em;
 }
 
 .keys__panel-header {
