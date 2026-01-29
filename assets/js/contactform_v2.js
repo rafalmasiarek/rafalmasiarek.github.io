@@ -4,7 +4,7 @@
  * contactform_v2.js
  *
  * Contact Form Frontend Script
- * Copyright (c) 2025 Rafał Masiarek. All rights reserved.
+ * Copyright (c) 2025 Rafał Masiarek. All rights reserved.
  *
  * This file is proprietary and confidential. Unauthorized copying,
  * distribution, modification, or use of this file, in whole or in part,
@@ -75,6 +75,16 @@ document.addEventListener('DOMContentLoaded', () => {
     return '';
   }
 
+  function requireLeadingVersion(txt, label) {
+    // Strict mode: v=<number> must be present and MUST be the first field.
+    const s = String(txt || '').trim();
+    const first = s.split(';', 1)[0].trim(); // e.g. "v=2"
+    if (!first) throw new Error(`${label} empty TXT`);
+    const m = /^v=(\d+)$/.exec(first);
+    if (!m) throw new Error(`${label} must start with v=<number> as the first field`);
+    return m[1]; // version string, e.g. "1", "2"
+  }
+
   async function dohFetchTxt(domain, provider) {
     // provider: 'cf' or 'gg'
     const url = provider === 'cf'
@@ -113,7 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
     //  "\"v=1;...\"" or "\"part1\" \"part2\""
     let s = String(txt).trim();
 
-    // Split on quote-space-quote patterns if present
+    // Split on quote patterns if present
     // We want to handle: "aaa" "bbb"  -> aaabbb
     const segments = [];
     const re = /"([^"]*)"/g;
@@ -171,17 +181,35 @@ document.addEventListener('DOMContentLoaded', () => {
     return cfOk ? cfVal : ggVal;
   }
 
-  function requireV1(txt, label) {
-    const v = kvGet(txt, 'v');
-    if (v !== '1') throw new Error(`${label} unsupported version v=${v || '(missing)'}`);
-  }
-
   async function fetchHttpsText(url) {
     const u = String(url || '');
     if (!u.startsWith('https://')) throw new Error('Only https:// URLs are allowed by identity resolver.');
     const res = await fetch(u, { cache: 'no-store' });
     if (!res.ok) throw new Error(`HTTP ${res.status} fetching ${u}`);
     return await res.text();
+  }
+
+  function pickRulesFromSchemas(schemasJson, type, version) {
+    const rules = schemasJson?.types?.[type]?.versions?.[String(version)];
+    if (!rules) throw new Error(`Unsupported ${type} schema version v=${version}`);
+    if (!Array.isArray(rules.required)) throw new Error(`Invalid schemas.json (missing required[] for ${type} v=${version})`);
+    if (!Array.isArray(rules.optional)) rules.optional = [];
+    return rules;
+  }
+
+  function validateTxtFields(txt, rules, label) {
+    for (const f of rules.required) {
+      const val = kvGet(txt, f);
+      if (!val) throw new Error(`${label} TXT missing required field: ${f}`);
+    }
+
+    // Optional constraints (kept minimal; only used if present)
+    const allow = rules?.constraints?.alg_allow;
+    if (Array.isArray(allow) && allow.length > 0) {
+      const alg = kvGet(txt, 'alg');
+      if (!alg) throw new Error(`${label} TXT missing required field: alg`);
+      if (!allow.includes(alg)) throw new Error(`${label} TXT has unsupported alg=${alg}`);
+    }
   }
 
   // Cache resolved recipient key to avoid repeated DoH/HTTP work
@@ -192,54 +220,53 @@ document.addEventListener('DOMContentLoaded', () => {
 
     setPgpStatus('Resolving identity (DNS)...');
 
-    // 1) Read meta _identity TXT
+    // 1) Read meta _identity TXT (strict: v must be first)
     const metaTxt = await getDnsTxtWithAd(IDENTITY.metaDomain);
-    requireV1(metaTxt, 'meta');
-    const schemaUrl = kvGet(metaTxt, 'schema');
-    const schemaSha = kvGet(metaTxt, 'schema_sha256');
-    if (!schemaUrl) throw new Error('meta TXT missing schema=');
-    if (!schemaSha) throw new Error('meta TXT missing schema_sha256=');
+    const metaV = requireLeadingVersion(metaTxt, 'meta');
+    if (metaV !== '1') throw new Error(`meta unsupported version v=${metaV}`);
 
-    // 2) Fetch schema JSON and verify sha256 pin
-    setPgpStatus('Fetching schema...');
-    const schemaText = await fetchHttpsText(schemaUrl);
-    const schemaHash = await sha256Hex(schemaText);
-    if (schemaHash !== schemaSha) throw new Error('Schema SHA256 mismatch (identity pin failed).');
+    // meta now points to schemas.json (pinned by sha256)
+    const schemasUrl = kvGet(metaTxt, 'schemas');
+    const schemasSha = kvGet(metaTxt, 'schemas_sha256');
+    if (!schemasUrl) throw new Error('meta TXT missing schemas=');
+    if (!schemasSha) throw new Error('meta TXT missing schemas_sha256=');
 
-    let schemaJson;
+    // 2) Fetch schemas.json and verify sha256 pin
+    setPgpStatus('Fetching schemas...');
+    const schemasText = await fetchHttpsText(schemasUrl);
+    const schemasHash = await sha256Hex(schemasText);
+    if (schemasHash !== schemasSha) throw new Error('Schemas SHA256 mismatch (identity pin failed).');
+
+    let schemasJson;
     try {
-      schemaJson = JSON.parse(schemaText);
+      schemasJson = JSON.parse(schemasText);
     } catch {
-      throw new Error('Schema JSON parse error.');
+      throw new Error('Schemas JSON parse error.');
     }
 
-    // Minimal schema validation
-    if (schemaJson.schema !== 'identity-txt' || schemaJson.version !== 1) {
-      throw new Error('Unsupported schema JSON.');
-    }
-    if (!schemaJson.types || !schemaJson.types.pgp || !Array.isArray(schemaJson.types.pgp.required)) {
-      throw new Error('Schema JSON missing types.pgp.required.');
+    // Minimal schemas.json validation
+    if (schemasJson.schema !== 'identity-schemas' || schemasJson.version !== 1) {
+      throw new Error('Unsupported schemas JSON.');
     }
 
-    // 3) Read PGP TXT record
+    // 3) Read PGP TXT record (strict: v must be first)
     setPgpStatus('Resolving PGP record (DNS)...');
     const pgpTxt = await getDnsTxtWithAd(IDENTITY.pgpDomain);
-    requireV1(pgpTxt, 'pgp');
+    const pgpV = requireLeadingVersion(pgpTxt, 'pgp');
+
     const type = kvGet(pgpTxt, 'type');
     if (type !== 'pgp') throw new Error(`PGP TXT has invalid type=${type || '(missing)'}`);
 
-    // Validate required fields from schema
-    for (const f of schemaJson.types.pgp.required) {
-      const val = kvGet(pgpTxt, f);
-      if (!val) throw new Error(`PGP TXT missing required field: ${f}`);
-    }
+    // 4) Validate required fields using schemas.json rules selected by v
+    const pgpRules = pickRulesFromSchemas(schemasJson, 'pgp', pgpV);
+    validateTxtFields(pgpTxt, pgpRules, 'PGP');
 
     const pubUrl = kvGet(pgpTxt, 'pub');
     const pubSha = kvGet(pgpTxt, 'pub_sha256');
     const fpr = kvGet(pgpTxt, 'fpr');
     const alg = kvGet(pgpTxt, 'alg');
 
-    // 4) Fetch pub key and verify pub_sha256 pin
+    // 5) Fetch pub key and verify pub_sha256 pin
     setPgpStatus('Fetching public key...');
     const pubArmored = await fetchHttpsText(pubUrl);
     if (!pubArmored.includes('BEGIN PGP PUBLIC KEY BLOCK')) {
@@ -410,7 +437,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const plain = (messageTa.value || '');
         if (!plain.trim()) throw new Error('Message is empty.');
 
-        // Resolve recipient key dynamically from identity (DNS + schema + pins)
+        // Resolve recipient key dynamically from identity (DNS + schemas + pins)
         const recipient = await resolveRecipientFromIdentity();
 
         setPgpStatus('Encrypting message...');
@@ -486,7 +513,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) {
       console.error('Contact form error:', err);
       alert.className = 'alert alert-red';
-      alert.textContent = (err && err.message) ? `✖ ${err.message}` : '✖ Unexpected error occurred.';
+      alert.textContent = (err && err.message) ? `â ${err.message}` : '❌ Unexpected error occurred.';
       alert.style.display = 'block';
       setPgpStatus('');
     } finally {

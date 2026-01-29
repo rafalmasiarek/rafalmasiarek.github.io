@@ -52,13 +52,17 @@
 </form>
 
 {% if jekyll.environment == "production" %}
-<script src="https://www.google.com/recaptcha/api.js?render={{ site.recaptcha_site_key }}" async defer data-cfasync="false"></script>
-<script src="{{ site.baseurl }}/assets/js/form-prefill.min.js?v={{ site.data.asset_version.version }}" data-cfasync="false"></script>
-<script src="https://cdn.masiarek.pl/openpgpjs/v6/openpgp.min.js" integrity="sha384-QJK16RICXnZBjNWfQQIhUPx4+I0Zg1EJGawTNLimDz0AkwWqpJDFTPSMkbmTV+Cn" crossorigin="anonymous" defer></script>
+<script src="https://www.google.com/recaptcha/api.js?render={{ site.recaptcha_site_key }}" async defer
+    data-cfasync="false"></script>
+<script src="{{ site.baseurl }}/assets/js/form-prefill.min.js?v={{ site.data.asset_version.version }}"
+    data-cfasync="false"></script>
 <script src="{{ site.baseurl }}/assets/js/contactform_v2.min.js?v={{ site.data.asset_version.version }}"></script>
 {% else %}
-<script src="{{ site.baseurl }}/assets/js/form-prefill.js?v={{ site.data.asset_version.version }}" data-cfasync="false"></script>
-<script src="https://cdn.masiarek.pl/openpgpjs/v6/openpgp.js" integrity="sha384-PHyi81GYKgQMOc0auAlfWNCtsoWaCqJXBXSrsfs6zO9EO45elOl7G2Pi8KsmG/ev" crossorigin="anonymous" defer></script>
+<script src="{{ site.baseurl }}/assets/js/form-prefill.js?v={{ site.data.asset_version.version }}"
+    data-cfasync="false"></script>
+<script src="https://cdn.masiarek.pl/openpgpjs/v6/openpgp.js"
+    integrity="sha384-PHyi81GYKgQMOc0auAlfWNCtsoWaCqJXBXSrsfs6zO9EO45elOl7G2Pi8KsmG/ev" crossorigin="anonymous"
+    defer></script>
 <script src="{{ site.baseurl }}/assets/js/contactform_v2.js?v={{ site.data.asset_version.version }}"></script>
 {% endif %}
 <script data-cfasync="false">

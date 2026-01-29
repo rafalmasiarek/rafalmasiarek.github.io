@@ -1,0 +1,35 @@
+<div class="keys__content" id="keys-page">
+    <div class="keys__grid">
+        <div class="keys__panel">
+            <div class="keys__panel-header">
+                <span class="keys__panel-label">PGP</span>
+                <span class="keys__panel-hint"></span>
+            </div>
+
+            <div class="keys__command-box">
+                <textarea id="keys-pgp" class="keys__output" readonly>Loading…</textarea>
+                <button id="keys-pgp-copy" class="keys__copy-btn" type="button">⧉ Copy</button>
+            </div>
+        </div>
+
+        <div class="keys__panel">
+            <div class="keys__panel-header">
+                <span class="keys__panel-label">SSH</span>
+                <span class="keys__panel-hint"></span>
+            </div>
+
+            <div class="keys__command-box">
+                <textarea id="keys-ssh" class="keys__output" readonly>Loading…</textarea>
+                <button id="keys-ssh-copy" class="keys__copy-btn" type="button">⧉ Copy</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="keys-alert" class="alert alert-red" style="display:none;"></div>
+</div>
+
+{% if jekyll.environment == "production" %}
+<script src="{{ site.baseurl }}/assets/js/keys.min.js?v={{ site.data.asset_version.version }}"></script>
+{% else %}
+<script src="{{ site.baseurl }}/assets/js/keys.js?v={{ site.data.asset_version.version }}"></script>
+{% endif %}
