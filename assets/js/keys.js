@@ -175,7 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
             throw new Error('Schemas JSON parse error.');
         }
 
-        if (schemasJson.schema !== 'identity-schemas' || schemasJson.version !== 1) {
+        if (schemasJson.schema !== 'masiarek-identity-schemas' || schemasJson.version !== 1) {
             throw new Error('Unsupported schemas JSON.');
         }
 
