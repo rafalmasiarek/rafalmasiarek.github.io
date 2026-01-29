@@ -356,7 +356,6 @@ document.addEventListener('DOMContentLoaded', () => {
     encryptedCb.addEventListener('change', () => {
       const on = !!encryptedCb.checked;
       if (pgpWrap) pgpWrap.style.display = on ? 'block' : 'none';
-      setPgpStatus(on ? 'Resolving identity…' : '');
 
       if (replyPgpInput) {
         if (on) replyPgpInput.setAttribute('required', 'required');
