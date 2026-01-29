@@ -157,6 +157,37 @@ jobs:
             echo "${{ secrets.RSYNC_EXCLUDES }}" >> rsync-exclude.txt
           fi
 
+      - name: Auto-exclude git submodules from rsync (from .gitmodules)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # .gitmodules is INI; let git parse it
+          if [ ! -f .gitmodules ]; then
+            echo "No .gitmodules found; skipping submodule excludes."
+            exit 0
+          fi
+
+          mapfile -t SUBS < <(
+            git config -f .gitmodules --get-regexp '^submodule\..*\.path$' \
+              | awk '{print $2}' \
+              | sed 's|^\./||' \
+              | sort -u
+          )
+
+          if [ ${#SUBS[@]} -eq 0 ]; then
+            echo "No submodule paths found; skipping."
+            exit 0
+          fi
+
+          echo "Adding submodule paths to rsync-exclude.txt:"
+          for p in "${SUBS[@]}"; do
+            echo " - /${p%/}/"
+            echo "/${p%/}/" >> rsync-exclude.txt
+          done
+
+          sort -u rsync-exclude.txt -o rsync-exclude.txt
+
       - name: Debug rsync excludes
         run: |
           set -euo pipefail
@@ -169,8 +200,33 @@ jobs:
         run: |
           set -euo pipefail
 
-          rsync -avz \
+          # Note: often faster without -z when there are many small files
+          rsync -av \
             -e "ssh -p ${{ secrets.RSYNC_SSH_PORT }}" \
             --delete \
+            --delete-delay \
             --exclude-from=rsync-exclude.txt \
             _site/ ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }}:${{ secrets.RSYNC_DEST_PATH }}
+
+      - name: Update submodules on server
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ssh -p ${{ secrets.RSYNC_SSH_PORT }} \
+            ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }} \
+            "bash -lc '
+              set -euo pipefail
+              cd \"${{ secrets.RSYNC_DEST_PATH }}\"
+
+              if [ ! -d .git ]; then
+                echo \"ERROR: ${{ secrets.RSYNC_DEST_PATH }} is not a git repo (no .git).\" >&2
+                echo \"Make it a checkout of the superproject if you want git submodule update here.\" >&2
+                exit 1
+              fi
+
+              git fetch --all --prune
+              git checkout -f \"${GITHUB_SHA}\"
+              git submodule sync --recursive
+              git submodule update --init --recursive
+            '"
