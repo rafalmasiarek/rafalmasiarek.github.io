@@ -31,10 +31,19 @@ function el(tag, cls, text) {
 function renderInfoBox(targetEl, rows) {
     if (!targetEl) return;
     targetEl.innerHTML = '';
+
+    const norm = (v) => {
+        if (v === null || v === undefined) return '';
+        if (typeof v === 'string') return v.trim();
+        return String(v).trim();
+    };
+
     for (const [k, v] of rows) {
+        const vv = norm(v);
+        if (!vv) continue;
         const row = el('div', 'keys__info-row');
         row.appendChild(el('div', 'keys__info-k', k));
-        row.appendChild(el('div', 'keys__info-v', v));
+        row.appendChild(el('div', 'keys__info-v', vv));
         targetEl.appendChild(row);
     }
 }
@@ -337,6 +346,17 @@ document.addEventListener('DOMContentLoaded', () => {
         return schemasJson;
     }
 
+    function setInfoBoxesVisible(visible) {
+        if (elPgpInfo) {
+            elPgpInfo.style.display = visible ? '' : 'none';
+            if (!visible) elPgpInfo.innerHTML = '';
+        }
+        if (elSshInfo) {
+            elSshInfo.style.display = visible ? '' : 'none';
+            if (!visible) elSshInfo.innerHTML = '';
+        }
+    }
+
     function pickRulesFromSchemas(schemasJson, type, version) {
         const rules = schemasJson?.types?.[type]?.versions?.[String(version)];
         if (!rules) throw new Error(`Unsupported ${type} schema version v=${version}`);
@@ -414,6 +434,8 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             hideError();
 
+            setInfoBoxesVisible(true);
+
             elPgp.value = 'Loading…';
             elSsh.value = 'Loading…';
 
@@ -434,16 +456,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 const fp = key.getFingerprint();    // hex
                 const kid = key.getKeyID().toHex(); // hex
                 const uids = (key.getUserIDs ? key.getUserIDs() : []).slice(0, 3);
-                const uidsText = uids.length ? uids.join(' | ') : '—';
+                const uidsText = uids.length ? uids.join(' | ') : '';
 
-                let algo = 'unknown';
-                let bits = 'unknown';
+                let algo = '';
+                let bits = '';
                 try {
                     const pk = key.getKeys?.()?.[0];
                     const info = pk?.getAlgorithmInfo?.();
                     if (info) {
-                        algo = info.algorithm || algo;
-                        bits = (info.bits !== undefined && info.bits !== null) ? String(info.bits) : bits;
+                        algo = info.algorithm || '';
+                        bits = (info.bits !== undefined && info.bits !== null) ? String(info.bits) : '';
                     }
                 } catch (_) { }
 
@@ -456,9 +478,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 ]);
             } catch (e) {
                 console.error('PGP info parse failed:', e);
-                renderInfoBox(elPgpInfo, [
-                    ['Info', 'PGP metadata parsing failed (openpgp.js missing or unsupported key format).']
-                ]);
+                if (elPgpInfo) elPgpInfo.innerHTML = '';
             }
 
             // SSH
@@ -479,7 +499,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const keyType = parts[0];
                 const keyB64 = parts[1];
-                const comment = parts.slice(2).join(' ') || '—';
+                const comment = parts.slice(2).join(' ') || '';
 
                 const blob = b64ToBytes(keyB64);
 
@@ -489,7 +509,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const parsed = sshBitsFromBlob(blob);
                 const type = parsed.type || keyType;
-                const bits = parsed.bits ? `${parsed.bits} bits` : 'unknown';
+                const bits = parsed.bits ? `${parsed.bits} bits` : '';
 
                 renderInfoBox(elSshInfo, [
                     ['Type', type],
@@ -497,23 +517,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     ['SHA-256 fingerprint', `SHA256:${sha256fp}`],
                     ['SHA-1 fingerprint', `SHA1:${sha1fp}`],
                     ['MD5 fingerprint', `MD5:${md5fp}`],
-                    ['Source', 'authorized_keys entry'],
                     ['Comment', comment],
                 ]);
             } catch (e) {
                 console.error('SSH info parse failed:', e);
-                renderInfoBox(elSshInfo, [
-                    ['Info', 'SSH metadata parsing failed (unsupported key format or invalid base64).']
-                ]);
+                if (elSshInfo) elSshInfo.innerHTML = '';
             }
         } catch (e) {
             console.error('Keys page error:', e);
             showError((e && e.message) ? `✖ ${e.message}` : '✖ Unexpected error occurred.');
             if (elPgp.value === 'Loading…') elPgp.value = '';
             if (elSsh.value === 'Loading…') elSsh.value = '';
-            // clear info boxes on fatal error
-            renderInfoBox(elPgpInfo, [['Status', '—']]);
-            renderInfoBox(elSshInfo, [['Status', '—']]);
+            setInfoBoxesVisible(false);
         }
     })();
 });
