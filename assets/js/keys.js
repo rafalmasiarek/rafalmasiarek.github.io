@@ -17,12 +17,167 @@ const IDENTITY = {
     sshDomain: 'ssh._identity.masiarek.pl',
 };
 
+/* =========================
+   UI helpers + crypto helpers (browser-only)
+========================= */
+
+function el(tag, cls, text) {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+}
+
+function renderInfoBox(targetEl, rows) {
+    if (!targetEl) return;
+    targetEl.innerHTML = '';
+    for (const [k, v] of rows) {
+        const row = el('div', 'keys__info-row');
+        row.appendChild(el('div', 'keys__info-k', k));
+        row.appendChild(el('div', 'keys__info-v', v));
+        targetEl.appendChild(row);
+    }
+}
+
+function b64ToBytes(b64) {
+    const bin = atob(b64);
+    const out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+}
+
+function bytesToB64(bytes) {
+    let s = '';
+    for (const b of bytes) s += String.fromCharCode(b);
+    return btoa(s);
+}
+
+function stripB64Padding(b64) {
+    return String(b64 || '').replace(/=+$/g, '');
+}
+
+function colonHex(bytes) {
+    const hex = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+    return hex.match(/.{2}/g).join(':');
+}
+
+async function hashWebCrypto(alg, bytes) {
+    const buf = await crypto.subtle.digest(alg, bytes);
+    return new Uint8Array(buf);
+}
+
+function md5(bytes) {
+    function rotl(x, n) { return (x << n) | (x >>> (32 - n)); }
+    function u32(x) { return x >>> 0; }
+
+    const K = new Uint32Array(64);
+    for (let i = 0; i < 64; i++) K[i] = Math.floor(Math.abs(Math.sin(i + 1)) * 0x100000000) >>> 0;
+    const S = [
+        7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22,
+        5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20,
+        4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23,
+        6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21
+    ];
+
+    const origBits = bytes.length * 8;
+    const withOne = new Uint8Array(bytes.length + 1);
+    withOne.set(bytes, 0);
+    withOne[bytes.length] = 0x80;
+
+    let newLen = withOne.length;
+    while ((newLen % 64) !== 56) newLen++;
+    const msg = new Uint8Array(newLen + 8);
+    msg.set(withOne, 0);
+
+    const dv = new DataView(msg.buffer);
+    dv.setUint32(msg.length - 8, origBits >>> 0, true);
+    dv.setUint32(msg.length - 4, Math.floor(origBits / 0x100000000) >>> 0, true);
+
+    let a0 = 0x67452301, b0 = 0xefcdab89, c0 = 0x98badcfe, d0 = 0x10325476;
+
+    for (let off = 0; off < msg.length; off += 64) {
+        let A = a0, B = b0, C = c0, D = d0;
+
+        const M = new Uint32Array(16);
+        for (let i = 0; i < 16; i++) M[i] = dv.getUint32(off + i * 4, true);
+
+        for (let i = 0; i < 64; i++) {
+            let F, g;
+            if (i < 16) { F = (B & C) | (~B & D); g = i; }
+            else if (i < 32) { F = (D & B) | (~D & C); g = (5 * i + 1) % 16; }
+            else if (i < 48) { F = B ^ C ^ D; g = (3 * i + 5) % 16; }
+            else { F = C ^ (B | ~D); g = (7 * i) % 16; }
+
+            const tmp = D;
+            D = C;
+            C = B;
+            const sum = u32(A + F + K[i] + M[g]);
+            B = u32(B + rotl(sum, S[i]));
+            A = tmp;
+        }
+
+        a0 = u32(a0 + A);
+        b0 = u32(b0 + B);
+        c0 = u32(c0 + C);
+        d0 = u32(d0 + D);
+    }
+
+    const out = new Uint8Array(16);
+    const odv = new DataView(out.buffer);
+    odv.setUint32(0, a0, true);
+    odv.setUint32(4, b0, true);
+    odv.setUint32(8, c0, true);
+    odv.setUint32(12, d0, true);
+    return out;
+}
+
+// SSH blob parsing for modulus bits (RSA) and basic key type detection.
+function readU32(view, off) { return { val: view.getUint32(off, false), off: off + 4 }; }
+function readBytes(view, off, len) {
+    const bytes = new Uint8Array(view.buffer, view.byteOffset + off, len);
+    return { bytes: new Uint8Array(bytes), off: off + len };
+}
+function readString(view, off) {
+    const u = readU32(view, off);
+    return readBytes(view, u.off, u.val);
+}
+function mpintBitLength(bytes) {
+    let b = bytes;
+    while (b.length > 0 && b[0] === 0x00) b = b.slice(1);
+    if (b.length === 0) return 0;
+    const msb = b[0];
+    let bits = (b.length - 1) * 8;
+    for (let i = 7; i >= 0; i--) {
+        if ((msb >> i) & 1) { bits += (i + 1); break; }
+    }
+    return bits;
+}
+function sshBitsFromBlob(blobBytes) {
+    const view = new DataView(blobBytes.buffer, blobBytes.byteOffset, blobBytes.byteLength);
+    let off = 0;
+    const t = readString(view, off); off = t.off;
+    const type = new TextDecoder().decode(t.bytes);
+
+    if (type === 'ssh-rsa') {
+        const e = readString(view, off); off = e.off; // eslint-disable-line no-unused-vars
+        const n = readString(view, off);
+        return { type, bits: mpintBitLength(n.bytes) };
+    }
+    if (type === 'ssh-ed25519') return { type, bits: 256 };
+    if (type.startsWith('ecdsa-sha2-')) return { type, bits: null };
+    return { type, bits: null };
+}
+
+/* ========================= */
+
 document.addEventListener('DOMContentLoaded', () => {
     const elPgp = document.getElementById('keys-pgp');
     const elSsh = document.getElementById('keys-ssh');
     const btnPgp = document.getElementById('keys-pgp-copy');
     const btnSsh = document.getElementById('keys-ssh-copy');
     const alertEl = document.getElementById('keys-alert');
+    const elPgpInfo = document.getElementById('keys-pgp-info');
+    const elSshInfo = document.getElementById('keys-ssh-info');
 
     if (!elPgp || !elSsh) return;
 
@@ -262,20 +417,103 @@ document.addEventListener('DOMContentLoaded', () => {
             elPgp.value = 'Loading…';
             elSsh.value = 'Loading…';
 
+            renderInfoBox(elPgpInfo, [['Status', 'Loading…']]);
+            renderInfoBox(elSshInfo, [['Status', 'Loading…']]);
+
             const schemasJson = await loadSchemasJson();
 
             // PGP
             const pgp = await resolveAndFetchPinnedPub('pgp', IDENTITY.pgpDomain, schemasJson);
             elPgp.value = pgp.pubText.trim() + '\n';
 
+            // PGP info
+            try {
+                if (!window.openpgp) throw new Error('openpgp.js is not available');
+
+                const key = await window.openpgp.readKey({ armoredKey: pgp.pubText });
+                const fp = key.getFingerprint();    // hex
+                const kid = key.getKeyID().toHex(); // hex
+                const uids = (key.getUserIDs ? key.getUserIDs() : []).slice(0, 3);
+                const uidsText = uids.length ? uids.join(' | ') : '—';
+
+                let algo = 'unknown';
+                let bits = 'unknown';
+                try {
+                    const pk = key.getKeys?.()?.[0];
+                    const info = pk?.getAlgorithmInfo?.();
+                    if (info) {
+                        algo = info.algorithm || algo;
+                        bits = (info.bits !== undefined && info.bits !== null) ? String(info.bits) : bits;
+                    }
+                } catch (_) { }
+
+                renderInfoBox(elPgpInfo, [
+                    ['Fingerprint', fp],
+                    ['Key ID', kid],
+                    ['Algorithm', algo],
+                    ['Key size', bits],
+                    ['User IDs', uidsText],
+                ]);
+            } catch (e) {
+                console.error('PGP info parse failed:', e);
+                renderInfoBox(elPgpInfo, [
+                    ['Info', 'PGP metadata parsing failed (openpgp.js missing or unsupported key format).']
+                ]);
+            }
+
             // SSH
             const ssh = await resolveAndFetchPinnedPub('ssh', IDENTITY.sshDomain, schemasJson);
             elSsh.value = ssh.pubText.trim() + '\n';
+
+            // SSH info (fingerprints + modulus bits)
+            try {
+                const line0 = ssh.pubText.trim().split(/\r?\n/).map(s => s.trim()).find(s => s && !s.startsWith('#'));
+                if (!line0) throw new Error('SSH public key is empty');
+
+                // Handle authorized_keys options prefix: command="...",no-pty ssh-rsa AAAA... comment
+                const m = line0.match(/(ssh-(rsa|ed25519|dss)|ecdsa-sha2-[^\s]+)\s+[A-Za-z0-9+/=]+.*/);
+                const normalized = m ? m[0] : line0;
+
+                const parts = normalized.split(/\s+/);
+                if (parts.length < 2) throw new Error('SSH key line does not contain base64 data');
+
+                const keyType = parts[0];
+                const keyB64 = parts[1];
+                const comment = parts.slice(2).join(' ') || '—';
+
+                const blob = b64ToBytes(keyB64);
+
+                const sha256fp = stripB64Padding(bytesToB64(await hashWebCrypto('SHA-256', blob)));
+                const sha1fp = stripB64Padding(bytesToB64(await hashWebCrypto('SHA-1', blob)));
+                const md5fp = colonHex(md5(blob));
+
+                const parsed = sshBitsFromBlob(blob);
+                const type = parsed.type || keyType;
+                const bits = parsed.bits ? `${parsed.bits} bits` : 'unknown';
+
+                renderInfoBox(elSshInfo, [
+                    ['Type', type],
+                    ['Modulus bits', bits],
+                    ['SHA-256 fingerprint', `SHA256:${sha256fp}`],
+                    ['SHA-1 fingerprint', `SHA1:${sha1fp}`],
+                    ['MD5 fingerprint', `MD5:${md5fp}`],
+                    ['Source', 'authorized_keys entry'],
+                    ['Comment', comment],
+                ]);
+            } catch (e) {
+                console.error('SSH info parse failed:', e);
+                renderInfoBox(elSshInfo, [
+                    ['Info', 'SSH metadata parsing failed (unsupported key format or invalid base64).']
+                ]);
+            }
         } catch (e) {
             console.error('Keys page error:', e);
             showError((e && e.message) ? `✖ ${e.message}` : '✖ Unexpected error occurred.');
             if (elPgp.value === 'Loading…') elPgp.value = '';
             if (elSsh.value === 'Loading…') elSsh.value = '';
+            // clear info boxes on fatal error
+            renderInfoBox(elPgpInfo, [['Status', '—']]);
+            renderInfoBox(elSshInfo, [['Status', '—']]);
         }
     })();
 });

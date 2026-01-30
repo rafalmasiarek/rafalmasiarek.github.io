@@ -10,6 +10,8 @@
                 <textarea id="keys-pgp" class="keys__output" readonly>Loading…</textarea>
                 <button id="keys-pgp-copy" class="keys__copy-btn" type="button">⧉ Copy</button>
             </div>
+
+            <div id="keys-pgp-info" class="keys__info" aria-live="polite"></div>
         </div>
 
         <div class="keys__panel">
@@ -22,6 +24,8 @@
                 <textarea id="keys-ssh" class="keys__output" readonly>Loading…</textarea>
                 <button id="keys-ssh-copy" class="keys__copy-btn" type="button">⧉ Copy</button>
             </div>
+
+            <div id="keys-ssh-info" class="keys__info" aria-live="polite"></div>
         </div>
     </div>
 
@@ -29,7 +33,13 @@
 </div>
 
 {% if jekyll.environment == "production" %}
+<script src="https://cdn.masiarek.pl/openpgpjs/v6/openpgp.min.js"
+    integrity="sha384-QJK16RICXnZBjNWfQQIhUPx4+I0Zg1EJGawTNLimDz0AkwWqpJDFTPSMkbmTV+Cn" crossorigin="anonymous"
+    defer></script>
 <script src="{{ site.baseurl }}/assets/js/keys.min.js?v={{ site.data.asset_version.version }}"></script>
 {% else %}
+<script src="https://cdn.masiarek.pl/openpgpjs/v6/openpgp.js"
+    integrity="sha384-PHyi81GYKgQMOc0auAlfWNCtsoWaCqJXBXSrsfs6zO9EO45elOl7G2Pi8KsmG/ev" crossorigin="anonymous"
+    defer></script>
 <script src="{{ site.baseurl }}/assets/js/keys.js?v={{ site.data.asset_version.version }}"></script>
 {% endif %}

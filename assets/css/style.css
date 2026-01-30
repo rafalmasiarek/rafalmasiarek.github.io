@@ -1042,9 +1042,6 @@ img.loaded {
 }
 
 .keys__panel {
-  padding: 0.9em 0.9em 0.8em;
-  border-radius: 4px;
-  border: 1px solid #e0e0e0;
   background: #fff;
   margin-bottom: 1.5em;
 }
@@ -1055,7 +1052,6 @@ img.loaded {
   align-items: baseline;
   gap: 0.6em;
   margin-bottom: 0.4em;
-  font-size: 0.78em;
 }
 
 .keys__panel-label {
@@ -1087,6 +1083,42 @@ img.loaded {
   border: none;
   resize: vertical;
   box-sizing: border-box;
+}
+
+.keys__info {
+  margin-top: 0.65em;
+  padding: 0.7em 0.75em;
+  border: 1px solid #e6e6e6;
+  border-radius: 4px;
+  background: #fafafa;
+  font-size: 0.82em;
+  color: #222;
+}
+
+.keys__info-row {
+  display: flex;
+  gap: 0.8em;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0.22em 0;
+  border-bottom: 1px dashed #e6e6e6;
+}
+
+.keys__info-row:last-child {
+  border-bottom: none;
+}
+
+.keys__info-k {
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.74em;
+}
+
+.keys__info-v {
+  font-family: 'Roboto Mono', monospace;
+  word-break: break-all;
+  text-align: right;
 }
 
 .keys__copy-btn {

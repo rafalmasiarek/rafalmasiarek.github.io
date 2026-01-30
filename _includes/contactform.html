@@ -52,6 +52,9 @@
 </form>
 
 {% if jekyll.environment == "production" %}
+<script src="https://cdn.masiarek.pl/openpgpjs/v6/openpgp.min.js"
+    integrity="sha384-QJK16RICXnZBjNWfQQIhUPx4+I0Zg1EJGawTNLimDz0AkwWqpJDFTPSMkbmTV+Cn" crossorigin="anonymous"
+    defer></script>
 <script src="https://www.google.com/recaptcha/api.js?render={{ site.recaptcha_site_key }}" async defer
     data-cfasync="false"></script>
 <script src="{{ site.baseurl }}/assets/js/form-prefill.min.js?v={{ site.data.asset_version.version }}"
