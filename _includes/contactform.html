@@ -24,8 +24,15 @@
 
     <label style="display:flex; gap:10px; align-items:center; font-size: 14px;">
         <input type="checkbox" id="contact-form-encrypted" name="encrypted" value="1">
-        Encrypted
+        <span>
+            Encrypted
+            <a href="/keys" style="margin-left:6px; font-size:12px;text-transform: uppercase;" target="_blank"
+                rel="noopener">
+                (my PGP key)
+            </a>
+        </span>
     </label>
+
 
     <div id="contact-form-pgp-wrap" style="display:none; margin-top:10px;">
         <div class="wrap-input">
