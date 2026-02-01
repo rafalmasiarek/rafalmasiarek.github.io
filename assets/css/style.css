@@ -973,6 +973,24 @@ img.loaded {
   text-underline-offset: 3px;
 }
 
+/* SSH helper notice: subtle callout above generator */
+.ssh-gen__notice {
+  margin: 0 0 12px 0;
+  padding: 10px 12px;
+  border: 1px solid #e6e6e6;
+  border-radius: 6px;
+  background: #fafafa;
+  font-size: 0.82em;
+  color: #222;
+}
+
+.ssh-gen__notice a {
+  background-image: none;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-weight: 600;
+}
+
 .ssh-gen__note a:hover {
   opacity: 0.85;
 }
