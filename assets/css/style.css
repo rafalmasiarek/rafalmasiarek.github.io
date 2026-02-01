@@ -967,6 +967,16 @@ img.loaded {
   margin-top: 0.2em;
 }
 
+.ssh-gen__note a {
+  background-image: none;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.ssh-gen__note a:hover {
+  opacity: 0.85;
+}
+
 .ssh-gen__panel {
   padding: 0.9em 0.9em 0.8em;
   border-radius: 4px;

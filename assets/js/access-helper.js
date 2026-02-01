@@ -14,7 +14,7 @@
  * sublicense, or redistribute this code.
  */
 (function () {
-    const BASE_URL = 'https://access.masiarek.pl/v1';
+    const BASE_URL = 'https://access.masiarek.pl';
     const EVENTS_BASE = 'https://events.masiarek.pl';
 
     const STREAM_SCOPES = ['stream:ssh-access'];
