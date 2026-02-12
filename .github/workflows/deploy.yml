@@ -37,9 +37,6 @@ jobs:
           bundle config set path 'vendor/bundle'
           bundle install --jobs 4 --retry 3
 
-      # --------------------------
-      # Minify assets (wildcards)
-      # --------------------------
       - name: Set up Node.js (for minifiers)
         uses: actions/setup-node@v6
         with:
@@ -92,11 +89,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-
-          # One "source of truth" for this deploy:
           VER="${GITHUB_SHA}"
-
-          # For Jekyll (Liquid can read site.data.*)
           mkdir -p _data
           printf "version: %s\n" "${VER}" > _data/asset_version.yml
 
@@ -109,25 +102,17 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-
-          # Expose asset version to Kirby on the remote (docroot/_asset_version.txt)
           printf "%s" "${GITHUB_SHA}" > _site/_asset_version.txt
 
-      # --------------------------
-      # Precompress _site (gzip + brotli)
-      # --------------------------
       - name: Precompress assets in _site (gzip + brotli)
         shell: bash
         run: |
           set -euo pipefail
-
-          # Compress only the static Jekyll output, never Kirby (/projects) and never dotfiles (e.g. .htaccess)
           find _site -type f \
             ! -path "_site/projects/*" \
             ! -name ".*" \
-            \( \
-              -name "*.html" -o -name "*.css" -o -name "*.js" \
-            \) -print0 | while IFS= read -r -d '' f; do
+            \( -name "*.html" -o -name "*.css" -o -name "*.js" \) -print0 \
+          | while IFS= read -r -d '' f; do
               gzip -kf -9 "$f"
               brotli -fk -q 11 "$f"
             done
@@ -164,7 +149,54 @@ jobs:
           cat rsync-exclude.txt
           echo "---------------------------"
 
-      - name: update meta indentity's keychain if needed
+      - name: Deploy via rsync
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          rsync -avz \
+            -e "ssh -p ${{ secrets.RSYNC_SSH_PORT }}" \
+            --delete \
+            --exclude-from=rsync-exclude.txt \
+            _site/ ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }}:${{ secrets.RSYNC_DEST_PATH }}
+
+      - name: Verify remote identity files match build
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Local hashes (build output)
+          L_SCHEMAS="$(sha256sum _site/.well-known/identity/schemas.json | awk '{print $1}')"
+          L_MANIFEST="$(sha256sum _site/.well-known/identity/manifest.json | awk '{print $1}')"
+          L_PGP="$(sha256sum _site/.well-known/identity/keys/pgp.asc | awk '{print $1}')"
+          L_SSH="$(sha256sum _site/.well-known/identity/keys/ssh.pub | awk '{print $1}')"
+
+          echo "LOCAL schemas.json  $L_SCHEMAS"
+          echo "LOCAL manifest.json $L_MANIFEST"
+          echo "LOCAL keys/pgp.asc  $L_PGP"
+          echo "LOCAL keys/ssh.pub  $L_SSH"
+
+          # Remote hashes (deployed)
+          R_SCHEMAS="$(ssh -p ${{ secrets.RSYNC_SSH_PORT }} ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }} \
+            "sha256sum '${{ secrets.RSYNC_DEST_PATH }}/.well-known/identity/schemas.json' | awk '{print \$1}'")"
+          R_MANIFEST="$(ssh -p ${{ secrets.RSYNC_SSH_PORT }} ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }} \
+            "sha256sum '${{ secrets.RSYNC_DEST_PATH }}/.well-known/identity/manifest.json' | awk '{print \$1}'")"
+          R_PGP="$(ssh -p ${{ secrets.RSYNC_SSH_PORT }} ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }} \
+            "sha256sum '${{ secrets.RSYNC_DEST_PATH }}/.well-known/identity/keys/pgp.asc' | awk '{print \$1}'")"
+          R_SSH="$(ssh -p ${{ secrets.RSYNC_SSH_PORT }} ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }} \
+            "sha256sum '${{ secrets.RSYNC_DEST_PATH }}/.well-known/identity/keys/ssh.pub' | awk '{print \$1}'")"
+
+          echo "REMOTE schemas.json  $R_SCHEMAS"
+          echo "REMOTE manifest.json $R_MANIFEST"
+          echo "REMOTE keys/pgp.asc  $R_PGP"
+          echo "REMOTE keys/ssh.pub  $R_SSH"
+
+          [ "$L_SCHEMAS" = "$R_SCHEMAS" ] || { echo "ERROR: schemas.json mismatch after deploy"; exit 1; }
+          [ "$L_MANIFEST" = "$R_MANIFEST" ] || { echo "ERROR: manifest.json mismatch after deploy"; exit 1; }
+          [ "$L_PGP" = "$R_PGP" ] || { echo "ERROR: pgp.asc mismatch after deploy"; exit 1; }
+          [ "$L_SSH" = "$R_SSH" ] || { echo "ERROR: ssh.pub mismatch after deploy"; exit 1; }
+
+      - name: Update identity DNS (meta + pgp + ssh) and verify via DoH
         shell: bash
         env:
           CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
@@ -177,32 +209,23 @@ jobs:
           SLEEP_S: "3"
         run: |
           set -euo pipefail
-
           unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY ALL_PROXY all_proxy NO_PROXY no_proxy
 
           chmod +x bin/identityctl
 
-          # ---- helpers (DoH + normalization) ----
           normalize_txt() {
             local txt="${1:-}"
-
-            # Unescape \" -> "
             txt="$(printf '%s' "$txt" | sed 's/\\"/"/g')"
-
-            # If contains quoted segments, concatenate them: "a" "b" -> ab
             if printf '%s' "$txt" | grep -q '"'; then
               local out=""
               while IFS= read -r seg; do out="${out}${seg}"; done < <(printf '%s' "$txt" | grep -Po '"\K[^"]*(?=")' || true)
               txt="$out"
             fi
-
-            # Remove whitespace/newlines
             txt="$(printf '%s' "$txt" | tr -d '\n' | tr -d '\r' | tr -d '[:space:]')"
             printf '%s' "$txt"
           }
 
           doh_get_txt_ad() {
-            # Usage: doh_get_txt_ad <provider: cf|gg> <fqdn>
             local provider="$1"
             local name="$2"
 
@@ -230,113 +253,79 @@ jobs:
             normalize_txt "$raw"
           }
 
-          # ---- desired meta TXT ----
-          WANT_META="$(bin/identityctl meta-txt --root _site/.well-known/identity --raw)"
+          wait_cf_hard_gg_warn() {
+            local fqdn="$1"
+            local want="$2"
+
+            check_provider_eq() {
+              local provider="$1"
+              local got=""
+              got="$(doh_get_txt_ad "$provider" "$fqdn")" || return 1
+              echo "DoH ${provider} (${fqdn}): $got"
+              [ "$got" = "$want" ]
+            }
+
+            MAX_TRIES="${MAX_TRIES:-40}"
+            SLEEP_S="${SLEEP_S:-3}"
+
+            ok_cf=0
+            for i in $(seq 1 "$MAX_TRIES"); do
+              echo "Check CF DoH ${fqdn} (${i}/${MAX_TRIES})..."
+              if check_provider_eq cf; then ok_cf=1; break; fi
+              sleep "$SLEEP_S"
+            done
+
+            if [ "$ok_cf" -ne 1 ]; then
+              echo "ERROR: CF DoH did not converge for ${fqdn} after ${MAX_TRIES} tries." >&2
+              echo "EXPECTED: $want" >&2
+              exit 1
+            fi
+
+            ok_gg=0
+            for i in $(seq 1 "$MAX_TRIES"); do
+              echo "Check GG DoH ${fqdn} (${i}/${MAX_TRIES})..."
+              if check_provider_eq gg; then ok_gg=1; break; fi
+              sleep "$SLEEP_S"
+            done
+
+            if [ "$ok_gg" -ne 1 ]; then
+              echo "::warning::Google DoH did not converge for ${fqdn} after ${MAX_TRIES} tries (CF is OK)."
+              echo "::warning::EXPECTED: $want"
+              GG_NOW="$(doh_get_txt_ad gg "$fqdn" 2>/dev/null || true)"
+              if [ -n "$GG_NOW" ]; then
+                echo "::warning::GG current (${fqdn}): $GG_NOW"
+              fi
+            else
+              echo "OK: Google DoH also matches for ${fqdn}."
+            fi
+          }
+
+          ROOT="_site/.well-known/identity"
+
+          # ---- META TXT (RAW, matches browser hashing) ----
+          WANT_META="$(bin/identityctl meta-txt --root "$ROOT" --raw)"
           WANT_META_NORM="$(printf '%s' "$WANT_META" | tr -d '[:space:]')"
           echo "WANT_META_NORM=$WANT_META_NORM"
 
-          # ---- current meta TXT from Cloudflare API ----
-          CF_ZONE_ID="${CF_ZONE_ID:-}"
+          echo "Upsert meta TXT -> ${IDENTITY_META_FQDN}"
+          bin/identityctl cf-set-meta --name "${IDENTITY_META_FQDN}" --ttl 120 --root "$ROOT" --raw
 
-          if [ -z "$CF_ZONE_ID" ]; then
-            CF_ZONE_ID="$(curl -fsSL -H "Authorization: Bearer ${CF_API_TOKEN}" \
-              "https://api.cloudflare.com/client/v4/zones?name=${CF_ZONE_NAME}&status=active" \
-              | jq -r '.result[0].id // empty')"
-          fi
+          wait_cf_hard_gg_warn "${IDENTITY_META_FQDN}" "${WANT_META_NORM}"
 
-          if [ -z "$CF_ZONE_ID" ] || [ "$CF_ZONE_ID" = "null" ]; then
-            echo "ERROR: cannot resolve Cloudflare zone ID" >&2
-            exit 1
-          fi
+          # ---- PGP KEY TXT ----
+          PGP_DNS="$(bin/identityctl show-dns --type pgp --root "$ROOT")"
+          WANT_PGP="$(bin/identityctl key-txt --type pgp --root "$ROOT" | tr -d '[:space:]')"
+          echo "WANT_PGP_TXT=$WANT_PGP"
+          echo "Upsert PGP TXT -> ${PGP_DNS}"
+          bin/identityctl cf-set-key --type pgp --ttl 120 --root "$ROOT"
+          wait_cf_hard_gg_warn "${PGP_DNS}" "${WANT_PGP}"
 
-          CUR_META="$(curl -fsSL \
-            -H "Authorization: Bearer ${CF_API_TOKEN}" \
-            "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/dns_records?type=TXT&name=${IDENTITY_META_FQDN}" \
-            | jq -r '.result[0].content // ""' \
-            | tr -d '[:space:]')"
+          # ---- SSH KEY TXT ----
+          SSH_DNS="$(bin/identityctl show-dns --type ssh --root "$ROOT")"
+          WANT_SSH="$(bin/identityctl key-txt --type ssh --root "$ROOT" | tr -d '[:space:]')"
+          echo "WANT_SSH_TXT=$WANT_SSH"
+          echo "Upsert SSH TXT -> ${SSH_DNS}"
+          bin/identityctl cf-set-key --type ssh --ttl 120 --root "$ROOT"
+          wait_cf_hard_gg_warn "${SSH_DNS}" "${WANT_SSH}"
 
-          echo "CUR_META=$CUR_META"
-
-          UPDATED=0
-          if [ "$CUR_META" = "$WANT_META_NORM" ]; then
-            echo "Identity meta TXT is up-to-date. No change."
-          else
-            echo "Identity meta TXT differs -> updating Cloudflare..."
-            bin/identityctl cf-set-meta --name "${IDENTITY_META_FQDN}" --ttl 120 --root _site/.well-known/identity --raw
-            UPDATED=1
-            echo "Cloudflare update done."
-          fi
-
-          # ---- smoke test: DoH+AD (CF hard, GG warn) with retries ----
-          echo "Smoke test (DoH + DNSSEC AD=true) for ${IDENTITY_META_FQDN} ..."
-
-          want="$WANT_META_NORM"
-
-          check_provider_eq() {
-            local provider="$1"
-            local got=""
-            got="$(doh_get_txt_ad "$provider" "${IDENTITY_META_FQDN}")" || return 1
-            echo "DoH ${provider}: $got"
-            [ "$got" = "$want" ]
-          }
-
-          # Tuning knobs
-          MAX_TRIES="${MAX_TRIES:-40}"
-          SLEEP_S="${SLEEP_S:-3}"
-
-          # ---- HARD REQUIRE: Cloudflare DoH must converge ----
-          ok_cf=0
-          for i in $(seq 1 "$MAX_TRIES"); do
-            echo "Check CF DoH (${i}/${MAX_TRIES})..."
-            if check_provider_eq cf; then
-              ok_cf=1
-              break
-            fi
-            sleep "$SLEEP_S"
-          done
-
-          if [ "$ok_cf" -ne 1 ]; then
-            echo "ERROR: CF DoH did not converge to expected TXT after ${MAX_TRIES} tries." >&2
-            echo "EXPECTED: $want" >&2
-            exit 1
-          fi
-
-          # ---- WARNING ONLY: Google DoH may lag ----
-          ok_gg=0
-          for i in $(seq 1 "$MAX_TRIES"); do
-            echo "Check GG DoH (${i}/${MAX_TRIES})..."
-            if check_provider_eq gg; then
-              ok_gg=1
-              break
-            fi
-            sleep "$SLEEP_S"
-          done
-
-          if [ "$ok_gg" -ne 1 ]; then
-            echo "::warning::Google DoH did not converge to expected TXT after ${MAX_TRIES} tries (CF is OK)."
-            echo "::warning::EXPECTED: $want"
-            # Optional: print what GG currently returns (best-effort)
-            GG_NOW="$(doh_get_txt_ad gg "${IDENTITY_META_FQDN}" 2>/dev/null || true)"
-            if [ -n "$GG_NOW" ]; then
-              echo "::warning::GG current: $GG_NOW"
-            fi
-          else
-            echo "OK: Google DoH also matches expected TXT."
-          fi
-
-          if [ "$UPDATED" -eq 1 ]; then
-            echo "OK: Updated and verified via CF DoH (AD=true)."
-          else
-            echo "OK: Already correct; verified via CF DoH (AD=true)."
-          fi
-
-      - name: Deploy via rsync
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          rsync -avz \
-            -e "ssh -p ${{ secrets.RSYNC_SSH_PORT }}" \
-            --delete \
-            --exclude-from=rsync-exclude.txt \
-            _site/ ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }}:${{ secrets.RSYNC_DEST_PATH }}
+          echo "OK: Identity DNS updated (meta + pgp + ssh) and verified via CF DoH (AD=true)."
