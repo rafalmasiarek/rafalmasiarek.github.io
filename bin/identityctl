@@ -13,7 +13,7 @@ have() { command -v "$1" >/dev/null 2>&1; }
 need() { have "$1" || die "missing dependency: $1"; }
 
 # ===================
-# Curl wrapper (shared style with your scripts)
+# Curl wrapper
 # ===================
 _curl_get() {
   local url="$1"; shift || true
@@ -293,6 +293,16 @@ cf_require() {
   : "${CF_ZONE_NAME:?Set CF_ZONE_NAME (e.g. masiarek.pl)}"
 }
 
+# Build curl args safely (array)
+cf_args() {
+  cf_require
+  CF_ARGS=(
+    -H "Authorization: Bearer ${CF_API_TOKEN}"
+    -H "Content-Type: application/json"
+  )
+}
+
+# (legacy; no longer used by curl calls)
 cf_headers() {
   printf '%s\n' \
     "-H" "Authorization: Bearer ${CF_API_TOKEN}" \
@@ -301,8 +311,16 @@ cf_headers() {
 
 cf_zone_id() {
   cf_require
+  cf_args
+
+  # Prefer CF_ZONE_ID if provided, else fallback to API lookup by CF_ZONE_NAME
+  if [ -n "${CF_ZONE_ID:-}" ]; then
+    printf '%s' "${CF_ZONE_ID}"
+    return 0
+  fi
+
   local out
-  out="$(_curl_get "${API}/zones?name=${CF_ZONE_NAME}&status=active" $(cf_headers))"
+  out="$(_curl_get "${API}/zones?name=${CF_ZONE_NAME}&status=active" "${CF_ARGS[@]}")"
   local ok
   ok="$(jq -r '.success' <<<"$out")"
   [ "$ok" = "true" ] || die "Cloudflare zones lookup failed: $(jq -c '.errors' <<<"$out")"
@@ -314,26 +332,29 @@ cf_zone_id() {
 
 cf_list_records() {
   cf_require
+  cf_args
   local type="${1:-TXT}"
   local name="${2:-}"
   local zid
   zid="$(cf_zone_id)"
   local url="${API}/zones/${zid}/dns_records?type=${type}"
   if [ -n "$name" ]; then url="${url}&name=${name}"; fi
-  _curl_get "$url" $(cf_headers) | jq
+  _curl_get "$url" "${CF_ARGS[@]}" | jq
 }
 
 cf_find_record() {
   cf_require
+  cf_args
   local type="$1"
   local name="$2"
   local zid
   zid="$(cf_zone_id)"
-  _curl_get "${API}/zones/${zid}/dns_records?type=${type}&name=${name}" $(cf_headers)
+  _curl_get "${API}/zones/${zid}/dns_records?type=${type}&name=${name}" "${CF_ARGS[@]}"
 }
 
 cf_create_txt() {
   cf_require
+  cf_args
   local name="$1"
   local content="$2"
   local ttl="${3:-120}"
@@ -343,7 +364,7 @@ cf_create_txt() {
   payload="$(jq -cn --arg type "TXT" --arg name "$name" --arg content "$content" --argjson ttl "$ttl" \
     '{type:$type,name:$name,content:$content,ttl:$ttl}')"
   local out
-  out="$(_curl_get "${API}/zones/${zid}/dns_records" -X POST $(cf_headers) --data "$payload")"
+  out="$(_curl_get "${API}/zones/${zid}/dns_records" -X POST "${CF_ARGS[@]}" --data "$payload")"
   local ok
   ok="$(jq -r '.success' <<<"$out")"
   [ "$ok" = "true" ] || die "Cloudflare create failed: $(jq -c '.errors' <<<"$out")"
@@ -352,6 +373,7 @@ cf_create_txt() {
 
 cf_update_txt_by_id() {
   cf_require
+  cf_args
   local rid="$1"
   local name="$2"
   local content="$3"
@@ -362,7 +384,7 @@ cf_update_txt_by_id() {
   payload="$(jq -cn --arg type "TXT" --arg name "$name" --arg content "$content" --argjson ttl "$ttl" \
     '{type:$type,name:$name,content:$content,ttl:$ttl}')"
   local out
-  out="$(_curl_get "${API}/zones/${zid}/dns_records/${rid}" -X PUT $(cf_headers) --data "$payload")"
+  out="$(_curl_get "${API}/zones/${zid}/dns_records/${rid}" -X PUT "${CF_ARGS[@]}" --data "$payload")"
   local ok
   ok="$(jq -r '.success' <<<"$out")"
   [ "$ok" = "true" ] || die "Cloudflare update failed: $(jq -c '.errors' <<<"$out")"
@@ -371,6 +393,7 @@ cf_update_txt_by_id() {
 
 cf_upsert_txt() {
   cf_require
+  cf_args
   local name="$1"
   local content="$2"
   local ttl="${3:-120}"
@@ -480,6 +503,9 @@ Env required for cf-*:
   CF_API_TOKEN   Cloudflare API token with DNS:Edit on the zone
   CF_ZONE_NAME   e.g. masiarek.pl
 
+Optional (preferred) for cf-*:
+  CF_ZONE_ID     if set, used directly; otherwise looked up by CF_ZONE_NAME
+
 Env required for meta-txt/cf-set-meta:
   SCHEMAS_URL    e.g. https://masiarek.pl/.well-known/identity/schemas.json
   MANIFEST_URL   e.g. https://masiarek.pl/.well-known/identity/manifest.json
@@ -566,7 +592,7 @@ main() {
       ;;
 
     show-dns)
-      local type="" 
+      local type=""
       while [ $# -gt 0 ]; do
         case "$1" in
           --type) type="$2"; shift 2;;
