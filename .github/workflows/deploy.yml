@@ -298,20 +298,21 @@ jobs:
 
           wait_cf_hard_gg_warn "${IDENTITY_META_FQDN}" "${WANT_META_NORM}"
 
-          # ---- PGP KEY TXT ----
-          PGP_DNS="$(bin/identityctl show-dns --type pgp --root "$ROOT")"
-          WANT_PGP="$(bin/identityctl key-txt --type pgp --root "$ROOT" | tr -d '[:space:]')"
-          echo "WANT_PGP_TXT=$WANT_PGP"
-          echo "Upsert PGP TXT -> ${PGP_DNS}"
-          bin/identityctl cf-set-key --type pgp --ttl 120 --root "$ROOT"
-          wait_cf_hard_gg_warn "${PGP_DNS}" "${WANT_PGP}"
+          # ---- APPLY + PRUNE ALL PGP/SSH KEYS ----
+          bin/identityctl cf-apply-keys --type pgp --ttl 120 --root "$ROOT"
+          bin/identityctl cf-prune-keys --type pgp --root "$ROOT"
 
-          # ---- SSH KEY TXT ----
-          SSH_DNS="$(bin/identityctl show-dns --type ssh --root "$ROOT")"
-          WANT_SSH="$(bin/identityctl key-txt --type ssh --root "$ROOT" | tr -d '[:space:]')"
-          echo "WANT_SSH_TXT=$WANT_SSH"
-          echo "Upsert SSH TXT -> ${SSH_DNS}"
-          bin/identityctl cf-set-key --type ssh --ttl 120 --root "$ROOT"
-          wait_cf_hard_gg_warn "${SSH_DNS}" "${WANT_SSH}"
+          bin/identityctl cf-apply-keys --type ssh --ttl 120 --root "$ROOT"
+          bin/identityctl cf-prune-keys --type ssh --root "$ROOT"
 
-          echo "OK: Identity DNS updated (meta + pgp + ssh) and verified via CF DoH (AD=true)."
+          # ---- Verify stable aliases always match current ----
+          CUR_PGP="$(jq -r '.pgp.current' "$ROOT/manifest.json")"
+          CUR_SSH="$(jq -r '.ssh.current' "$ROOT/manifest.json")"
+
+          WANT_PGP_ALIAS="$(bin/identityctl key-txt --type pgp --ver "$CUR_PGP" --root "$ROOT" | tr -d '[:space:]')"
+          WANT_SSH_ALIAS="$(bin/identityctl key-txt --type ssh --ver "$CUR_SSH" --root "$ROOT" | tr -d '[:space:]')"
+
+          wait_cf_hard_gg_warn "pgp._identity.${CF_ZONE_NAME}" "$WANT_PGP_ALIAS"
+          wait_cf_hard_gg_warn "ssh._identity.${CF_ZONE_NAME}" "$WANT_SSH_ALIAS"
+
+          echo "OK: Identity DNS updated (meta + pgp + ssh), pruned, and aliases verified via CF DoH (AD=true)."
