@@ -51,6 +51,7 @@ include:
   - .htaccess
   - _config.yml
   - sw-vinyls.js
+  - .well-known
   - projects
   - "projects/**/.*"
 

@@ -1,0 +1,33 @@
+{
+  "schema": "identity-txt",
+  "version": 1,
+  "format": {
+    "separator": ";",
+    "kv": "=",
+    "whitespace": "ignore"
+  },
+  "types": {
+    "pgp": {
+      "required": [
+        "fpr",
+        "pub",
+        "pub_sha256"
+      ],
+      "optional": [
+        "kid",
+        "alg"
+      ]
+    },
+    "ssh": {
+      "required": [
+        "fp",
+        "pub",
+        "pub_sha256"
+      ],
+      "optional": [
+        "kid",
+        "alg"
+      ]
+    }
+  }
+}

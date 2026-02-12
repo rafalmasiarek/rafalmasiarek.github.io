@@ -237,7 +237,7 @@ jobs:
           }
 
           # ---- desired meta TXT ----
-          WANT_META="$(bin/identityctl meta-txt --root .well-known/identity)"
+          WANT_META="$(bin/identityctl meta-txt --root _site/.well-known/identity)"
           WANT_META_NORM="$(printf '%s' "$WANT_META" | tr -d '[:space:]')"
           echo "WANT_META_NORM=$WANT_META_NORM"
 
@@ -264,7 +264,7 @@ jobs:
             echo "Identity meta TXT is up-to-date. No change."
           else
             echo "Identity meta TXT differs -> updating Cloudflare..."
-            bin/identityctl cf-set-meta --name "${IDENTITY_META_FQDN}" --ttl 120 --root .well-known/identity
+            bin/identityctl cf-set-meta --name "${IDENTITY_META_FQDN}" --ttl 120 --root _site/.well-known/identity
             UPDATED=1
             echo "Cloudflare update done."
           fi

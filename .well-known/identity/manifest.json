@@ -1,0 +1,27 @@
+{
+  "schema": "masiarek-identity-manifest",
+  "version": 1,
+  "pgp": {
+    "current": "2026-01",
+    "versions": {
+      "2026-01": {
+        "dns": "pgp._identity.masiarek.pl",
+        "fingerprint": "F9DC50F63D3E696479C45B16A32C15DAF07D7E80",
+        "pub": "https://masiarek.pl/.well-known/identity/keys/pgp.asc",
+        "sha256": "f76e29ef13f58c4401d670c6d23fdc603323fd359a6481666250a6376f413826"
+      }
+    }
+  },
+  "ssh": {
+    "current": "2026-01",
+    "versions": {
+      "2026-01": {
+        "dns": "ssh._identity.masiarek.pl",
+        "fingerprint": "SHA256:bXMwi/mk+QNsCZcSD59pTo7Yd9fgbh4pRhaBvBJQEBI",
+        "pub": "https://masiarek.pl/.well-known/identity/keys/ssh.pub",
+        "sha256": "a3adb3add65dbe4eb37b4a6e23633dd4ae8320cf9c15be98fc9adbb4fee9ade3",
+        "alg": "rsa"
+      }
+    }
+  }
+}

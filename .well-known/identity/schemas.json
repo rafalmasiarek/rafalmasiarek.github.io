@@ -1,0 +1,41 @@
+{
+  "schema": "masiarek-identity-schemas",
+  "version": 1,
+  "format": {
+    "separator": ";",
+    "kv": "=",
+    "whitespace": "ignore"
+  },
+  "types": {
+    "pgp": {
+      "versions": {
+        "1": {
+          "required": [
+            "fpr",
+            "pub",
+            "pub_sha256"
+          ],
+          "optional": [
+            "kid",
+            "alg"
+          ]
+        }
+      }
+    },
+    "ssh": {
+      "versions": {
+        "1": {
+          "required": [
+            "fp",
+            "pub",
+            "pub_sha256"
+          ],
+          "optional": [
+            "kid",
+            "alg"
+          ]
+        }
+      }
+    }
+  }
+}
