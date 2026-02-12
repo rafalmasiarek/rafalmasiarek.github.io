@@ -9,6 +9,12 @@
         "fingerprint": "F9DC50F63D3E696479C45B16A32C15DAF07D7E80",
         "pub": "https://masiarek.pl/.well-known/identity/keys/pgp-2026-01.asc",
         "sha256": "f76e29ef13f58c4401d670c6d23fdc603323fd359a6481666250a6376f413826"
+      },
+      "2027-99-new": {
+        "dns": "pgp-2027-99-new._identity.masiarek.pl",
+        "fingerprint": "F9DC50F63D3E696479C45B16A32C15DAF07D7E80",
+        "pub": "https://masiarek.pl/.well-known/identity/keys/pgp-2026-01.asc",
+        "sha256": "f76e29ef13f58c4401d670c6d23fdc603323fd359a6481666250a6376f413826"
       }
     }
   },
