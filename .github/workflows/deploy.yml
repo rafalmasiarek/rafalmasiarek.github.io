@@ -169,6 +169,7 @@ jobs:
         env:
           CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
           CF_ZONE_NAME: ${{ secrets.CF_ZONE_NAME }}
+          CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
           SCHEMAS_URL: ${{ secrets.IDENTITY_SCHEMAS_URL }}
           MANIFEST_URL: ${{ secrets.IDENTITY_MANIFEST_URL }}
           IDENTITY_META_FQDN: ${{ secrets.IDENTITY_META_FQDN }}
@@ -233,18 +234,22 @@ jobs:
           echo "WANT_META_NORM=$WANT_META_NORM"
 
           # ---- current meta TXT from Cloudflare API ----
-          ZONE_ID="$(curl -fsSL -H "Authorization: Bearer ${CF_API_TOKEN}" \
-            "https://api.cloudflare.com/client/v4/zones?name=${CF_ZONE_NAME}&status=active" \
-            | jq -r '.result[0].id')"
+          CF_ZONE_ID="${CF_ZONE_ID:-}"
 
-          if [ -z "$ZONE_ID" ] || [ "$ZONE_ID" = "null" ]; then
-            echo "ERROR: cannot resolve Cloudflare zone id for ${CF_ZONE_NAME}" >&2
+          if [ -z "$CF_ZONE_ID" ]; then
+            CF_ZONE_ID="$(curl -fsSL -H "Authorization: Bearer ${CF_API_TOKEN}" \
+              "https://api.cloudflare.com/client/v4/zones?name=${CF_ZONE_NAME}&status=active" \
+              | jq -r '.result[0].id // empty')"
+          fi
+
+          if [ -z "$CF_ZONE_ID" ] || [ "$CF_ZONE_ID" = "null" ]; then
+            echo "ERROR: cannot resolve Cloudflare zone ID" >&2
             exit 1
           fi
 
           CUR_META="$(curl -fsSL \
             -H "Authorization: Bearer ${CF_API_TOKEN}" \
-            "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records?type=TXT&name=${IDENTITY_META_FQDN}" \
+            "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/dns_records?type=TXT&name=${IDENTITY_META_FQDN}" \
             | jq -r '.result[0].content // ""' \
             | sed 's/^"//; s/"$//' \
             | tr -d '[:space:]')"
