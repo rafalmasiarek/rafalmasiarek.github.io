@@ -18,6 +18,7 @@ need() { have "$1" || die "missing dependency: $1"; }
 _curl_get() {
   local url="$1"; shift || true
   curl -fsSL \
+    --noproxy '*' \
     --proto '=https' --tlsv1.2 \
     --connect-timeout 3 --max-time 20 \
     --retry 2 --retry-delay 1 --retry-max-time 20 \
