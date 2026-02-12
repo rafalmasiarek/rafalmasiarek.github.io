@@ -164,17 +164,6 @@ jobs:
           cat rsync-exclude.txt
           echo "---------------------------"
 
-      - name: Deploy via rsync
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          rsync -avz \
-            -e "ssh -p ${{ secrets.RSYNC_SSH_PORT }}" \
-            --delete \
-            --exclude-from=rsync-exclude.txt \
-            _site/ ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }}:${{ secrets.RSYNC_DEST_PATH }}
-
       - name: update meta indentity's keychain if needed
         shell: bash
         env:
@@ -297,3 +286,14 @@ jobs:
           else
             echo "OK: Already correct; verified via DoH (AD=true)."
           fi
+
+      - name: Deploy via rsync
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          rsync -avz \
+            -e "ssh -p ${{ secrets.RSYNC_SSH_PORT }}" \
+            --delete \
+            --exclude-from=rsync-exclude.txt \
+            _site/ ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }}:${{ secrets.RSYNC_DEST_PATH }}
