@@ -186,6 +186,8 @@ jobs:
         run: |
           set -euo pipefail
 
+          unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY ALL_PROXY all_proxy NO_PROXY no_proxy
+
           chmod +x bin/identityctl
 
           # ---- helpers (DoH + normalization) ----
@@ -255,6 +257,7 @@ jobs:
             -H "Authorization: Bearer ${CF_API_TOKEN}" \
             "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records?type=TXT&name=${IDENTITY_META_FQDN}" \
             | jq -r '.result[0].content // ""' \
+            | sed 's/^"//; s/"$//' \
             | tr -d '[:space:]')"
 
           echo "CUR_META=$CUR_META"
