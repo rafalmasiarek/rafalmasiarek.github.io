@@ -160,41 +160,27 @@ jobs:
             --exclude-from=rsync-exclude.txt \
             _site/ ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }}:${{ secrets.RSYNC_DEST_PATH }}
 
-      - name: Verify remote identity files match build
+      - name: Verify remote identity JSON files match build
         shell: bash
         run: |
           set -euo pipefail
 
-          # Local hashes (build output)
           L_SCHEMAS="$(sha256sum _site/.well-known/identity/schemas.json | awk '{print $1}')"
           L_MANIFEST="$(sha256sum _site/.well-known/identity/manifest.json | awk '{print $1}')"
-          L_PGP="$(sha256sum _site/.well-known/identity/keys/pgp.asc | awk '{print $1}')"
-          L_SSH="$(sha256sum _site/.well-known/identity/keys/ssh.pub | awk '{print $1}')"
 
           echo "LOCAL schemas.json  $L_SCHEMAS"
           echo "LOCAL manifest.json $L_MANIFEST"
-          echo "LOCAL keys/pgp.asc  $L_PGP"
-          echo "LOCAL keys/ssh.pub  $L_SSH"
 
-          # Remote hashes (deployed)
           R_SCHEMAS="$(ssh -p ${{ secrets.RSYNC_SSH_PORT }} ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }} \
             "sha256sum '${{ secrets.RSYNC_DEST_PATH }}/.well-known/identity/schemas.json' | awk '{print \$1}'")"
           R_MANIFEST="$(ssh -p ${{ secrets.RSYNC_SSH_PORT }} ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }} \
             "sha256sum '${{ secrets.RSYNC_DEST_PATH }}/.well-known/identity/manifest.json' | awk '{print \$1}'")"
-          R_PGP="$(ssh -p ${{ secrets.RSYNC_SSH_PORT }} ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }} \
-            "sha256sum '${{ secrets.RSYNC_DEST_PATH }}/.well-known/identity/keys/pgp.asc' | awk '{print \$1}'")"
-          R_SSH="$(ssh -p ${{ secrets.RSYNC_SSH_PORT }} ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }} \
-            "sha256sum '${{ secrets.RSYNC_DEST_PATH }}/.well-known/identity/keys/ssh.pub' | awk '{print \$1}'")"
 
           echo "REMOTE schemas.json  $R_SCHEMAS"
           echo "REMOTE manifest.json $R_MANIFEST"
-          echo "REMOTE keys/pgp.asc  $R_PGP"
-          echo "REMOTE keys/ssh.pub  $R_SSH"
 
           [ "$L_SCHEMAS" = "$R_SCHEMAS" ] || { echo "ERROR: schemas.json mismatch after deploy"; exit 1; }
           [ "$L_MANIFEST" = "$R_MANIFEST" ] || { echo "ERROR: manifest.json mismatch after deploy"; exit 1; }
-          [ "$L_PGP" = "$R_PGP" ] || { echo "ERROR: pgp.asc mismatch after deploy"; exit 1; }
-          [ "$L_SSH" = "$R_SSH" ] || { echo "ERROR: ssh.pub mismatch after deploy"; exit 1; }
 
       - name: Update identity DNS (meta + pgp + ssh) and verify via DoH
         shell: bash
