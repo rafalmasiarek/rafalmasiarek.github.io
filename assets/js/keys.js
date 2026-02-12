@@ -192,6 +192,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!elPgp || !elSsh) return;
 
+    let schemasJson = null;
+    let manifestJson = null;
+    let updatingSelects = false;
+    let loadSeq = 0;
+
     function showError(msg) {
         if (!alertEl) return;
         alertEl.textContent = msg || 'Unexpected error.';
@@ -233,13 +238,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function setVersionInUrl(type, v) {
         const url = new URL(window.location.href);
-        if (v) url.searchParams.set(type, v);
+        const val = String(v || '').trim();
+        if (val) url.searchParams.set(type, val);
         else url.searchParams.delete(type);
-        window.location.href = url.toString();
+        window.history.replaceState(null, '', url.toString());
+    }
+
+    function buildExactUrlFromUi() {
+        const url = new URL(window.location.href);
+        const pgp = selPgpVer && selPgpVer.value ? selPgpVer.value.trim() : '';
+        const ssh = selSshVer && selSshVer.value ? selSshVer.value.trim() : '';
+
+        if (pgp) url.searchParams.set('pgp', pgp);
+        else url.searchParams.delete('pgp');
+
+        if (ssh) url.searchParams.set('ssh', ssh);
+        else url.searchParams.delete('ssh');
+
+        return url.toString();
+    }
+
+    function syncUrlFromUi() {
+        const exact = buildExactUrlFromUi();
+        window.history.replaceState(null, '', exact);
+        return exact;
     }
 
     function fillVersionSelect(selectEl, ids, selectedId, type) {
         if (!selectEl) return;
+
+        updatingSelects = true;
         selectEl.innerHTML = '';
 
         const sorted = [...ids].sort();
@@ -251,7 +279,16 @@ document.addEventListener('DOMContentLoaded', () => {
             selectEl.appendChild(opt);
         }
 
-        selectEl.addEventListener('change', () => setVersionInUrl(type, selectEl.value));
+        setVersionInUrl(type, selectEl.value);
+        syncUrlFromUi();
+        updatingSelects = false;
+
+        selectEl.onchange = () => {
+            if (updatingSelects) return;
+            setVersionInUrl(type, selectEl.value);
+            syncUrlFromUi();
+            void reloadForSelection();
+        };
     }
 
     async function sha256Hex(text) {
@@ -358,18 +395,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const schemasHash = await sha256Hex(schemasText);
         if (schemasHash !== schemasSha) throw new Error('Schemas SHA256 mismatch (identity pin failed).');
 
-        let schemasJson;
+        let sj;
         try {
-            schemasJson = JSON.parse(schemasText);
+            sj = JSON.parse(schemasText);
         } catch {
             throw new Error('Schemas JSON parse error.');
         }
 
-        if (schemasJson.schema !== 'masiarek-identity-schemas' || schemasJson.version !== 1) {
+        if (sj.schema !== 'masiarek-identity-schemas' || sj.version !== 1) {
             throw new Error('Unsupported schemas JSON.');
         }
 
-        return schemasJson;
+        return sj;
     }
 
     async function loadManifestJson(metaTxt) {
@@ -383,22 +420,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const manifestHash = await sha256Hex(manifestText);
         if (manifestHash !== manifestSha) throw new Error('Manifest SHA256 mismatch (identity pin failed).');
 
-        let manifestJson;
+        let mj;
         try {
-            manifestJson = JSON.parse(manifestText);
+            mj = JSON.parse(manifestText);
         } catch {
             throw new Error('Manifest JSON parse error.');
         }
 
-        if (manifestJson.schema !== 'masiarek-identity-manifest' || manifestJson.version !== 1) {
+        if (mj.schema !== 'masiarek-identity-manifest' || mj.version !== 1) {
             throw new Error('Unsupported manifest JSON.');
         }
 
-        return manifestJson;
+        return mj;
     }
 
-    function pickRulesFromSchemas(schemasJson, type, version) {
-        const rules = schemasJson?.types?.[type]?.versions?.[String(version)];
+    function pickRulesFromSchemas(sj, type, version) {
+        const rules = sj?.types?.[type]?.versions?.[String(version)];
         if (!rules) throw new Error(`Unsupported ${type} schema version v=${version}`);
         if (!Array.isArray(rules.required)) throw new Error(`Invalid schemas.json (missing required[] for ${type} v=${version})`);
         if (!Array.isArray(rules.optional)) rules.optional = [];
@@ -412,13 +449,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function resolveAndFetchPinnedPub(type, domain, schemasJson) {
+    async function resolveAndFetchPinnedPub(type, domain, sj) {
         // 1) TXT (strict v first)
         const txt = await getDnsTxtWithAd(domain);
         const v = requireLeadingVersion(txt, type);
 
         // 2) Validate using schemas.json
-        const rules = pickRulesFromSchemas(schemasJson, type, v);
+        const rules = pickRulesFromSchemas(sj, type, v);
         validateRequiredFields(txt, rules, type.toUpperCase());
 
         // 3) Extract pub URL + pin
@@ -435,13 +472,13 @@ document.addEventListener('DOMContentLoaded', () => {
         return { v, txt, pubUrl, pubText };
     }
 
-    function listManifestVersionIds(manifestJson, type) {
-        const versions = manifestJson?.[type]?.versions || {};
+    function listManifestVersionIds(mj, type) {
+        const versions = mj?.[type]?.versions || {};
         return Object.keys(versions);
     }
 
-    function pickDomainFromManifest(manifestJson, type, requestedId) {
-        const node = manifestJson?.[type];
+    function pickDomainFromManifest(mj, type, requestedId) {
+        const node = mj?.[type];
         if (!node) throw new Error(`Manifest missing section: ${type}`);
 
         const versions = node.versions || {};
@@ -470,10 +507,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function copyLink(btn) {
-        const url = new URL(window.location.href);
-
-        // Normalizuj: jeśli user jest na wersjach domyślnych, i tak zostaw parametry jakie są.
-        const text = url.toString();
+        const text = syncUrlFromUi();
 
         try {
             await navigator.clipboard.writeText(text + '\n');
@@ -530,6 +564,121 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    async function renderPgp(pgpPick, seq) {
+        const pgp = await resolveAndFetchPinnedPub('pgp', pgpPick.dns, schemasJson);
+        if (seq !== loadSeq) return;
+        elPgp.value = pgp.pubText.trim() + '\n';
+
+        try {
+            if (!window.openpgp) throw new Error('openpgp.js is not available');
+
+            const key = await window.openpgp.readKey({ armoredKey: pgp.pubText });
+            const fp = key.getFingerprint();    // hex
+            const kid = key.getKeyID().toHex(); // hex
+            const uids = (key.getUserIDs ? key.getUserIDs() : []).slice(0, 3);
+            const uidsText = uids.length ? uids.join(' | ') : '';
+
+            let algo = '';
+            let bits = '';
+            try {
+                const pk = key.getKeys?.()?.[0];
+                const info = pk?.getAlgorithmInfo?.();
+                if (info) {
+                    algo = info.algorithm || '';
+                    bits = (info.bits !== undefined && info.bits !== null) ? String(info.bits) : '';
+                }
+            } catch (_) { }
+
+            renderInfoBox(elPgpInfo, [
+                ['Selected version', pgpPick.id],
+                ['Current version', pgpPick.current],
+                ['DNS', pgpPick.dns],
+                ['Fingerprint', fp],
+                ['Key ID', kid],
+                ['Algorithm', algo],
+                ['Key size', bits],
+                ['User IDs', uidsText],
+            ]);
+        } catch (e) {
+            console.error('PGP info parse failed:', e);
+            if (elPgpInfo) elPgpInfo.innerHTML = '';
+        }
+    }
+
+    async function renderSsh(sshPick, seq) {
+        const ssh = await resolveAndFetchPinnedPub('ssh', sshPick.dns, schemasJson);
+        if (seq !== loadSeq) return;
+        elSsh.value = ssh.pubText.trim() + '\n';
+
+        try {
+            const line0 = ssh.pubText.trim().split(/\r?\n/).map(s => s.trim()).find(s => s && !s.startsWith('#'));
+            if (!line0) throw new Error('SSH public key is empty');
+
+            // Handle authorized_keys options prefix: command="...",no-pty ssh-rsa AAAA... comment
+            const m = line0.match(/(ssh-(rsa|ed25519|dss)|ecdsa-sha2-[^\s]+)\s+[A-Za-z0-9+/=]+.*/);
+            const normalized = m ? m[0] : line0;
+
+            const parts = normalized.split(/\s+/);
+            if (parts.length < 2) throw new Error('SSH key line does not contain base64 data');
+
+            const keyType = parts[0];
+            const keyB64 = parts[1];
+            const comment = parts.slice(2).join(' ') || '';
+
+            const blob = b64ToBytes(keyB64);
+
+            const sha256fp = stripB64Padding(bytesToB64(await hashWebCrypto('SHA-256', blob)));
+            const sha1fp = stripB64Padding(bytesToB64(await hashWebCrypto('SHA-1', blob)));
+            const md5fp = colonHex(md5(blob));
+
+            const parsed = sshBitsFromBlob(blob);
+            const type = parsed.type || keyType;
+            const bits = parsed.bits ? `${parsed.bits} bits` : '';
+
+            renderInfoBox(elSshInfo, [
+                ['Selected version', sshPick.id],
+                ['Current version', sshPick.current],
+                ['DNS', sshPick.dns],
+                ['Type', type],
+                ['Modulus bits', bits],
+                ['SHA-256 fingerprint', `SHA256:${sha256fp}`],
+                ['SHA-1 fingerprint', `SHA1:${sha1fp}`],
+                ['MD5 fingerprint', `MD5:${md5fp}`],
+                ['Comment', comment],
+            ]);
+        } catch (e) {
+            console.error('SSH info parse failed:', e);
+            if (elSshInfo) elSshInfo.innerHTML = '';
+        }
+    }
+
+    async function reloadForSelection() {
+        if (!schemasJson || !manifestJson) return;
+
+        const seq = ++loadSeq;
+        const reqPgp = (selPgpVer && selPgpVer.value) ? selPgpVer.value.trim() : getRequestedVersionFromUrl('pgp');
+        const reqSsh = (selSshVer && selSshVer.value) ? selSshVer.value.trim() : getRequestedVersionFromUrl('ssh');
+
+        const pgpPick = pickDomainFromManifest(manifestJson, 'pgp', reqPgp);
+        const sshPick = pickDomainFromManifest(manifestJson, 'ssh', reqSsh);
+
+        fillVersionSelect(selPgpVer, listManifestVersionIds(manifestJson, 'pgp'), pgpPick.id, 'pgp');
+        fillVersionSelect(selSshVer, listManifestVersionIds(manifestJson, 'ssh'), sshPick.id, 'ssh');
+
+        hideError();
+        setInfoBoxesVisible(true);
+
+        elPgp.value = 'Loading…';
+        elSsh.value = 'Loading…';
+        renderInfoBox(elPgpInfo, [['Status', 'Loading…']]);
+        renderInfoBox(elSshInfo, [['Status', 'Loading…']]);
+
+        await Promise.all([
+            renderPgp(pgpPick, seq),
+            renderSsh(sshPick, seq),
+        ]);
+    }
+
     if (btnPgp) {
         btnPgp.addEventListener('click', () => copyFromTextarea(elPgp, btnPgp));
     }
@@ -543,7 +692,6 @@ document.addEventListener('DOMContentLoaded', () => {
     (async () => {
         try {
             hideError();
-
             setInfoBoxesVisible(true);
 
             elPgp.value = 'Loading…';
@@ -557,105 +705,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const metaV = requireLeadingVersion(metaTxt, 'meta');
             if (metaV !== '1') throw new Error(`meta unsupported version v=${metaV}`);
 
-            const schemasJson = await loadSchemasJson(metaTxt);
-            const manifestJson = await loadManifestJson(metaTxt);
+            schemasJson = await loadSchemasJson(metaTxt);
+            manifestJson = await loadManifestJson(metaTxt);
 
-            // pick versions from GET params (?pgp=<id>&ssh=<id>)
-            const reqPgp = getRequestedVersionFromUrl('pgp');
-            const reqSsh = getRequestedVersionFromUrl('ssh');
-
-            const pgpPick = pickDomainFromManifest(manifestJson, 'pgp', reqPgp);
-            const sshPick = pickDomainFromManifest(manifestJson, 'ssh', reqSsh);
-
-            // fill selects
-            fillVersionSelect(selPgpVer, listManifestVersionIds(manifestJson, 'pgp'), pgpPick.id, 'pgp');
-            fillVersionSelect(selSshVer, listManifestVersionIds(manifestJson, 'ssh'), sshPick.id, 'ssh');
-
-            // PGP
-            const pgp = await resolveAndFetchPinnedPub('pgp', pgpPick.dns, schemasJson);
-            elPgp.value = pgp.pubText.trim() + '\n';
-
-            // PGP info
-            try {
-                if (!window.openpgp) throw new Error('openpgp.js is not available');
-
-                const key = await window.openpgp.readKey({ armoredKey: pgp.pubText });
-                const fp = key.getFingerprint();    // hex
-                const kid = key.getKeyID().toHex(); // hex
-                const uids = (key.getUserIDs ? key.getUserIDs() : []).slice(0, 3);
-                const uidsText = uids.length ? uids.join(' | ') : '';
-
-                let algo = '';
-                let bits = '';
-                try {
-                    const pk = key.getKeys?.()?.[0];
-                    const info = pk?.getAlgorithmInfo?.();
-                    if (info) {
-                        algo = info.algorithm || '';
-                        bits = (info.bits !== undefined && info.bits !== null) ? String(info.bits) : '';
-                    }
-                } catch (_) { }
-
-                renderInfoBox(elPgpInfo, [
-                    ['Selected version', pgpPick.id],
-                    ['Current version', pgpPick.current],
-                    ['DNS', pgpPick.dns],
-                    ['Fingerprint', fp],
-                    ['Key ID', kid],
-                    ['Algorithm', algo],
-                    ['Key size', bits],
-                    ['User IDs', uidsText],
-                ]);
-            } catch (e) {
-                console.error('PGP info parse failed:', e);
-                if (elPgpInfo) elPgpInfo.innerHTML = '';
-            }
-
-            // SSH
-            const ssh = await resolveAndFetchPinnedPub('ssh', sshPick.dns, schemasJson);
-            elSsh.value = ssh.pubText.trim() + '\n';
-
-            // SSH info (fingerprints + modulus bits)
-            try {
-                const line0 = ssh.pubText.trim().split(/\r?\n/).map(s => s.trim()).find(s => s && !s.startsWith('#'));
-                if (!line0) throw new Error('SSH public key is empty');
-
-                // Handle authorized_keys options prefix: command="...",no-pty ssh-rsa AAAA... comment
-                const m = line0.match(/(ssh-(rsa|ed25519|dss)|ecdsa-sha2-[^\s]+)\s+[A-Za-z0-9+/=]+.*/);
-                const normalized = m ? m[0] : line0;
-
-                const parts = normalized.split(/\s+/);
-                if (parts.length < 2) throw new Error('SSH key line does not contain base64 data');
-
-                const keyType = parts[0];
-                const keyB64 = parts[1];
-                const comment = parts.slice(2).join(' ') || '';
-
-                const blob = b64ToBytes(keyB64);
-
-                const sha256fp = stripB64Padding(bytesToB64(await hashWebCrypto('SHA-256', blob)));
-                const sha1fp = stripB64Padding(bytesToB64(await hashWebCrypto('SHA-1', blob)));
-                const md5fp = colonHex(md5(blob));
-
-                const parsed = sshBitsFromBlob(blob);
-                const type = parsed.type || keyType;
-                const bits = parsed.bits ? `${parsed.bits} bits` : '';
-
-                renderInfoBox(elSshInfo, [
-                    ['Selected version', sshPick.id],
-                    ['Current version', sshPick.current],
-                    ['DNS', sshPick.dns],
-                    ['Type', type],
-                    ['Modulus bits', bits],
-                    ['SHA-256 fingerprint', `SHA256:${sha256fp}`],
-                    ['SHA-1 fingerprint', `SHA1:${sha1fp}`],
-                    ['MD5 fingerprint', `MD5:${md5fp}`],
-                    ['Comment', comment],
-                ]);
-            } catch (e) {
-                console.error('SSH info parse failed:', e);
-                if (elSshInfo) elSshInfo.innerHTML = '';
-            }
+            await reloadForSelection();
         } catch (e) {
             console.error('Keys page error:', e);
             showError((e && e.message) ? `✖ ${e.message}` : '✖ Unexpected error occurred.');
