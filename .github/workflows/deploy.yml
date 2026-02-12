@@ -173,6 +173,8 @@ jobs:
           SCHEMAS_URL: ${{ secrets.IDENTITY_SCHEMAS_URL }}
           MANIFEST_URL: ${{ secrets.IDENTITY_MANIFEST_URL }}
           IDENTITY_META_FQDN: ${{ secrets.IDENTITY_META_FQDN }}
+          MAX_TRIES: "60"
+          SLEEP_S: "3"
         run: |
           set -euo pipefail
 
@@ -265,30 +267,67 @@ jobs:
             echo "Cloudflare update done."
           fi
 
-          # ---- smoke test: DoH+AD on both providers must match expected ----
+          # ---- smoke test: DoH+AD (CF hard, GG warn) with retries ----
           echo "Smoke test (DoH + DNSSEC AD=true) for ${IDENTITY_META_FQDN} ..."
 
-          CF_TXT="$(doh_get_txt_ad cf "${IDENTITY_META_FQDN}")"
-          GG_TXT="$(doh_get_txt_ad gg "${IDENTITY_META_FQDN}")"
+          want="$WANT_META_NORM"
 
-          echo "DoH CF: $CF_TXT"
-          echo "DoH GG: $GG_TXT"
+          check_provider_eq() {
+            local provider="$1"
+            local got=""
+            got="$(doh_get_txt_ad "$provider" "${IDENTITY_META_FQDN}")" || return 1
+            echo "DoH ${provider}: $got"
+            [ "$got" = "$want" ]
+          }
 
-          if [ "$CF_TXT" != "$GG_TXT" ]; then
-            echo "ERROR: DoH mismatch: Cloudflare != Google" >&2
+          # Tuning knobs
+          MAX_TRIES="${MAX_TRIES:-40}"
+          SLEEP_S="${SLEEP_S:-3}"
+
+          # ---- HARD REQUIRE: Cloudflare DoH must converge ----
+          ok_cf=0
+          for i in $(seq 1 "$MAX_TRIES"); do
+            echo "Check CF DoH (${i}/${MAX_TRIES})..."
+            if check_provider_eq cf; then
+              ok_cf=1
+              break
+            fi
+            sleep "$SLEEP_S"
+          done
+
+          if [ "$ok_cf" -ne 1 ]; then
+            echo "ERROR: CF DoH did not converge to expected TXT after ${MAX_TRIES} tries." >&2
+            echo "EXPECTED: $want" >&2
             exit 1
           fi
 
-          if [ "$CF_TXT" != "$WANT_META_NORM" ]; then
-            echo "ERROR: DoH TXT != expected meta TXT" >&2
-            echo "EXPECTED: $WANT_META_NORM" >&2
-            exit 1
+          # ---- WARNING ONLY: Google DoH may lag ----
+          ok_gg=0
+          for i in $(seq 1 "$MAX_TRIES"); do
+            echo "Check GG DoH (${i}/${MAX_TRIES})..."
+            if check_provider_eq gg; then
+              ok_gg=1
+              break
+            fi
+            sleep "$SLEEP_S"
+          done
+
+          if [ "$ok_gg" -ne 1 ]; then
+            echo "::warning::Google DoH did not converge to expected TXT after ${MAX_TRIES} tries (CF is OK)."
+            echo "::warning::EXPECTED: $want"
+            # Optional: print what GG currently returns (best-effort)
+            GG_NOW="$(doh_get_txt_ad gg "${IDENTITY_META_FQDN}" 2>/dev/null || true)"
+            if [ -n "$GG_NOW" ]; then
+              echo "::warning::GG current: $GG_NOW"
+            fi
+          else
+            echo "OK: Google DoH also matches expected TXT."
           fi
 
           if [ "$UPDATED" -eq 1 ]; then
-            echo "OK: Updated and verified via DoH (AD=true)."
+            echo "OK: Updated and verified via CF DoH (AD=true)."
           else
-            echo "OK: Already correct; verified via DoH (AD=true)."
+            echo "OK: Already correct; verified via CF DoH (AD=true)."
           fi
 
       - name: Deploy via rsync
