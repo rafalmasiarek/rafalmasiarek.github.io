@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# identityctl - manage .well-known/identity assets + Cloudflare TXT records
-
 ROOT_DEFAULT=".well-known/identity"
 API="https://api.cloudflare.com/client/v4"
 
@@ -29,7 +27,6 @@ _curl_get() {
 # ===================
 # JSON parsing helper (jq -> fallback AWK)
 # ===================
-
 _json_parse() {
   local json="${1:-}"
   local filter="${2:-}"
@@ -276,7 +273,12 @@ sha256_text() {
   fi
 }
 
-# Canonical JSON requires jq
+sha256_url() {
+  local url="$1"
+  [[ "$url" == https://* ]] || die "Only https:// URLs are allowed (got: $url)"
+  _curl_get "$url" -H "cache-control: no-store" | sha256_text
+}
+
 sha256_json_canon() {
   local f="$1"
   [ -f "$f" ] || die "file not found: $f"
@@ -285,7 +287,7 @@ sha256_json_canon() {
 }
 
 # ===================
-# Cloudflare helpers (requires jq; CI-only)
+# Cloudflare helpers
 # ===================
 cf_require() {
   have jq || die "Cloudflare operations require jq (run in CI or install jq)"
@@ -293,7 +295,6 @@ cf_require() {
   : "${CF_ZONE_NAME:?Set CF_ZONE_NAME (e.g. masiarek.pl)}"
 }
 
-# Build curl args safely (array)
 cf_args() {
   cf_require
   CF_ARGS=(
@@ -306,7 +307,6 @@ cf_zone_id() {
   cf_require
   cf_args
 
-  # Prefer CF_ZONE_ID if provided, else fallback to API lookup by CF_ZONE_NAME
   if [ -n "${CF_ZONE_ID:-}" ]; then
     printf '%s' "${CF_ZONE_ID}"
     return 0
@@ -389,7 +389,7 @@ cf_upsert_txt() {
 }
 
 # ===================
-# Meta TXT builder
+# TXT builders
 # ===================
 build_meta_txt() {
   : "${META_V:=1}"
@@ -401,9 +401,6 @@ build_meta_txt() {
     "$META_V" "$SCHEMAS_URL" "$schemas_hash" "$MANIFEST_URL" "$manifest_hash"
 }
 
-# ===================
-# Key TXT builders
-# ===================
 build_pgp_txt() {
   local v="${1:-1}" alg="$2" fpr="$3" pub_url="$4" pub_sha256="$5"
   printf 'v=%s;type=pgp;alg=%s;fpr=%s;pub=%s;pub_sha256=%s' \
@@ -428,96 +425,26 @@ json_file_get() {
   _json_parse "$json" "$filter"
 }
 
-manifest_path() {
-  local root="$1"
-  printf '%s' "${root%/}/manifest.json"
-}
-
-# Extract current version id (e.g. 2026-01) for pgp/ssh
-manifest_current() {
-  local root="$1" type="$2"
-  local mf
-  mf="$(manifest_path "$root")"
-  local cur
-  cur="$(json_file_get "$mf" ".${type}.current" 2>/dev/null || true)"
-  [ -n "$cur" ] || die "cannot read .${type}.current"
-  printf '%s' "$cur"
-}
-
-# Extract a field for a given type+version: .pgp.versions["2026-01"].pub etc.
-manifest_ver_field() {
-  local root="$1" type="$2" ver="$3" field="$4"
-  local mf
-  mf="$(manifest_path "$root")"
-  local v
-  v="$(json_file_get "$mf" ".${type}.versions.\"${ver}\".${field}" 2>/dev/null || true)"
-  [ -n "$v" ] || die "cannot read .${type}.versions[${ver}].${field}"
-  printf '%s' "$v"
-}
-
-# Turn https://host/.well-known/identity/keys/x -> <root>/keys/x
-pub_url_to_local_path() {
-  local root="$1" url="$2"
-
-  # Must include "/.well-known/identity/"
-  local marker="/.well-known/identity/"
-  case "$url" in
-    http://*|https://*) ;;
-    *) die "pub URL must be absolute https://... (got: $url)" ;;
-  esac
-
-  local path="${url#*://*/}" # not reliable in bash; use sed instead
-  path="$(printf '%s' "$url" | sed -E 's|^https?://[^/]+||')"
-
-  case "$path" in
-    *"$marker"*)
-      path="${path#*$marker}"
-      ;;
-    *)
-      die "pub URL does not contain ${marker}: $url"
-      ;;
-  esac
-
-  printf '%s' "${root%/}/${path}"
-}
-
-# ===================
-# CLI
-# ===================
 usage() {
   cat <<'EOF'
 identityctl - manage identity files + DNS
 
 Usage:
-  identityctl hashes [--root <dir>] [--raw]
-    Prints schemas_sha256 and manifest_sha256.
-      - With jq (default): hashes are canonical JSON (stable across formatting)
-      - Without jq: requires --raw (hashes raw file bytes; formatting changes WILL change the hash)
-
   identityctl meta-txt [--root <dir>] [--raw]
-    Prints meta TXT value built from env:
-      SCHEMAS_URL, MANIFEST_URL, (optional META_V=1)
-
   identityctl show-current [--root <dir>]
-    Prints pgp.current and ssh.current from manifest.json
-
   identityctl show-dns --type <pgp|ssh> [--root <dir>]
-    Prints DNS name (FQDN) for given type, current version
-
   identityctl key-txt --type <pgp|ssh> [--root <dir>]
-    Builds TXT value for PGP/SSH from manifest.json, and verifies local pub file sha256 matches manifest .sha256.
+    Builds TXT for keys using manifest fields and sha256 fetched from pub URL.
+    Fails if fetched sha256 != manifest .sha256 (pin safety).
 
   identityctl cf-set-meta --name <fqdn> [--ttl <sec>] [--root <dir>] [--raw]
-    Upserts Cloudflare TXT record <fqdn> with meta TXT
-
   identityctl cf-set-key --type <pgp|ssh> [--ttl <sec>] [--root <dir>]
-    Upserts Cloudflare TXT record for given key type using manifest.<type>.versions[current].dns and key-txt output
 
-Env required for cf-*:
-  CF_API_TOKEN   Cloudflare API token with DNS:Edit on the zone
-  CF_ZONE_NAME   e.g. masiarek.pl
-Optional:
-  CF_ZONE_ID     if set, used directly; otherwise looked up by CF_ZONE_NAME
+Env for cf-*:
+  CF_API_TOKEN, CF_ZONE_NAME
+Optional: CF_ZONE_ID (preferred; fallback lookup by CF_ZONE_NAME)
+Env for meta-txt/cf-set-meta:
+  SCHEMAS_URL, MANIFEST_URL
 EOF
 }
 
@@ -527,34 +454,6 @@ main() {
   local root="$ROOT_DEFAULT"
 
   case "$cmd" in
-    hashes)
-      local raw=0
-      while [ $# -gt 0 ]; do
-        case "$1" in
-          --root) root="$2"; shift 2;;
-          --raw) raw=1; shift 1;;
-          *) die "unknown arg: $1";;
-        esac
-      done
-      local schemas="${root%/}/schemas.json"
-      local manifest="${root%/}/manifest.json"
-      [ -f "$schemas" ] || die "missing: $schemas"
-      [ -f "$manifest" ] || die "missing: $manifest"
-
-      local schemas_hash manifest_hash
-      if have jq && [ "$raw" -eq 0 ]; then
-        schemas_hash="$(sha256_json_canon "$schemas")"
-        manifest_hash="$(sha256_json_canon "$manifest")"
-      else
-        [ "$raw" -eq 1 ] || die "jq not found: use --raw (note: raw hash changes when formatting changes)"
-        schemas_hash="$(sha256_file "$schemas")"
-        manifest_hash="$(sha256_file "$manifest")"
-      fi
-
-      printf 'schemas_sha256=%s\n' "$schemas_hash"
-      printf 'manifest_sha256=%s\n' "$manifest_hash"
-      ;;
-
     meta-txt)
       local raw=0
       while [ $# -gt 0 ]; do
@@ -564,6 +463,7 @@ main() {
           *) die "unknown arg: $1";;
         esac
       done
+
       local schemas="${root%/}/schemas.json"
       local manifest="${root%/}/manifest.json"
       [ -f "$schemas" ] || die "missing: $schemas"
@@ -574,7 +474,7 @@ main() {
         schemas_hash="$(sha256_json_canon "$schemas")"
         manifest_hash="$(sha256_json_canon "$manifest")"
       else
-        [ "$raw" -eq 1 ] || die "jq not found: use --raw (note: raw hash changes when formatting changes)"
+        [ "$raw" -eq 1 ] || die "jq not found: use --raw"
         schemas_hash="$(sha256_file "$schemas")"
         manifest_hash="$(sha256_file "$manifest")"
       fi
@@ -590,11 +490,10 @@ main() {
           *) die "unknown arg: $1";;
         esac
       done
-      local mf
-      mf="$(manifest_path "$root")"
+      local manifest="${root%/}/manifest.json"
       local pgp_cur ssh_cur
-      pgp_cur="$(json_file_get "$mf" '.pgp.current' 2>/dev/null || true)"
-      ssh_cur="$(json_file_get "$mf" '.ssh.current' 2>/dev/null || true)"
+      pgp_cur="$(json_file_get "$manifest" '.pgp.current' 2>/dev/null || true)"
+      ssh_cur="$(json_file_get "$manifest" '.ssh.current' 2>/dev/null || true)"
       [ -n "$pgp_cur" ] || die "cannot read .pgp.current"
       [ -n "$ssh_cur" ] || die "cannot read .ssh.current"
       printf 'pgp.current=%s\n' "$pgp_cur"
@@ -611,9 +510,12 @@ main() {
         esac
       done
       [ "$type" = "pgp" ] || [ "$type" = "ssh" ] || die "--type must be pgp or ssh"
+      local manifest="${root%/}/manifest.json"
       local cur dns
-      cur="$(manifest_current "$root" "$type")"
-      dns="$(manifest_ver_field "$root" "$type" "$cur" "dns")"
+      cur="$(json_file_get "$manifest" ".${type}.current" 2>/dev/null || true)"
+      [ -n "$cur" ] || die "cannot read .${type}.current"
+      dns="$(json_file_get "$manifest" ".${type}.versions.\"${cur}\".dns" 2>/dev/null || true)"
+      [ -n "$dns" ] || die "cannot read .${type}.versions[${cur}].dns"
       printf '%s\n' "$dns"
       ;;
 
@@ -628,31 +530,34 @@ main() {
       done
       [ "$type" = "pgp" ] || [ "$type" = "ssh" ] || die "--type must be pgp or ssh"
 
-      local cur dns pub sha fpr alg
-      cur="$(manifest_current "$root" "$type")"
-      dns="$(manifest_ver_field "$root" "$type" "$cur" "dns")"
-      pub="$(manifest_ver_field "$root" "$type" "$cur" "pub")"
-      sha="$(manifest_ver_field "$root" "$type" "$cur" "sha256")"
+      local manifest="${root%/}/manifest.json"
+      local cur dns pub sha fpr alg computed
 
-      # Verify local file sha256 matches manifest sha256
-      local pub_local computed
-      pub_local="$(pub_url_to_local_path "$root" "$pub")"
-      [ -f "$pub_local" ] || die "pub file not found at: $pub_local (from pub=$pub)"
-      computed="$(sha256_file "$pub_local")"
-      [ "$computed" = "$sha" ] || die "${type} pub sha256 mismatch: manifest=$sha local=$computed file=$pub_local"
+      cur="$(json_file_get "$manifest" ".${type}.current" 2>/dev/null || true)"
+      [ -n "$cur" ] || die "cannot read .${type}.current"
+
+      dns="$(json_file_get "$manifest" ".${type}.versions.\"${cur}\".dns" 2>/dev/null || true)"
+      pub="$(json_file_get "$manifest" ".${type}.versions.\"${cur}\".pub" 2>/dev/null || true)"
+      sha="$(json_file_get "$manifest" ".${type}.versions.\"${cur}\".sha256" 2>/dev/null || true)"
+      fpr="$(json_file_get "$manifest" ".${type}.versions.\"${cur}\".fingerprint" 2>/dev/null || true)"
+
+      [ -n "$dns" ] || die "missing ${type}.versions[${cur}].dns"
+      [ -n "$pub" ] || die "missing ${type}.versions[${cur}].pub"
+      [ -n "$sha" ] || die "missing ${type}.versions[${cur}].sha256"
+      [ -n "$fpr" ] || die "missing ${type}.versions[${cur}].fingerprint"
+
+      computed="$(sha256_url "$pub")"
+      [ "$computed" = "$sha" ] || die "${type} pub sha256 mismatch: manifest=$sha fetched=$computed pub=$pub"
 
       if [ "$type" = "pgp" ]; then
-        fpr="$(manifest_ver_field "$root" "$type" "$cur" "fingerprint")"
-        # manifest has no alg field for pgp; keep your previous convention "ed25519" as in existing DNS
         alg="ed25519"
         build_pgp_txt 1 "$alg" "$fpr" "$pub" "$computed"
-        printf '\n'
       else
-        fpr="$(manifest_ver_field "$root" "$type" "$cur" "fingerprint")"
-        alg="$(manifest_ver_field "$root" "$type" "$cur" "alg")"
+        alg="$(json_file_get "$manifest" ".${type}.versions.\"${cur}\".alg" 2>/dev/null || true)"
+        [ -n "$alg" ] || die "missing ${type}.versions[${cur}].alg"
         build_ssh_txt 1 "$alg" "$fpr" "$pub" "$computed"
-        printf '\n'
       fi
+      printf '\n'
       ;;
 
     cf-set-meta)
@@ -668,6 +573,7 @@ main() {
         esac
       done
       [ -n "$name" ] || die "--name <fqdn> is required"
+
       local meta
       meta="$("$0" meta-txt --root "$root" $( [ "$raw" -eq 1 ] && printf '%s' '--raw' ))"
       cf_upsert_txt "$name" "$meta" "$ttl"
@@ -685,6 +591,7 @@ main() {
         esac
       done
       [ "$type" = "pgp" ] || [ "$type" = "ssh" ] || die "--type must be pgp or ssh"
+
       local dns txt
       dns="$("$0" show-dns --type "$type" --root "$root")"
       txt="$("$0" key-txt --type "$type" --root "$root")"
