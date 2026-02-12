@@ -251,7 +251,6 @@ jobs:
             -H "Authorization: Bearer ${CF_API_TOKEN}" \
             "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/dns_records?type=TXT&name=${IDENTITY_META_FQDN}" \
             | jq -r '.result[0].content // ""' \
-            | sed 's/^"//; s/"$//' \
             | tr -d '[:space:]')"
 
           echo "CUR_META=$CUR_META"
