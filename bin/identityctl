@@ -61,7 +61,7 @@ _json_parse_fallback() {
   if printf '%s' "$filter" | grep -qE '[|(){};]'; then
     echo "ERROR: fallback parser supports only simple .a.b.c and []/[N]" >&2
     return 2
-  fi
+    fi
 
   local path="${filter#.}"
 
@@ -388,6 +388,46 @@ cf_upsert_txt() {
   fi
 }
 
+# NEW: delete by record id
+cf_delete_record_by_id() {
+  cf_require
+  cf_args
+  local rid="$1"
+  local zid out ok
+  zid="$(cf_zone_id)"
+  out="$(_curl_get "${API}/zones/${zid}/dns_records/${rid}" -X DELETE "${CF_ARGS[@]}")"
+  ok="$(jq -r '.success' <<<"$out")"
+  [ "$ok" = "true" ] || die "Cloudflare delete failed: $(jq -c '.errors' <<<"$out")"
+  log "OK: deleted record id=${rid}"
+}
+
+# NEW: list all TXT records ending with a suffix, output: "<name>\t<id>"
+cf_list_txt_by_suffix() {
+  cf_require
+  cf_args
+  local suffix="$1"
+
+  local zid page per_page out total_pages
+  zid="$(cf_zone_id)"
+  page=1
+  per_page=100
+
+  while :; do
+    out="$(_curl_get "${API}/zones/${zid}/dns_records?type=TXT&per_page=${per_page}&page=${page}" "${CF_ARGS[@]}")"
+    total_pages="$(jq -r '.result_info.total_pages // 1' <<<"$out")"
+
+    jq -r --arg suffix "$suffix" '
+      .result[]
+      | select(.type=="TXT")
+      | select(.name|endswith($suffix))
+      | [.name,.id] | @tsv
+    ' <<<"$out"
+
+    [ "$page" -ge "$total_pages" ] && break
+    page=$((page+1))
+  done
+}
+
 # ===================
 # TXT builders
 # ===================
@@ -433,12 +473,22 @@ Usage:
   identityctl meta-txt [--root <dir>] [--raw]
   identityctl show-current [--root <dir>]
   identityctl show-dns --type <pgp|ssh> [--root <dir>]
-  identityctl key-txt --type <pgp|ssh> [--root <dir>]
+  identityctl key-txt --type <pgp|ssh> [--ver <version>] [--root <dir>]
     Builds TXT for keys using manifest fields and sha256 fetched from pub URL.
     Fails if fetched sha256 != manifest .sha256 (pin safety).
 
   identityctl cf-set-meta --name <fqdn> [--ttl <sec>] [--root <dir>] [--raw]
   identityctl cf-set-key --type <pgp|ssh> [--ttl <sec>] [--root <dir>]
+    (legacy) updates only current key DNS from manifest
+
+  identityctl cf-apply-keys --type <pgp|ssh> [--ttl <sec>] [--root <dir>]
+    Upserts ALL versioned keys from manifest + stable alias:
+      pgp._identity.<zone> -> pgp.current
+      ssh._identity.<zone> -> ssh.current
+
+  identityctl cf-prune-keys --type <pgp|ssh> [--root <dir>]
+    Deletes TXT records under _identity that look managed (pgp-* / ssh-*)
+    but are not present in manifest (keeps pgp._identity / ssh._identity aliases).
 
 Env for cf-*:
   CF_API_TOKEN, CF_ZONE_NAME
@@ -520,10 +570,11 @@ main() {
       ;;
 
     key-txt)
-      local type=""
+      local type="" ver=""
       while [ $# -gt 0 ]; do
         case "$1" in
           --type) type="$2"; shift 2;;
+          --ver)  ver="$2"; shift 2;;
           --root) root="$2"; shift 2;;
           *) die "unknown arg: $1";;
         esac
@@ -533,8 +584,12 @@ main() {
       local manifest="${root%/}/manifest.json"
       local cur dns pub sha fpr alg computed
 
-      cur="$(json_file_get "$manifest" ".${type}.current" 2>/dev/null || true)"
-      [ -n "$cur" ] || die "cannot read .${type}.current"
+      if [ -n "$ver" ]; then
+        cur="$ver"
+      else
+        cur="$(json_file_get "$manifest" ".${type}.current" 2>/dev/null || true)"
+      fi
+      [ -n "$cur" ] || die "cannot determine version (.${type}.current or --ver)"
 
       dns="$(json_file_get "$manifest" ".${type}.versions.\"${cur}\".dns" 2>/dev/null || true)"
       pub="$(json_file_get "$manifest" ".${type}.versions.\"${cur}\".pub" 2>/dev/null || true)"
@@ -596,6 +651,100 @@ main() {
       dns="$("$0" show-dns --type "$type" --root "$root")"
       txt="$("$0" key-txt --type "$type" --root "$root")"
       cf_upsert_txt "$dns" "$txt" "$ttl"
+      ;;
+
+    # NEW: upsert ALL versions + stable alias -> current
+    cf-apply-keys)
+      have jq || die "cf-apply-keys requires jq (run in CI)"
+      local type="" ttl="120"
+      while [ $# -gt 0 ]; do
+        case "$1" in
+          --type) type="$2"; shift 2;;
+          --ttl) ttl="$2"; shift 2;;
+          --root) root="$2"; shift 2;;
+          *) die "unknown arg: $1";;
+        esac
+      done
+      [ "$type" = "pgp" ] || [ "$type" = "ssh" ] || die "--type must be pgp or ssh"
+
+      local manifest="${root%/}/manifest.json"
+      local cur
+      cur="$(json_file_get "$manifest" ".${type}.current" 2>/dev/null || true)"
+      [ -n "$cur" ] || die "cannot read .${type}.current"
+
+      # Upsert all versioned records from manifest
+      while IFS= read -r ver; do
+        [ -n "$ver" ] || continue
+        local dns txt
+        dns="$(jq -r ".${type}.versions.\"${ver}\".dns" "$manifest")"
+        [ -n "$dns" ] || die "missing ${type}.versions[${ver}].dns"
+        txt="$("$0" key-txt --type "$type" --ver "$ver" --root "$root")"
+        cf_upsert_txt "$dns" "$txt" "$ttl"
+      done < <(jq -r ".${type}.versions | keys[]" "$manifest")
+
+      # Stable alias always points to current
+      local alias_name alias_txt
+      if [ "$type" = "pgp" ]; then
+        alias_name="pgp._identity.${CF_ZONE_NAME}"
+      else
+        alias_name="ssh._identity.${CF_ZONE_NAME}"
+      fi
+      alias_txt="$("$0" key-txt --type "$type" --ver "$cur" --root "$root")"
+      cf_upsert_txt "$alias_name" "$alias_txt" "$ttl"
+
+      log "OK: applied ${type} keys (all versions + alias ${alias_name} -> current=${cur})"
+      ;;
+
+    # NEW: delete managed key TXT records not present in manifest
+    cf-prune-keys)
+      have jq || die "cf-prune-keys requires jq (run in CI)"
+      local type=""
+      while [ $# -gt 0 ]; do
+        case "$1" in
+          --type) type="$2"; shift 2;;
+          --root) root="$2"; shift 2;;
+          *) die "unknown arg: $1";;
+        esac
+      done
+      [ "$type" = "pgp" ] || [ "$type" = "ssh" ] || die "--type must be pgp or ssh"
+
+      local manifest="${root%/}/manifest.json"
+      local suffix="._identity.${CF_ZONE_NAME}"
+      local prefix alias
+
+      if [ "$type" = "pgp" ]; then
+        prefix="pgp-"
+        alias="pgp._identity.${CF_ZONE_NAME}"
+      else
+        prefix="ssh-"
+        alias="ssh._identity.${CF_ZONE_NAME}"
+      fi
+
+      # Build allowlist (versioned dns names from manifest + alias)
+      local allow_tmp
+      allow_tmp="$(mktemp)"
+      jq -r ".${type}.versions | keys[] as \$k | .[\$k].dns" "$manifest" | sort -u > "$allow_tmp"
+      echo "$alias" >> "$allow_tmp"
+      sort -u -o "$allow_tmp" "$allow_tmp"
+
+      # Iterate existing TXT under _identity.<zone>, delete managed ones not in allowlist
+      while IFS=$'\t' read -r name rid; do
+        [ -n "$name" ] || continue
+        [ -n "$rid" ] || continue
+
+        case "$name" in
+          ${prefix}*${suffix}|$alias) ;;
+          *) continue ;;
+        esac
+
+        if ! grep -Fxq "$name" "$allow_tmp"; then
+          log "Prune: deleting TXT ${name} (not in manifest allowlist)"
+          cf_delete_record_by_id "$rid"
+        fi
+      done < <(cf_list_txt_by_suffix "$suffix")
+
+      rm -f "$allow_tmp"
+      log "OK: pruned ${type} key TXT records not present in manifest"
       ;;
 
     ""|-h|--help|help)
