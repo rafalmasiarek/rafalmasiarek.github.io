@@ -13,8 +13,6 @@
 // Identity DNS records
 const IDENTITY = {
     metaDomain: '_identity.masiarek.pl',
-    pgpDomain: 'pgp._identity.masiarek.pl',
-    sshDomain: 'ssh._identity.masiarek.pl',
 };
 
 /* =========================
@@ -187,6 +185,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const alertEl = document.getElementById('keys-alert');
     const elPgpInfo = document.getElementById('keys-pgp-info');
     const elSshInfo = document.getElementById('keys-ssh-info');
+    const selPgpVer = document.getElementById('keys-pgp-ver');
+    const selSshVer = document.getElementById('keys-ssh-ver');
+    const btnCopyLink1 = document.getElementById('keys-link-copy');
+    const btnCopyLink2 = document.getElementById('keys-link-copy-2');
 
     if (!elPgp || !elSsh) return;
 
@@ -221,6 +223,35 @@ document.addEventListener('DOMContentLoaded', () => {
         const m = /^v=(\d+)$/.exec(first);
         if (!m) throw new Error(`${label} must start with v=<number> as the first field`);
         return m[1];
+    }
+
+    function getRequestedVersionFromUrl(type) {
+        const sp = new URLSearchParams(window.location.search || '');
+        const v = (sp.get(type) || '').trim(); // type: "pgp" or "ssh"
+        return v || '';
+    }
+
+    function setVersionInUrl(type, v) {
+        const url = new URL(window.location.href);
+        if (v) url.searchParams.set(type, v);
+        else url.searchParams.delete(type);
+        window.location.href = url.toString();
+    }
+
+    function fillVersionSelect(selectEl, ids, selectedId, type) {
+        if (!selectEl) return;
+        selectEl.innerHTML = '';
+
+        const sorted = [...ids].sort();
+        for (const id of sorted) {
+            const opt = document.createElement('option');
+            opt.value = id;
+            opt.textContent = id;
+            if (id === selectedId) opt.selected = true;
+            selectEl.appendChild(opt);
+        }
+
+        selectEl.addEventListener('change', () => setVersionInUrl(type, selectEl.value));
     }
 
     async function sha256Hex(text) {
@@ -316,12 +347,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return await res.text();
     }
 
-    async function loadSchemasJson() {
-        // 1) Read meta TXT (strict: v must be first, only v=1 supported)
-        const metaTxt = await getDnsTxtWithAd(IDENTITY.metaDomain);
-        const metaV = requireLeadingVersion(metaTxt, 'meta');
-        if (metaV !== '1') throw new Error(`meta unsupported version v=${metaV}`);
-
+    async function loadSchemasJson(metaTxt) {
         // 2) Fetch schemas.json (pinned)
         const schemasUrl = kvGet(metaTxt, 'schemas');
         const schemasSha = kvGet(metaTxt, 'schemas_sha256');
@@ -346,15 +372,29 @@ document.addEventListener('DOMContentLoaded', () => {
         return schemasJson;
     }
 
-    function setInfoBoxesVisible(visible) {
-        if (elPgpInfo) {
-            elPgpInfo.style.display = visible ? '' : 'none';
-            if (!visible) elPgpInfo.innerHTML = '';
+    async function loadManifestJson(metaTxt) {
+        // Fetch manifest.json (pinned)
+        const manifestUrl = kvGet(metaTxt, 'manifest');
+        const manifestSha = kvGet(metaTxt, 'manifest_sha256');
+        if (!manifestUrl) throw new Error('meta TXT missing manifest=');
+        if (!manifestSha) throw new Error('meta TXT missing manifest_sha256=');
+
+        const manifestText = await fetchHttpsText(manifestUrl);
+        const manifestHash = await sha256Hex(manifestText);
+        if (manifestHash !== manifestSha) throw new Error('Manifest SHA256 mismatch (identity pin failed).');
+
+        let manifestJson;
+        try {
+            manifestJson = JSON.parse(manifestText);
+        } catch {
+            throw new Error('Manifest JSON parse error.');
         }
-        if (elSshInfo) {
-            elSshInfo.style.display = visible ? '' : 'none';
-            if (!visible) elSshInfo.innerHTML = '';
+
+        if (manifestJson.schema !== 'masiarek-identity-manifest' || manifestJson.version !== 1) {
+            throw new Error('Unsupported manifest JSON.');
         }
+
+        return manifestJson;
     }
 
     function pickRulesFromSchemas(schemasJson, type, version) {
@@ -395,7 +435,74 @@ document.addEventListener('DOMContentLoaded', () => {
         return { v, txt, pubUrl, pubText };
     }
 
-    async function copyFromTextarea(textarea, btn, which) {
+    function listManifestVersionIds(manifestJson, type) {
+        const versions = manifestJson?.[type]?.versions || {};
+        return Object.keys(versions);
+    }
+
+    function pickDomainFromManifest(manifestJson, type, requestedId) {
+        const node = manifestJson?.[type];
+        if (!node) throw new Error(`Manifest missing section: ${type}`);
+
+        const versions = node.versions || {};
+        const current = String(node.current || '');
+        if (!current) throw new Error(`Manifest missing ${type}.current`);
+
+        const id = (requestedId && versions[String(requestedId)]) ? String(requestedId) : current;
+        const entry = versions[id];
+        if (!entry) throw new Error(`Manifest missing ${type}.versions["${id}"]`);
+
+        const dns = entry.dns;
+        if (!dns) throw new Error(`Manifest missing ${type}.versions["${id}"].dns`);
+
+        return { id, dns: String(dns), current };
+    }
+
+    function setInfoBoxesVisible(visible) {
+        if (elPgpInfo) {
+            elPgpInfo.style.display = visible ? '' : 'none';
+            if (!visible) elPgpInfo.innerHTML = '';
+        }
+        if (elSshInfo) {
+            elSshInfo.style.display = visible ? '' : 'none';
+            if (!visible) elSshInfo.innerHTML = '';
+        }
+    }
+
+    async function copyLink(btn) {
+        const url = new URL(window.location.href);
+
+        // Normalizuj: jeśli user jest na wersjach domyślnych, i tak zostaw parametry jakie są.
+        const text = url.toString();
+
+        try {
+            await navigator.clipboard.writeText(text + '\n');
+            const old = btn ? btn.textContent : '';
+            if (btn) btn.textContent = '✓';
+            setTimeout(() => { if (btn) btn.textContent = old || '🔗'; }, 900);
+        } catch (e) {
+            // fallback
+            try {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.position = 'fixed';
+                ta.style.left = '-9999px';
+                document.body.appendChild(ta);
+                ta.focus();
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+
+                const old = btn ? btn.textContent : '';
+                if (btn) btn.textContent = '✓';
+                setTimeout(() => { if (btn) btn.textContent = old || '🔗'; }, 900);
+            } catch (err2) {
+                console.error('Copy link failed:', e, err2);
+            }
+        }
+    }
+
+    async function copyFromTextarea(textarea, btn) {
         const text = (textarea.value || '').trim();
         if (!text) return;
 
@@ -424,11 +531,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (btnPgp) {
-        btnPgp.addEventListener('click', () => copyFromTextarea(elPgp, btnPgp, 'pgp'));
+        btnPgp.addEventListener('click', () => copyFromTextarea(elPgp, btnPgp));
     }
     if (btnSsh) {
-        btnSsh.addEventListener('click', () => copyFromTextarea(elSsh, btnSsh, 'ssh'));
+        btnSsh.addEventListener('click', () => copyFromTextarea(elSsh, btnSsh));
     }
+
+    if (btnCopyLink1) btnCopyLink1.addEventListener('click', () => copyLink(btnCopyLink1));
+    if (btnCopyLink2) btnCopyLink2.addEventListener('click', () => copyLink(btnCopyLink2));
 
     (async () => {
         try {
@@ -442,10 +552,27 @@ document.addEventListener('DOMContentLoaded', () => {
             renderInfoBox(elPgpInfo, [['Status', 'Loading…']]);
             renderInfoBox(elSshInfo, [['Status', 'Loading…']]);
 
-            const schemasJson = await loadSchemasJson();
+            // Read meta TXT once (strict v first)
+            const metaTxt = await getDnsTxtWithAd(IDENTITY.metaDomain);
+            const metaV = requireLeadingVersion(metaTxt, 'meta');
+            if (metaV !== '1') throw new Error(`meta unsupported version v=${metaV}`);
+
+            const schemasJson = await loadSchemasJson(metaTxt);
+            const manifestJson = await loadManifestJson(metaTxt);
+
+            // pick versions from GET params (?pgp=<id>&ssh=<id>)
+            const reqPgp = getRequestedVersionFromUrl('pgp');
+            const reqSsh = getRequestedVersionFromUrl('ssh');
+
+            const pgpPick = pickDomainFromManifest(manifestJson, 'pgp', reqPgp);
+            const sshPick = pickDomainFromManifest(manifestJson, 'ssh', reqSsh);
+
+            // fill selects
+            fillVersionSelect(selPgpVer, listManifestVersionIds(manifestJson, 'pgp'), pgpPick.id, 'pgp');
+            fillVersionSelect(selSshVer, listManifestVersionIds(manifestJson, 'ssh'), sshPick.id, 'ssh');
 
             // PGP
-            const pgp = await resolveAndFetchPinnedPub('pgp', IDENTITY.pgpDomain, schemasJson);
+            const pgp = await resolveAndFetchPinnedPub('pgp', pgpPick.dns, schemasJson);
             elPgp.value = pgp.pubText.trim() + '\n';
 
             // PGP info
@@ -470,6 +597,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 } catch (_) { }
 
                 renderInfoBox(elPgpInfo, [
+                    ['Selected version', pgpPick.id],
+                    ['Current version', pgpPick.current],
+                    ['DNS', pgpPick.dns],
                     ['Fingerprint', fp],
                     ['Key ID', kid],
                     ['Algorithm', algo],
@@ -482,7 +612,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // SSH
-            const ssh = await resolveAndFetchPinnedPub('ssh', IDENTITY.sshDomain, schemasJson);
+            const ssh = await resolveAndFetchPinnedPub('ssh', sshPick.dns, schemasJson);
             elSsh.value = ssh.pubText.trim() + '\n';
 
             // SSH info (fingerprints + modulus bits)
@@ -512,6 +642,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const bits = parsed.bits ? `${parsed.bits} bits` : '';
 
                 renderInfoBox(elSshInfo, [
+                    ['Selected version', sshPick.id],
+                    ['Current version', sshPick.current],
+                    ['DNS', sshPick.dns],
                     ['Type', type],
                     ['Modulus bits', bits],
                     ['SHA-256 fingerprint', `SHA256:${sha256fp}`],

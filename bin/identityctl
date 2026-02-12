@@ -1,0 +1,626 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# identityctl - manage .well-known/identity assets + Cloudflare TXT records
+
+ROOT_DEFAULT=".well-known/identity"
+API="https://api.cloudflare.com/client/v4"
+
+log() { printf '%s\n' "$*" >&2; }
+die() { log "ERROR: $*"; exit 1; }
+
+have() { command -v "$1" >/dev/null 2>&1; }
+need() { have "$1" || die "missing dependency: $1"; }
+
+# ===================
+# Curl wrapper (shared style with your scripts)
+# ===================
+_curl_get() {
+  local url="$1"; shift || true
+  curl -fsSL \
+    --proto '=https' --tlsv1.2 \
+    --connect-timeout 3 --max-time 20 \
+    --retry 2 --retry-delay 1 --retry-max-time 20 \
+    "$@" \
+    "$url"
+}
+
+# ===================
+# JSON parsing helper (jq -> fallback AWK)
+# ===================
+
+_json_parse() {
+  local json="${1:-}"
+  local filter="${2:-}"
+
+  if [ -z "$filter" ]; then
+    echo "ERROR: _json_parse requires a jq-like filter (e.g. .schema)" >&2
+    return 2
+  fi
+
+  if have jq; then
+    printf '%s' "$json" | jq -r "$filter"
+    return $?
+  fi
+
+  _json_parse_fallback "$json" "$filter"
+}
+
+_json_parse_fallback() {
+  local json="${1:-}"
+  local filter="${2:-}"
+
+  json="$(printf '%s' "$json" | tr -d '\r')"
+
+  case "$filter" in
+    .*) ;;
+    *)
+      echo "ERROR: fallback parser only supports filters starting with '.'" >&2
+      return 2
+      ;;
+  esac
+
+  if printf '%s' "$filter" | grep -qE '[|(){};]'; then
+    echo "ERROR: fallback parser supports only simple .a.b.c and []/[N]" >&2
+    return 2
+  fi
+
+  local path="${filter#.}"
+
+  local want_all=0
+  local want_index=""
+  if [[ "$path" == *"[]" ]]; then
+    want_all=1
+    path="${path%[]}"
+  elif [[ "$path" =~ \[([0-9]+)\]$ ]]; then
+    want_index="${BASH_REMATCH[1]}"
+    path="${path%\[${want_index}\]}"
+  fi
+
+  IFS='.' read -r -a keys <<< "$path"
+
+  _json_extract_key() {
+    local blob="$1"
+    local k="$2"
+    awk -v key="$k" '
+      function ltrim(s){ sub(/^[ \t\r\n]+/, "", s); return s }
+      function rtrim(s){ sub(/[ \t\r\n]+$/, "", s); return s }
+      function trim(s){ return rtrim(ltrim(s)) }
+
+      function extract_value(s, i,   c, j, depth, in_str, esc, out) {
+        consumed = 0
+        s = substr(s, i)
+        s = trim(s)
+
+        c = substr(s, 1, 1)
+
+        if (c == "\"") {
+          out = ""
+          esc = 0
+          for (j=2; j<=length(s); j++) {
+            c = substr(s, j, 1)
+            if (esc) { out = out c; esc = 0; continue }
+            if (c == "\\") { esc = 1; continue }
+            if (c == "\"") { consumed = j; return out }
+            out = out c
+          }
+          consumed = 0
+          return ""
+        }
+
+        if (c == "{" || c == "[") {
+          depth = 0
+          in_str = 0
+          esc = 0
+          out = ""
+          for (j=1; j<=length(s); j++) {
+            c = substr(s, j, 1)
+            out = out c
+
+            if (in_str) {
+              if (esc) { esc=0; continue }
+              if (c == "\\") { esc=1; continue }
+              if (c == "\"") in_str=0
+              continue
+            } else {
+              if (c == "\"") { in_str=1; continue }
+              if (c == "{" || c == "[") depth++
+              if (c == "}" || c == "]") depth--
+              if (depth == 0) { consumed = j; return out }
+            }
+          }
+          consumed = 0
+          return ""
+        }
+
+        out = ""
+        for (j=1; j<=length(s); j++) {
+          c = substr(s, j, 1)
+          if (c == "," || c == "}" || c == "]") { consumed = j-1; return trim(out) }
+          out = out c
+        }
+        consumed = length(s)
+        return trim(out)
+      }
+
+      BEGIN { RS=""; ORS=""; }
+      {
+        blob = $0
+        pat = "\"" key "\""
+        pos = index(blob, pat)
+        if (!pos) exit 1
+
+        rest = substr(blob, pos + length(pat))
+        colon = index(rest, ":")
+        if (!colon) exit 1
+
+        start = pos + length(pat) + colon
+        val = extract_value(blob, start+1)
+        if (consumed == 0) exit 1
+
+        print val
+        exit 0
+      }
+    ' <<< "$blob"
+  }
+
+  local blob="$json"
+  local value=""
+
+  for k in "${keys[@]}"; do
+    [ -n "$k" ] || continue
+    value="$(_json_extract_key "$blob" "$k" 2>/dev/null || true)"
+    if [ -z "$value" ] && [ "$value" != "0" ]; then
+      return 1
+    fi
+    blob="$value"
+  done
+
+  if [ "$want_all" -eq 1 ] || [ -n "$want_index" ]; then
+    if [[ "$blob" != \[*\] ]]; then
+      return 1
+    fi
+
+    awk -v want_all="$want_all" -v want_index="$want_index" '
+      function trim(s){ sub(/^[ \t\r\n]+/,"",s); sub(/[ \t\r\n]+$/,"",s); return s }
+
+      function emit_item(x,   v) {
+        x = trim(x)
+        if (x == "") return
+        if (substr(x,1,1)=="\"" && substr(x,length(x),1)=="\"") {
+          v = substr(x,2,length(x)-2)
+          print v
+        } else {
+          print x
+        }
+      }
+
+      BEGIN { idx=0; in_str=0; esc=0; buf="" }
+      {
+        s=$0
+        sub(/^[[:space:]]*\[/,"",s)
+        sub(/\][[:space:]]*$/,"",s)
+
+        for (i=1; i<=length(s); i++) {
+          c=substr(s,i,1)
+
+          if (in_str) {
+            buf = buf c
+            if (esc) { esc=0; continue }
+            if (c=="\\") { esc=1; continue }
+            if (c=="\"") in_str=0
+            continue
+          } else {
+            if (c=="\"") { in_str=1; buf = buf c; continue }
+
+            if (c==",") {
+              item = trim(buf)
+              buf=""
+              if (item != "") {
+                if (want_all=="1") {
+                  emit_item(item)
+                } else if (want_index != "" && idx == want_index) {
+                  emit_item(item)
+                  exit 0
+                }
+                idx++
+              }
+              continue
+            }
+
+            buf = buf c
+          }
+        }
+
+        item = trim(buf)
+        if (item != "") {
+          if (want_all=="1") {
+            emit_item(item)
+          } else if (want_index != "" && idx == want_index) {
+            emit_item(item)
+            exit 0
+          }
+        }
+      }
+    ' <<< "$blob"
+    return $?
+  fi
+
+  printf '%s\n' "$blob"
+  return 0
+}
+
+# ===================
+# Hash helpers
+# ===================
+sha256_file() {
+  local f="$1"
+  [ -f "$f" ] || die "file not found: $f"
+  if have sha256sum; then
+    sha256sum "$f" | awk '{print $1}'
+  elif have shasum; then
+    shasum -a 256 "$f" | awk '{print $1}'
+  else
+    die "need sha256sum or shasum"
+  fi
+}
+
+sha256_text() {
+  if have sha256sum; then
+    sha256sum | awk '{print $1}'
+  elif have shasum; then
+    shasum -a 256 | awk '{print $1}'
+  else
+    return 1
+  fi
+}
+
+# Canonical JSON requires jq
+sha256_json_canon() {
+  local f="$1"
+  [ -f "$f" ] || die "file not found: $f"
+  have jq || die "canonical JSON hash requires jq (use --raw)"
+  jq -cS . "$f" | awk 'BEGIN{ORS="";} {print $0 "\n"}' | sha256_text
+}
+
+# ===================
+# Cloudflare helpers (requires jq; CI-only)
+# ===================
+cf_require() {
+  have jq || die "Cloudflare operations require jq (run in CI or install jq)"
+  : "${CF_API_TOKEN:?Set CF_API_TOKEN}"
+  : "${CF_ZONE_NAME:?Set CF_ZONE_NAME (e.g. masiarek.pl)}"
+}
+
+cf_headers() {
+  printf '%s\n' \
+    "-H" "Authorization: Bearer ${CF_API_TOKEN}" \
+    "-H" "Content-Type: application/json"
+}
+
+cf_zone_id() {
+  cf_require
+  local out
+  out="$(_curl_get "${API}/zones?name=${CF_ZONE_NAME}&status=active" $(cf_headers))"
+  local ok
+  ok="$(jq -r '.success' <<<"$out")"
+  [ "$ok" = "true" ] || die "Cloudflare zones lookup failed: $(jq -c '.errors' <<<"$out")"
+  local zid
+  zid="$(jq -r '.result[0].id // empty' <<<"$out")"
+  [ -n "$zid" ] || die "Zone not found for CF_ZONE_NAME=${CF_ZONE_NAME}"
+  printf '%s' "$zid"
+}
+
+cf_list_records() {
+  cf_require
+  local type="${1:-TXT}"
+  local name="${2:-}"
+  local zid
+  zid="$(cf_zone_id)"
+  local url="${API}/zones/${zid}/dns_records?type=${type}"
+  if [ -n "$name" ]; then url="${url}&name=${name}"; fi
+  _curl_get "$url" $(cf_headers) | jq
+}
+
+cf_find_record() {
+  cf_require
+  local type="$1"
+  local name="$2"
+  local zid
+  zid="$(cf_zone_id)"
+  _curl_get "${API}/zones/${zid}/dns_records?type=${type}&name=${name}" $(cf_headers)
+}
+
+cf_create_txt() {
+  cf_require
+  local name="$1"
+  local content="$2"
+  local ttl="${3:-120}"
+  local zid
+  zid="$(cf_zone_id)"
+  local payload
+  payload="$(jq -cn --arg type "TXT" --arg name "$name" --arg content "$content" --argjson ttl "$ttl" \
+    '{type:$type,name:$name,content:$content,ttl:$ttl}')"
+  local out
+  out="$(_curl_get "${API}/zones/${zid}/dns_records" -X POST $(cf_headers) --data "$payload")"
+  local ok
+  ok="$(jq -r '.success' <<<"$out")"
+  [ "$ok" = "true" ] || die "Cloudflare create failed: $(jq -c '.errors' <<<"$out")"
+  log "OK: created TXT ${name}"
+}
+
+cf_update_txt_by_id() {
+  cf_require
+  local rid="$1"
+  local name="$2"
+  local content="$3"
+  local ttl="${4:-120}"
+  local zid
+  zid="$(cf_zone_id)"
+  local payload
+  payload="$(jq -cn --arg type "TXT" --arg name "$name" --arg content "$content" --argjson ttl "$ttl" \
+    '{type:$type,name:$name,content:$content,ttl:$ttl}')"
+  local out
+  out="$(_curl_get "${API}/zones/${zid}/dns_records/${rid}" -X PUT $(cf_headers) --data "$payload")"
+  local ok
+  ok="$(jq -r '.success' <<<"$out")"
+  [ "$ok" = "true" ] || die "Cloudflare update failed: $(jq -c '.errors' <<<"$out")"
+  log "OK: updated TXT ${name}"
+}
+
+cf_upsert_txt() {
+  cf_require
+  local name="$1"
+  local content="$2"
+  local ttl="${3:-120}"
+  local out rid
+  out="$(cf_find_record "TXT" "$name")"
+  rid="$(jq -r '.result[0].id // empty' <<<"$out")"
+  if [ -n "$rid" ]; then
+    cf_update_txt_by_id "$rid" "$name" "$content" "$ttl"
+  else
+    cf_create_txt "$name" "$content" "$ttl"
+  fi
+}
+
+# ===================
+# Meta TXT builder
+# ===================
+build_meta_txt() {
+  : "${META_V:=1}"
+  : "${SCHEMAS_URL:?Set SCHEMAS_URL}"
+  : "${MANIFEST_URL:?Set MANIFEST_URL}"
+  local schemas_hash="$1"
+  local manifest_hash="$2"
+  printf 'v=%s;schemas=%s;schemas_sha256=%s;manifest=%s;manifest_sha256=%s' \
+    "$META_V" "$SCHEMAS_URL" "$schemas_hash" "$MANIFEST_URL" "$manifest_hash"
+}
+
+# ===================
+# Fingerprint helpers (rotate requires jq anyway)
+# ===================
+pgp_fpr_from_pub() {
+  local pubfile="$1"
+  have gpg || return 1
+  local fpr
+  fpr="$(gpg --batch --quiet --with-colons --import-options show-only --import "$pubfile" 2>/dev/null \
+    | awk -F: '$1=="fpr"{print toupper($10); exit}')"
+  [ -n "$fpr" ] || return 1
+  printf '%s' "$fpr"
+}
+
+ssh_fp_from_pub() {
+  local pubfile="$1"
+  have ssh-keygen || return 1
+  local out fp
+  out="$(ssh-keygen -lf "$pubfile" -E sha256 2>/dev/null || true)"
+  fp="$(awk '{print $2}' <<<"$out")"
+  [[ "$fp" == SHA256:* ]] || return 1
+  printf '%s' "$fp"
+}
+
+build_pgp_txt() {
+  local v="${1:-1}" alg="$2" fpr="$3" pub_url="$4" pub_sha256="$5"
+  printf 'v=%s;type=pgp;alg=%s;fpr=%s;pub=%s;pub_sha256=%s' \
+    "$v" "$alg" "$fpr" "$pub_url" "$pub_sha256"
+}
+
+build_ssh_txt() {
+  local v="${1:-1}" alg="$2" fp="$3" pub_url="$4" pub_sha256="$5"
+  printf 'v=%s;type=ssh;alg=%s;fp=%s;pub=%s;pub_sha256=%s' \
+    "$v" "$alg" "$fp" "$pub_url" "$pub_sha256"
+}
+
+# ===================
+# Manifest read-only helpers (work without jq)
+# ===================
+json_file_get() {
+  local file="$1"
+  local filter="$2"
+  [ -f "$file" ] || die "file not found: $file"
+  local json
+  json="$(cat "$file")"
+  _json_parse "$json" "$filter"
+}
+
+usage() {
+  cat <<'EOF'
+identityctl - manage identity files + DNS
+
+Usage:
+  identityctl hashes [--root <dir>] [--raw]
+    Prints schemas_sha256 and manifest_sha256.
+      - With jq (default): hashes are canonical JSON (stable across formatting)
+      - Without jq: requires --raw (hashes raw file bytes; formatting changes WILL change the hash)
+
+  identityctl meta-txt [--root <dir>] [--raw]
+    Prints meta TXT value built from env:
+      SCHEMAS_URL, MANIFEST_URL, (optional META_V=1)
+    Same jq/--raw behavior as hashes.
+
+  identityctl show-current [--root <dir>]
+    Prints pgp.current and ssh.current from manifest.json (works without jq).
+
+  identityctl show-dns --type <pgp|ssh> [--root <dir>]
+    Prints current DNS name for given type:
+      manifest.<type>.versions[manifest.<type>.current].dns
+    (works without jq)
+
+  identityctl cf-list [TXT|A|...] [name]
+    Lists DNS records via Cloudflare API (requires jq + CF_API_TOKEN + CF_ZONE_NAME)
+
+  identityctl cf-set-meta --name <fqdn> [--ttl <sec>] [--root <dir>] [--raw]
+    Upserts Cloudflare TXT record <fqdn> with meta TXT (requires jq + CF_* + SCHEMAS_URL + MANIFEST_URL)
+
+  identityctl rotate-pgp ... (requires jq)
+  identityctl rotate-ssh ... (requires jq)
+
+Env required for cf-*:
+  CF_API_TOKEN   Cloudflare API token with DNS:Edit on the zone
+  CF_ZONE_NAME   e.g. masiarek.pl
+
+Env required for meta-txt/cf-set-meta:
+  SCHEMAS_URL    e.g. https://masiarek.pl/.well-known/identity/schemas.json
+  MANIFEST_URL   e.g. https://masiarek.pl/.well-known/identity/manifest.json
+EOF
+}
+
+main() {
+  need curl
+  local cmd="${1:-}"; shift || true
+  local root="$ROOT_DEFAULT"
+
+  case "$cmd" in
+    hashes)
+      local raw=0
+      while [ $# -gt 0 ]; do
+        case "$1" in
+          --root) root="$2"; shift 2;;
+          --raw) raw=1; shift 1;;
+          *) die "unknown arg: $1";;
+        esac
+      done
+      local schemas="${root%/}/schemas.json"
+      local manifest="${root%/}/manifest.json"
+      [ -f "$schemas" ] || die "missing: $schemas"
+      [ -f "$manifest" ] || die "missing: $manifest"
+
+      local schemas_hash manifest_hash
+      if have jq && [ "$raw" -eq 0 ]; then
+        schemas_hash="$(sha256_json_canon "$schemas")"
+        manifest_hash="$(sha256_json_canon "$manifest")"
+      else
+        [ "$raw" -eq 1 ] || die "jq not found: use --raw (note: raw hash changes when formatting changes)"
+        schemas_hash="$(sha256_file "$schemas")"
+        manifest_hash="$(sha256_file "$manifest")"
+      fi
+
+      printf 'schemas_sha256=%s\n' "$schemas_hash"
+      printf 'manifest_sha256=%s\n' "$manifest_hash"
+      ;;
+
+    meta-txt)
+      local raw=0
+      while [ $# -gt 0 ]; do
+        case "$1" in
+          --root) root="$2"; shift 2;;
+          --raw) raw=1; shift 1;;
+          *) die "unknown arg: $1";;
+        esac
+      done
+      local schemas="${root%/}/schemas.json"
+      local manifest="${root%/}/manifest.json"
+      [ -f "$schemas" ] || die "missing: $schemas"
+      [ -f "$manifest" ] || die "missing: $manifest"
+
+      local schemas_hash manifest_hash
+      if have jq && [ "$raw" -eq 0 ]; then
+        schemas_hash="$(sha256_json_canon "$schemas")"
+        manifest_hash="$(sha256_json_canon "$manifest")"
+      else
+        [ "$raw" -eq 1 ] || die "jq not found: use --raw (note: raw hash changes when formatting changes)"
+        schemas_hash="$(sha256_file "$schemas")"
+        manifest_hash="$(sha256_file "$manifest")"
+      fi
+
+      build_meta_txt "$schemas_hash" "$manifest_hash"
+      printf '\n'
+      ;;
+
+    show-current)
+      while [ $# -gt 0 ]; do
+        case "$1" in
+          --root) root="$2"; shift 2;;
+          *) die "unknown arg: $1";;
+        esac
+      done
+      local manifest="${root%/}/manifest.json"
+      local pgp_cur ssh_cur
+      pgp_cur="$(json_file_get "$manifest" '.pgp.current' 2>/dev/null || true)"
+      ssh_cur="$(json_file_get "$manifest" '.ssh.current' 2>/dev/null || true)"
+      [ -n "$pgp_cur" ] || die "cannot read .pgp.current"
+      [ -n "$ssh_cur" ] || die "cannot read .ssh.current"
+      printf 'pgp.current=%s\n' "$pgp_cur"
+      printf 'ssh.current=%s\n' "$ssh_cur"
+      ;;
+
+    show-dns)
+      local type="" 
+      while [ $# -gt 0 ]; do
+        case "$1" in
+          --type) type="$2"; shift 2;;
+          --root) root="$2"; shift 2;;
+          *) die "unknown arg: $1";;
+        esac
+      done
+      [ "$type" = "pgp" ] || [ "$type" = "ssh" ] || die "--type must be pgp or ssh"
+      local manifest="${root%/}/manifest.json"
+      local cur dns
+      cur="$(json_file_get "$manifest" ".${type}.current" 2>/dev/null || true)"
+      [ -n "$cur" ] || die "cannot read .${type}.current"
+      dns="$(json_file_get "$manifest" ".${type}.versions.\"${cur}\".dns" 2>/dev/null || true)"
+      [ -n "$dns" ] || die "cannot read .${type}.versions[${cur}].dns"
+      printf '%s\n' "$dns"
+      ;;
+
+    cf-list)
+      have jq || die "cf-list requires jq (run in CI)"
+      local type="${1:-TXT}"
+      local name="${2:-}"
+      cf_list_records "$type" "$name"
+      ;;
+
+    cf-set-meta)
+      have jq || die "cf-set-meta requires jq (run in CI)"
+      local name="" ttl="120" raw=0
+      while [ $# -gt 0 ]; do
+        case "$1" in
+          --name) name="$2"; shift 2;;
+          --ttl) ttl="$2"; shift 2;;
+          --root) root="$2"; shift 2;;
+          --raw) raw=1; shift 1;;
+          *) die "unknown arg: $1";;
+        esac
+      done
+      [ -n "$name" ] || die "--name <fqdn> is required"
+
+      local meta
+      meta="$( "$0" meta-txt --root "$root" $( [ "$raw" -eq 1 ] && printf '%s' '--raw' ) )"
+      cf_upsert_txt "$name" "$meta" "$ttl"
+      ;;
+
+    rotate-pgp|rotate-ssh)
+      die "$cmd requires jq (run rotate in CI where jq is available)."
+      ;;
+
+    ""|-h|--help|help)
+      usage
+      ;;
+
+    *)
+      die "unknown command: $cmd (run: $0 --help)"
+      ;;
+  esac
+}
+
+main "$@"

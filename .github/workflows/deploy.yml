@@ -174,3 +174,123 @@ jobs:
             --delete \
             --exclude-from=rsync-exclude.txt \
             _site/ ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }}:${{ secrets.RSYNC_DEST_PATH }}
+
+      - name: update meta indentity's keychain if needed
+        shell: bash
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CF_ZONE_NAME: ${{ secrets.CF_ZONE_NAME }}
+          SCHEMAS_URL: ${{ secrets.IDENTITY_SCHEMAS_URL }}
+          MANIFEST_URL: ${{ secrets.IDENTITY_MANIFEST_URL }}
+          IDENTITY_META_FQDN: ${{ secrets.IDENTITY_META_FQDN }}
+        run: |
+          set -euo pipefail
+
+          chmod +x bin/identityctl
+
+          # ---- helpers (DoH + normalization) ----
+          normalize_txt() {
+            local txt="${1:-}"
+
+            # Unescape \" -> "
+            txt="$(printf '%s' "$txt" | sed 's/\\"/"/g')"
+
+            # If contains quoted segments, concatenate them: "a" "b" -> ab
+            if printf '%s' "$txt" | grep -q '"'; then
+              local out=""
+              while IFS= read -r seg; do out="${out}${seg}"; done < <(printf '%s' "$txt" | grep -Po '"\K[^"]*(?=")' || true)
+              txt="$out"
+            fi
+
+            # Remove whitespace/newlines
+            txt="$(printf '%s' "$txt" | tr -d '\n' | tr -d '\r' | tr -d '[:space:]')"
+            printf '%s' "$txt"
+          }
+
+          doh_get_txt_ad() {
+            # Usage: doh_get_txt_ad <provider: cf|gg> <fqdn>
+            local provider="$1"
+            local name="$2"
+
+            local url=""
+            if [ "$provider" = "cf" ]; then
+              url="https://cloudflare-dns.com/dns-query?name=${name}&type=TXT&do=1&cd=0"
+            else
+              url="https://dns.google/resolve?name=${name}&type=TXT&do=1&cd=0"
+            fi
+
+            local json
+            json="$(curl -fsSL -H 'accept: application/dns-json' "$url")"
+
+            local ad status
+            ad="$(printf '%s' "$json" | jq -r '(.AD // .ad) // empty')"
+            status="$(printf '%s' "$json" | jq -r '(.Status // .status) // empty')"
+
+            [ "$ad" = "true" ] || { echo "ERROR: DoH ${provider} missing AD=true" >&2; return 2; }
+            [ "$status" = "0" ] || { echo "ERROR: DoH ${provider} Status=${status}" >&2; return 3; }
+
+            local raw
+            raw="$(printf '%s' "$json" | jq -r '(.Answer // .answer // [])[] | select((.type // .Type)==16) | (.data // .Data) ' | head -n1)"
+            [ -n "$raw" ] || { echo "ERROR: DoH ${provider} no TXT data" >&2; return 4; }
+
+            normalize_txt "$raw"
+          }
+
+          # ---- desired meta TXT ----
+          WANT_META="$(bin/identityctl meta-txt --root .well-known/identity)"
+          WANT_META_NORM="$(printf '%s' "$WANT_META" | tr -d '[:space:]')"
+          echo "WANT_META_NORM=$WANT_META_NORM"
+
+          # ---- current meta TXT from Cloudflare API ----
+          ZONE_ID="$(curl -fsSL -H "Authorization: Bearer ${CF_API_TOKEN}" \
+            "https://api.cloudflare.com/client/v4/zones?name=${CF_ZONE_NAME}&status=active" \
+            | jq -r '.result[0].id')"
+
+          if [ -z "$ZONE_ID" ] || [ "$ZONE_ID" = "null" ]; then
+            echo "ERROR: cannot resolve Cloudflare zone id for ${CF_ZONE_NAME}" >&2
+            exit 1
+          fi
+
+          CUR_META="$(curl -fsSL \
+            -H "Authorization: Bearer ${CF_API_TOKEN}" \
+            "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records?type=TXT&name=${IDENTITY_META_FQDN}" \
+            | jq -r '.result[0].content // ""' \
+            | tr -d '[:space:]')"
+
+          echo "CUR_META=$CUR_META"
+
+          UPDATED=0
+          if [ "$CUR_META" = "$WANT_META_NORM" ]; then
+            echo "Identity meta TXT is up-to-date. No change."
+          else
+            echo "Identity meta TXT differs -> updating Cloudflare..."
+            bin/identityctl cf-set-meta --name "${IDENTITY_META_FQDN}" --ttl 120 --root .well-known/identity
+            UPDATED=1
+            echo "Cloudflare update done."
+          fi
+
+          # ---- smoke test: DoH+AD on both providers must match expected ----
+          echo "Smoke test (DoH + DNSSEC AD=true) for ${IDENTITY_META_FQDN} ..."
+
+          CF_TXT="$(doh_get_txt_ad cf "${IDENTITY_META_FQDN}")"
+          GG_TXT="$(doh_get_txt_ad gg "${IDENTITY_META_FQDN}")"
+
+          echo "DoH CF: $CF_TXT"
+          echo "DoH GG: $GG_TXT"
+
+          if [ "$CF_TXT" != "$GG_TXT" ]; then
+            echo "ERROR: DoH mismatch: Cloudflare != Google" >&2
+            exit 1
+          fi
+
+          if [ "$CF_TXT" != "$WANT_META_NORM" ]; then
+            echo "ERROR: DoH TXT != expected meta TXT" >&2
+            echo "EXPECTED: $WANT_META_NORM" >&2
+            exit 1
+          fi
+
+          if [ "$UPDATED" -eq 1 ]; then
+            echo "OK: Updated and verified via DoH (AD=true)."
+          else
+            echo "OK: Already correct; verified via DoH (AD=true)."
+          fi
