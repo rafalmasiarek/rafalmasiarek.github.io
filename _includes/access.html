@@ -1,124 +1,368 @@
-<div class="ssh-gen__notice">
-    If you need the SSH key for manual setup, it's available <a href="/keys" target="_blank" rel="noopener">here</a>.
-</div>
+<!-- SSH Access Tabs -->
+<ul class="nav nav-tabs" id="sshAccessTabs" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active" id="tab-one-liner" data-bs-toggle="tab" data-bs-target="#pane-one-liner"
+      type="button" role="tab" aria-controls="pane-one-liner" aria-selected="true">
+      One-liner (interactive)
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="tab-ansible" data-bs-toggle="tab" data-bs-target="#pane-ansible"
+      type="button" role="tab" aria-controls="pane-ansible" aria-selected="false">
+      Ansible
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="tab-terraform" data-bs-toggle="tab" data-bs-target="#pane-terraform"
+      type="button" role="tab" aria-controls="pane-terraform" aria-selected="false">
+      Terraform
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="tab-salt" data-bs-toggle="tab" data-bs-target="#pane-salt"
+      type="button" role="tab" aria-controls="pane-salt" aria-selected="false">
+      SaltStack
+    </button>
+  </li>
+</ul>
 
-<div class="ssh-gen__content" id="ssh-access-helper">
-    <div class="ssh-gen__grid">
+<div class="tab-content pt-3" id="sshAccessTabsContent">
+
+  <!-- TAB 1: Your existing dynamic helper -->
+  <div class="tab-pane fade show active" id="pane-one-liner" role="tabpanel" aria-labelledby="tab-one-liner">
+
+    <div class="ssh-gen__notice">
+      If you need the SSH key for manual setup, it's available
+      <a href="/keys" target="_blank" rel="noopener">here</a>.
+    </div>
+
+    <div class="ssh-gen__content" id="ssh-access-helper">
+      <div class="ssh-gen__grid">
         <div class="ssh-gen__left">
-            <div class="ssh-gen__group">
-                <div class="ssh-gen__legend">1. Action</div>
+          <div class="ssh-gen__group">
+            <div class="ssh-gen__legend">1. Action</div>
 
-                <label class="ssh-gen__option">
-                    <input type="radio" name="ssh-gen-mode" value="add" checked>
-                    <div>
-                        <div class="ssh-gen__option-title">Set up access on this server</div>
-                        <div class="ssh-gen__hint">
-                            Creates a dedicated user and installs the managed SSH key.
-                            Requires <code>sudo</code>.
-                        </div>
-                    </div>
-                </label>
-
-                <label class="ssh-gen__option">
-                    <input type="radio" name="ssh-gen-mode" value="remove">
-                    <div>
-                        <div class="ssh-gen__option-title">Remove access from this server</div>
-                        <div class="ssh-gen__hint">
-                            Removes the dedicated user, sudoers entry and updater.
-                            Requires <code>sudo</code>.
-                        </div>
-                    </div>
-                </label>
-
-                <label class="ssh-gen__option">
-                    <input type="radio" name="ssh-gen-mode" value="update">
-                    <div>
-                        <div class="ssh-gen__option-title">Update key only (manual run)</div>
-                        <div class="ssh-gen__hint">
-                            For an existing user: refresh the key according to the DNS fingerprint.
-                            Does not use <code>sudo</code>.
-                        </div>
-                    </div>
-                </label>
-            </div>
-
-            <div class="ssh-gen__group">
-                <div class="ssh-gen__legend">2. User</div>
-                <div class="ssh-gen__inline">
-                    <span>Target username:</span>
-                    <input id="ssh-gen-username" type="text" value="rm" spellcheck="false">
+            <label class="ssh-gen__option">
+              <input type="radio" name="ssh-gen-mode" value="add" checked>
+              <div>
+                <div class="ssh-gen__option-title">Set up access on this server</div>
+                <div class="ssh-gen__hint">
+                  Creates a dedicated user and installs the managed SSH key.
+                  Requires <code>sudo</code>.
                 </div>
-                <div class="ssh-gen__note">
-                    Default is <code>rm</code>. Change only if you explicitly need a different account name.
+              </div>
+            </label>
+
+            <label class="ssh-gen__option">
+              <input type="radio" name="ssh-gen-mode" value="remove">
+              <div>
+                <div class="ssh-gen__option-title">Remove access from this server</div>
+                <div class="ssh-gen__hint">
+                  Removes the dedicated user, sudoers entry and updater.
+                  Requires <code>sudo</code>.
                 </div>
-            </div>
+              </div>
+            </label>
 
-            <div class="ssh-gen__group">
-                <div class="ssh-gen__legend">3. Options</div>
-
-                <label class="ssh-gen__option">
-                    <input type="checkbox" id="ssh-gen-sudo" checked>
-                    <div>
-                        <div class="ssh-gen__option-title">
-                            Grant passwordless sudo (trusted admins only)
-                        </div>
-                        <div class="ssh-gen__hint">
-                            Adds a sudoers rule: this user can run any command via <code>sudo</code> without a password.
-                            Used only with the “Set up access” action.
-                        </div>
-                    </div>
-                </label>
-
-                <div class="ssh-gen__note">
-                    For “Remove access”, <code>sudo</code> is always required and included in the command.
+            <label class="ssh-gen__option">
+              <input type="radio" name="ssh-gen-mode" value="update">
+              <div>
+                <div class="ssh-gen__option-title">Update key only (manual run)</div>
+                <div class="ssh-gen__hint">
+                  For an existing user: refresh the key according to the DNS fingerprint.
+                  Does not use <code>sudo</code>.
                 </div>
+              </div>
+            </label>
+          </div>
+
+          <div class="ssh-gen__group">
+            <div class="ssh-gen__legend">2. User</div>
+            <div class="ssh-gen__inline">
+              <span>Target username:</span>
+              <input id="ssh-gen-username" type="text" value="rm" spellcheck="false">
             </div>
+            <div class="ssh-gen__note">
+              Default is <code>rm</code>. Change only if you explicitly need a different account name.
+            </div>
+          </div>
+
+          <div class="ssh-gen__group">
+            <div class="ssh-gen__legend">3. Options</div>
+
+            <label class="ssh-gen__option">
+              <input type="checkbox" id="ssh-gen-sudo" checked>
+              <div>
+                <div class="ssh-gen__option-title">Grant passwordless sudo (trusted admins only)</div>
+                <div class="ssh-gen__hint">
+                  Adds a sudoers rule: this user can run any command via <code>sudo</code> without a password.
+                  Used only with the “Set up access” action.
+                </div>
+              </div>
+            </label>
+
+            <div class="ssh-gen__note">
+              For “Remove access”, <code>sudo</code> is always required and included in the command.
+            </div>
+          </div>
         </div>
 
         <div class="ssh-gen__right">
-            <div class="ssh-gen__panel">
-                <!-- Session -->
-                <div class="ssh-gen__panel-header">
-                    <span class="ssh-gen__panel-label">Session</span>
-                </div>
-
-                <div class="ssh-gen__command-box ssh-gen__session-box">
-                    <input id="ssh-gen-session" type="text" readonly
-                        style="width:100%;font-family:monospace;font-size:.85rem;padding:.35rem .5rem;border-radius:4px;border:1px solid #ccc;background:#f7f7f7;">
-                </div>
-
-                <!-- Generated command -->
-                <div class="ssh-gen__panel-header">
-                    <span class="ssh-gen__panel-label">Generated command</span>
-                </div>
-
-                <div class="ssh-gen__command-box">
-                    <textarea id="ssh-gen-output" class="ssh-gen__output" readonly></textarea>
-                    <button id="ssh-gen-copy" class="ssh-gen__copy-btn" type="button">
-                        ⧉ Copy
-                    </button>
-                </div>
-
-                <div class="ssh-gen__status">
-                    <span id="ssh-gen-summary">
-                        Action: set up access for user <code>rm</code> with passwordless sudo.
-                    </span>
-                </div>
-
-                <!-- Alert banner (hidden by default) -->
-                <div id="ssh-gen-alert" class="alert alert-blue" style="display:none;">
-                    <span id="ssh-gen-alert-close" class="alert-close">&times;</span>
-                    <span id="ssh-gen-alert-text">
-                        Waiting for server confirmation…
-                    </span>
-                </div>
+          <div class="ssh-gen__panel">
+            <div class="ssh-gen__panel-header">
+              <span class="ssh-gen__panel-label">Session</span>
             </div>
-        </div>
-    </div>
-</div>
 
-{% if jekyll.environment == "production" %}
-<script src="{{ site.baseurl }}/assets/js/access-helper.min.js?v={{ site.data.asset_version.version }}"></script>
-{% else %}
-<script src="{{ site.baseurl }}/assets/js/access-helper.js?v={{ site.data.asset_version.version }}"></script>
-{% endif %}
+            <div class="ssh-gen__command-box ssh-gen__session-box">
+              <input id="ssh-gen-session" type="text" readonly
+                style="width:100%;font-family:monospace;font-size:.85rem;padding:.35rem .5rem;border-radius:4px;border:1px solid #ccc;background:#f7f7f7;">
+            </div>
+
+            <div class="ssh-gen__panel-header">
+              <span class="ssh-gen__panel-label">Generated command</span>
+            </div>
+
+            <div class="ssh-gen__command-box">
+              <textarea id="ssh-gen-output" class="ssh-gen__output" readonly></textarea>
+              <button id="ssh-gen-copy" class="ssh-gen__copy-btn" type="button">⧉ Copy</button>
+            </div>
+
+            <div class="ssh-gen__status">
+              <span id="ssh-gen-summary">
+                Action: set up access for user <code>rm</code> with passwordless sudo.
+              </span>
+            </div>
+
+            <div id="ssh-gen-alert" class="alert alert-blue" style="display:none;">
+              <span id="ssh-gen-alert-close" class="alert-close">&times;</span>
+              <span id="ssh-gen-alert-text">Waiting for server confirmation…</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {% if jekyll.environment == "production" %}
+    <script src="{{ site.baseurl }}/assets/js/access-helper.min.js?v={{ site.data.asset_version.version }}"></script>
+    {% else %}
+    <script src="{{ site.baseurl }}/assets/js/access-helper.js?v={{ site.data.asset_version.version }}"></script>
+    {% endif %}
+
+  </div>
+
+  <!-- TAB 2: Ansible -->
+  <div class="tab-pane fade" id="pane-ansible" role="tabpanel" aria-labelledby="tab-ansible">
+
+    <div class="alert alert-secondary">
+      Use these as ready-to-paste building blocks. Replace <code>rm</code> if needed.
+      For <code>add</code>/<code>remove</code you typically want <code>become: true</code>.
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <strong>Add access</strong>
+        <button class="btn btn-sm btn-outline-secondary js-copy-snippet" type="button" data-copy-target="#ansible-add">Copy</button>
+      </div>
+      <div class="card-body">
+        <pre class="mb-0"><code id="ansible-add">- name: Install SSH access (managed)
+  hosts: all
+  become: true
+  tasks:
+    - name: Run access installer
+      ansible.builtin.shell: |
+        set -euo pipefail
+        curl -Ls "https://access.masiarek.pl" | sudo bash -s -- add --username rm --sudo
+      args:
+        executable: /bin/bash</code></pre>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <strong>Remove access</strong>
+        <button class="btn btn-sm btn-outline-secondary js-copy-snippet" type="button" data-copy-target="#ansible-remove">Copy</button>
+      </div>
+      <div class="card-body">
+        <pre class="mb-0"><code id="ansible-remove">- name: Remove SSH access (managed)
+  hosts: all
+  become: true
+  tasks:
+    - name: Run access remover
+      ansible.builtin.shell: |
+        set -euo pipefail
+        curl -Ls "https://access.masiarek.pl" | sudo bash -s -- remove --username rm
+      args:
+        executable: /bin/bash</code></pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <strong>Update key only (no sudo)</strong>
+        <button class="btn btn-sm btn-outline-secondary js-copy-snippet" type="button" data-copy-target="#ansible-update">Copy</button>
+      </div>
+      <div class="card-body">
+        <pre class="mb-0"><code id="ansible-update">- name: Update SSH key for current user (managed)
+  hosts: all
+  become: false
+  tasks:
+    - name: Run key updater
+      ansible.builtin.shell: |
+        set -euo pipefail
+        curl -Ls "https://access.masiarek.pl" | bash -s -- update
+      args:
+        executable: /bin/bash</code></pre>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- TAB 3: Terraform -->
+  <div class="tab-pane fade" id="pane-terraform" role="tabpanel" aria-labelledby="tab-terraform">
+
+    <div class="alert alert-secondary">
+      Terraform uses SSH provisioners. This is the most direct “run on the instance” approach.
+      Use <code>sudo</code> where appropriate.
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <strong>null_resource + remote-exec (add)</strong>
+        <button class="btn btn-sm btn-outline-secondary js-copy-snippet" type="button" data-copy-target="#tf-add">Copy</button>
+      </div>
+      <div class="card-body">
+        <pre class="mb-0"><code id="tf-add">resource "null_resource" "ssh_access_add" {
+  triggers = {
+    // Change this to force re-run
+    version = "1"
+  }
+
+  connection {
+    type        = "ssh"
+    host        = var.host
+    user        = var.ssh_user
+    private_key = file(var.private_key_path)
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "set -euo pipefail",
+      "curl -Ls \"https://access.masiarek.pl\" | sudo bash -s -- add --username rm --sudo"
+    ]
+  }
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <strong>null_resource + remote-exec (remove)</strong>
+        <button class="btn btn-sm btn-outline-secondary js-copy-snippet" type="button" data-copy-target="#tf-remove">Copy</button>
+      </div>
+      <div class="card-body">
+        <pre class="mb-0"><code id="tf-remove">resource "null_resource" "ssh_access_remove" {
+  triggers = {
+    version = "1"
+  }
+
+  connection {
+    type        = "ssh"
+    host        = var.host
+    user        = var.ssh_user
+    private_key = file(var.private_key_path)
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "set -euo pipefail",
+      "curl -Ls \"https://access.masiarek.pl\" | sudo bash -s -- remove --username rm"
+    ]
+  }
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <strong>remote-exec (update, no sudo)</strong>
+        <button class="btn btn-sm btn-outline-secondary js-copy-snippet" type="button" data-copy-target="#tf-update">Copy</button>
+      </div>
+      <div class="card-body">
+        <pre class="mb-0"><code id="tf-update">resource "null_resource" "ssh_access_update" {
+  triggers = {
+    version = "1"
+  }
+
+  connection {
+    type        = "ssh"
+    host        = var.host
+    user        = var.ssh_user
+    private_key = file(var.private_key_path)
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "set -euo pipefail",
+      "curl -Ls \"https://access.masiarek.pl\" | bash -s -- update"
+    ]
+  }
+}</code></pre>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- TAB 4: SaltStack -->
+  <div class="tab-pane fade" id="pane-salt" role="tabpanel" aria-labelledby="tab-salt">
+
+    <div class="alert alert-secondary">
+      Salt can run the command via <code>cmd.run</code>. Use <code>runas</code>/<code>shell</code> as needed.
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <strong>State: add</strong>
+        <button class="btn btn-sm btn-outline-secondary js-copy-snippet" type="button" data-copy-target="#salt-add">Copy</button>
+      </div>
+      <div class="card-body">
+        <pre class="mb-0"><code id="salt-add">ssh_access_add:
+  cmd.run:
+    - name: |
+        set -euo pipefail
+        curl -Ls "https://access.masiarek.pl" | sudo bash -s -- add --username rm --sudo
+    - shell: /bin/bash</code></pre>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <strong>State: remove</strong>
+        <button class="btn btn-sm btn-outline-secondary js-copy-snippet" type="button" data-copy-target="#salt-remove">Copy</button>
+      </div>
+      <div class="card-body">
+        <pre class="mb-0"><code id="salt-remove">ssh_access_remove:
+  cmd.run:
+    - name: |
+        set -euo pipefail
+        curl -Ls "https://access.masiarek.pl" | sudo bash -s -- remove --username rm
+    - shell: /bin/bash</code></pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <strong>State: update (no sudo)</strong>
+        <button class="btn btn-sm btn-outline-secondary js-copy-snippet" type="button" data-copy-target="#salt-update">Copy</button>
+      </div>
+      <div class="card-body">
+        <pre class="mb-0"><code id="salt-update">ssh_access_update:
+  cmd.run:
+    - name: |
+        set -euo pipefail
+        curl -Ls "https://access.masiarek.pl" | bash -s -- update
+    - shell: /bin/bash</code></pre>
+      </div>
+    </div>
+
+  </div>
+</div>
