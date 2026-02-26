@@ -18,11 +18,95 @@ canonical: "/vinyls/"
 
 {{ content }}
 
-<script data-cfasync="false">
+<!--LEGACY WORKER-->
+<!--script data-cfasync="false">
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('{{ site.baseurl }}/sw-vinyls.js?{{ site.time | date: "%s%N" }}', { scope: '{{ site.baseurl }}/' })
         .catch(err => console.warn('SW register failed', err));
     });
   }
+</script-->
+<script data-cfasync="false">
+  (function () {
+    if (!('serviceWorker' in navigator)) return;
+
+    const base = '{{ site.baseurl }}' || '';
+    const expectedScope = new URL(base + '/', location.origin).href;
+    const expectedScriptPrefix = new URL(base + '/sw-vinyls.js', location.origin).href;
+
+    function getScriptUrls(reg) {
+      return [
+        reg.active && reg.active.scriptURL,
+        reg.waiting && reg.waiting.scriptURL,
+        reg.installing && reg.installing.scriptURL
+      ].filter(Boolean).map(String);
+    }
+
+    function matchesOurWorker(reg) {
+      const urls = getScriptUrls(reg);
+      const hasScriptUrl = urls.length > 0;
+
+      // Prefer precise match by script URL
+      const scriptMatch = urls.some(u => u.startsWith(expectedScriptPrefix));
+
+      // Fallback to scope only if script URL is unavailable
+      const scopeMatchFallback = (!hasScriptUrl && reg.scope === expectedScope);
+
+      return scriptMatch || scopeMatchFallback;
+    }
+
+    window.addEventListener('load', async () => {
+      try {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+
+        let removedCount = 0;
+        const removedDetails = [];
+        const wasControlled = !!navigator.serviceWorker.controller;
+
+        for (const reg of registrations) {
+          if (!matchesOurWorker(reg)) continue;
+
+          removedCount++;
+          removedDetails.push({
+            scope: reg.scope,
+            scriptURLs: getScriptUrls(reg)
+          });
+
+          await reg.unregister();
+        }
+
+        // Remove only caches created by this SW
+        if (removedCount > 0 && window.caches && caches.keys) {
+          const keys = await caches.keys();
+          await Promise.all(
+            keys
+              .filter(k => k.startsWith('vinyl-img-') || k.startsWith('vinyl-api-'))
+              .map(k => caches.delete(k))
+          );
+        }
+
+        if (removedCount > 0) {
+          console.info(
+            `[SW cleanup] Legacy service worker (sw-vinyls.js) unregistered successfully. Count: ${removedCount}`,
+            removedDetails
+          );
+          // Reload once (guarded) only if the page was controlled by the SW
+          const reloadKey = 'sw_cleanup_reloaded_once';
+          const alreadyReloaded = sessionStorage.getItem(reloadKey) === '1';
+          
+          if (wasControlled && !alreadyReloaded) {
+            sessionStorage.setItem(reloadKey, '1');
+            console.info('[SW cleanup] Page was controlled by a service worker. Reloading once to detach...');
+            location.reload();
+          }
+        } else {
+          console.debug('[SW cleanup] sw-vinyls.js was not registered. Nothing to clean.');
+        }
+
+      } catch (err) {
+        console.warn('[SW cleanup] Targeted cleanup failed:', err);
+      }
+    });
+  })();
 </script>
