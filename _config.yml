@@ -34,9 +34,10 @@ socials:
   - title: Github
     url: "https://github.com/rafalmasiarek"
     icon: "fab fa-github"
-  - title: Linkedin
-    url: "https://www.linkedin.com/in/rafal-masiarek/"
-    icon: "fab fa-linkedin-in"
+# I need to take a temporary break from social media, account suspended.”
+#  - title: Linkedin
+#    url: "https://www.linkedin.com/in/rafal-masiarek/"
+#    icon: "fab fa-linkedin-in"
 
 compress_html:
   ignore:
