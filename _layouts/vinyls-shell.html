@@ -87,10 +87,7 @@ canonical: "/vinyls/"
         }
 
         if (removedCount > 0) {
-          console.info(
-            `[SW cleanup] Legacy service worker (sw-vinyls.js) unregistered successfully. Count: ${removedCount}`,
-            removedDetails
-          );
+          console.info('[SW cleanup] Legacy service worker (sw-vinyls.js) unregistered successfully. Count: ' + ${removedCount}, removedDetails);
           // Reload once (guarded) only if the page was controlled by the SW
           const reloadKey = 'sw_cleanup_reloaded_once';
           const alreadyReloaded = sessionStorage.getItem(reloadKey) === '1';
