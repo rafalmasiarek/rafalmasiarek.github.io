@@ -6,6 +6,12 @@
 <IfModule mod_rewrite.c>
   RewriteEngine On
 
+  # ---------------------------------------------------------
+  # KILL: service worker file -> 410 Gone (no longer available)
+  # ---------------------------------------------------------
+  RewriteRule ^sw-vinyls\.js$ - [G,L]
+  RewriteRule ^sw-vinyls\.js\.br$ - [G,L]
+
   # ----------------------------
   # Kirby under /projects
   # ----------------------------
@@ -17,7 +23,8 @@
   RewriteCond %{REQUEST_FILENAME}.br -s
   RewriteRule ^(.+)\.css$ $1.css.br [QSA,L]
 
-  # JS
+  # JS (skip sw-vinyls.js, because it's gone)
+  RewriteCond %{REQUEST_URI} !^/sw-vinyls\.js$
   RewriteCond %{HTTP:Accept-Encoding} br
   RewriteCond %{REQUEST_FILENAME}.br -s
   RewriteRule ^(.+)\.js$ $1.js.br [QSA,L]
@@ -27,6 +34,15 @@
   <FilesMatch "\.(css|js)\.br$">
     Header set Content-Encoding br
     Header append Vary Accept-Encoding
+  </FilesMatch>
+
+  # ---------------------------------------------------------
+  # NO-CACHE for the old service worker file (even if someone caches 410)
+  # ---------------------------------------------------------
+  <FilesMatch "^sw-vinyls\.js(\.br)?$">
+    Header always set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+    Header always set Pragma "no-cache"
+    Header always set Expires "0"
   </FilesMatch>
 </IfModule>
 
