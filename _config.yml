@@ -48,6 +48,53 @@ compress_html:
   blanklines: false
   startings: [html, head, body]
 
+licenses:
+  - name: Bootstrap
+    version: 5.3.8
+    license: MIT
+    author: The Bootstrap Authors
+    homepage: https://getbootstrap.com/
+    source_url: https://github.com/twbs/bootstrap
+    source: JS
+  - name: instagram.css
+    license: MIT
+    author: "Yan Zhu (https://github.com/picturepan2)"
+    source_url: https://github.com/picturepan2/instagram.css
+    source: JS
+  - name: js-fair-consent
+    version: v1.0.0
+    license: MIT
+    author: Rafał Masiarek
+    source_url: https://github.com/rafalmasiarek/js-fair-consent
+    source: JS
+  - name: js-form-prefill
+    version: v1.2.0
+    license: MIT
+    author: Rafał Masiarek
+    source_url: https://github.com/rafalmasiarek/js-form-prefill
+    source: JS
+  - name: Twemoji
+    version: v14.0.2
+    license: MIT
+    author: Twitter
+    homepage: https://twemoji.twitter.com/
+    source_url: https://github.com/twitter/twemoji
+    source: JS
+  - name: PDF.js
+    version: v3.11.174
+    license: Apache-2.0
+    author: Mozilla and PDF.js contributors
+    homepage: https://mozilla.github.io/pdf.js/
+    source_url: https://github.com/mozilla/pdf.js
+    source: JS
+  - name: OpenPGP.js
+    version: v6.3.0
+    license: LGPL-3.0-or-later
+    author: OpenPGP.js contributors
+    homepage: https://openpgpjs.org/
+    source_url: https://github.com/openpgpjs/openpgpjs
+    source: JS
+    
 include:
   - .htaccess
   - _config.yml
