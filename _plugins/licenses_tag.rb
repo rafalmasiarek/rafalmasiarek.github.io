@@ -75,21 +75,24 @@ module Jekyll
 
     def build_html(licenses)
       rows = licenses.map do |pkg|
-        name = pkg["name"]
-        version = pkg["version"]
-        license = pkg["license"] || "unknown"
-        homepage = pkg["homepage"]
-        source = pkg["source"] || "unknown"
+        name       = pkg["name"]
+        version    = pkg["version"]
+        license    = pkg["license"] || "unknown"
+        homepage   = pkg["homepage"]
+        source_url = pkg["source_url"
+        source     = pkg["source"] || "unknown"
 
-        name_html = if homepage && !homepage.strip.empty?
-          "<a href='#{homepage}' target='_blank' rel='noopener'>#{name} <span class='external-link-arrow'>↗</span></a>"
+        link = [homepage, source_url].find { |u| u && !u.to_s.strip.empty? }
+    
+        name_html = if link
+          "<a href='#{link}' target='_blank' rel='noopener'>#{name} <span class='external-link-arrow'>↗</span></a>"
         else
           name
         end
-
+    
         "<tr><td class='pkg-name'>#{name_html}</td><td>#{version}</td><td>#{license}</td><td>#{source}</td></tr>"
       end.join("\n")
-
+    
       <<~HTML
         <table class="licenses-table">
           <thead>
