@@ -79,7 +79,7 @@ module Jekyll
         version    = pkg["version"]
         license    = pkg["license"] || "unknown"
         homepage   = pkg["homepage"]
-        source_url = pkg["source_url"
+        source_url = pkg["source_url"]
         source     = pkg["source"] || "unknown"
 
         link = [homepage, source_url].find { |u| u && !u.to_s.strip.empty? }
