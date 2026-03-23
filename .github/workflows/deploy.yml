@@ -85,24 +85,18 @@ jobs:
             esac
           done
 
-      - name: Generate asset version
+      - name: Generate asset config
         shell: bash
         run: |
           set -euo pipefail
           VER="${GITHUB_SHA}"
-          mkdir -p _data
-          printf "version: %s\n" "${VER}" > _data/asset_version.yml
+          TS="$(date +%s%6N)"
+          printf 'asset_build:\n  version: "%s"\n  timestamp: "%s"\n' "$VER" "$TS" > _config.assets.yml
 
       - name: Build Jekyll site
-        run: bundle exec jekyll build
+        run: bundle exec jekyll build --config _config.yml,_config.assets.yml
         env:
           JEKYLL_ENV: production
-
-      - name: Stage runtime files into _site
-        shell: bash
-        run: |
-          set -euo pipefail
-          printf "%s" "${GITHUB_SHA}" > _site/_asset_version.txt
 
       - name: Precompress assets in _site (gzip + brotli)
         shell: bash

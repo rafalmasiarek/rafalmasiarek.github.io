@@ -13,6 +13,20 @@ plugins:
   - jekyll-sitemap
   - jekyll-assets
 
+assets:
+  default_strategy: "config_version"
+  default_source: local
+  default_bust: true
+
+  sources:
+    local:
+      base_url: ""
+      prefix: "/assets"
+
+    cdn:
+      base_url: "https://cdn.masiarek.pl"
+      prefix: ""
+
 collections:
   vinyls:
     output: true
