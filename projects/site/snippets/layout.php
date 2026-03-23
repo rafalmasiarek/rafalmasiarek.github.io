@@ -23,7 +23,7 @@ declare(strict_types=1);
 
   <?php snippet('site-footer') ?>
 
-  <script src="https://cdn.masiarek.pl/bootstrap/v5.3.8/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous" defer></script>
+  <script src="<?= htmlspecialchars(asset_url('bootstrap/v5.3.8/bootstrap.bundle.min.js', 'cdn'), ENT_QUOTES, 'UTF-8') ?>" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous" defer></script>
 
   <?php snippet('site-analytics') ?>
   <?php snippet('analytics-helper') ?>
