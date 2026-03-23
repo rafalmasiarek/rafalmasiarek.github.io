@@ -30,7 +30,11 @@ final class AssetUrl
 
         $baseUrl = rtrim((string)($source['base_url'] ?? ''), '/');
         $prefix = (string)($source['prefix'] ?? '');
-        $strategy = (string)($source['strategy'] ?? 'config_version');
+        $strategy = (string)(
+            $source['strategy']
+            ?? $cfg['default_strategy']
+            ?? 'config_version'
+        );
 
         if ($bustOverride === null) {
             $bust = array_key_exists('bust', $source)
@@ -51,6 +55,45 @@ final class AssetUrl
         return self::appendVersion($url, $version);
     }
 
+    public static function preconnects(): string
+    {
+        $kirby = App::instance();
+        $cfg = $kirby->option('assets', []);
+        if (!is_array($cfg)) {
+            return '';
+        }
+
+        $sources = $cfg['sources'] ?? [];
+        if (!is_array($sources)) {
+            return '';
+        }
+
+        $seen = [];
+        $html = [];
+
+        foreach ($sources as $source) {
+            if (!is_array($source)) {
+                continue;
+            }
+
+            $baseUrl = trim((string)($source['base_url'] ?? ''));
+            $preconnect = (bool)($source['preconnect'] ?? false);
+
+            if ($preconnect !== true || $baseUrl === '' || !preg_match('~^https?://~i', $baseUrl)) {
+                continue;
+            }
+
+            if (isset($seen[$baseUrl])) {
+                continue;
+            }
+
+            $seen[$baseUrl] = true;
+            $html[] = '<link rel="preconnect" href="' . htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') . '" crossorigin>';
+        }
+
+        return implode("\n", $html);
+    }
+
     private static function normalizePath(string $input, string $prefix): string
     {
         $cleanInput = trim($input);
@@ -63,13 +106,11 @@ final class AssetUrl
             return $cleanInput;
         }
 
-        $normalizedPrefix = trim($prefix);
-        if ($normalizedPrefix === '') {
+        if (trim($prefix) === '') {
             return '/' . ltrim($cleanInput, '/');
         }
 
-        $normalizedPrefix = '/' . trim($normalizedPrefix, '/');
-
+        $normalizedPrefix = '/' . trim($prefix, '/');
         return preg_replace('~/+~', '/', $normalizedPrefix . '/' . ltrim($cleanInput, '/')) ?: '';
     }
 
@@ -78,7 +119,7 @@ final class AssetUrl
         return match ($strategy) {
             'file_hash'       => self::fileHashVersion($kirby, $cfg, $path),
             'config_version'  => self::configVersion($kirby, $cfg),
-            'build_timestamp' => self::buildTimestamp($kirby),
+            'build_timestamp' => self::buildTimestamp($kirby, $cfg),
             'none'            => null,
             default           => self::configVersion($kirby, $cfg),
         };
@@ -86,55 +127,42 @@ final class AssetUrl
 
     private static function configVersion(App $kirby, array $cfg): ?string
     {
-        $version = trim((string)$kirby->option('asset_build.version', ''));
-        if ($version !== '') {
-            return $version;
+        $buildVersion = trim((string)$kirby->option('asset_build.version', ''));
+        if ($buildVersion !== '') {
+            return $buildVersion;
         }
 
         $fallback = trim((string)($cfg['version'] ?? ''));
         return $fallback !== '' ? $fallback : null;
     }
 
-    private static function buildTimestamp(App $kirby): ?string
+    private static function buildTimestamp(App $kirby, array $cfg): ?string
     {
-        $timestamp = trim((string)$kirby->option('asset_build.timestamp', ''));
-        if ($timestamp !== '') {
-            return $timestamp;
-        }
-
-        $fallbackVersion = trim((string)$kirby->option('asset_build.version', ''));
-        return $fallbackVersion !== '' ? $fallbackVersion : null;
-    }
-
-    private static function fileHashVersion(App $kirby, array $cfg, string $publicPath): ?string
-    {
-        $relativePath = ltrim($publicPath, '/');
-        $root = self::fileRoot($kirby, $cfg);
-        $filePath = rtrim($root, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
-
-        if (is_file($filePath)) {
-            $hash = md5_file($filePath);
-            if (is_string($hash) && $hash !== '') {
-                return $hash;
-            }
+        $configuredTimestamp = trim((string)$kirby->option('asset_build.timestamp', ''));
+        if ($configuredTimestamp !== '') {
+            return $configuredTimestamp;
         }
 
         return self::configVersion($kirby, $cfg);
     }
 
-    private static function fileRoot(App $kirby, array $cfg): string
+    private static function fileHashVersion(App $kirby, array $cfg, string $publicPath): ?string
     {
-        $fromOption = trim((string)$kirby->option('jekyll_root', ''));
-        if ($fromOption !== '') {
-            return $fromOption;
+        $relativePath = ltrim($publicPath, '/');
+        $root = trim((string)$kirby->option('jekyll_root', ''));
+
+        if ($root !== '') {
+            $filePath = rtrim($root, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
+
+            if (is_file($filePath)) {
+                $hash = md5_file($filePath);
+                if (is_string($hash) && $hash !== '') {
+                    return $hash;
+                }
+            }
         }
 
-        $fromCfg = trim((string)($cfg['file_root'] ?? ''));
-        if ($fromCfg !== '') {
-            return $fromCfg;
-        }
-
-        return dirname($kirby->root('index'));
+        return self::configVersion($kirby, $cfg);
     }
 
     private static function appendVersion(string $url, ?string $version): string
@@ -152,6 +180,13 @@ if (!function_exists('asset_url')) {
     function asset_url(string $input, ?string $sourceName = null, ?bool $bustOverride = null): string
     {
         return AssetUrl::build($input, $sourceName, $bustOverride);
+    }
+}
+
+if (!function_exists('asset_preconnects')) {
+    function asset_preconnects(): string
+    {
+        return AssetUrl::preconnects();
     }
 }
 

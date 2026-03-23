@@ -1,12 +1,11 @@
 <?php
-// projects/site/snippets/site-head.php
 
 declare(strict_types=1);
 
 $siteTitle = (string)option('title');
 $siteDesc  = (string)option('description');
-$baseurl   = (string)option('baseurl');           // "" or "/something"
-$siteUrl   = (string)option('jekyll_site_url');   // original Jekyll site.url
+$baseurl   = (string)option('baseurl');
+$siteUrl   = (string)option('jekyll_site_url');
 
 $baseurl = trim($baseurl);
 if ($baseurl === '' || $baseurl === '/') {
@@ -24,16 +23,12 @@ $descField = $page->content()->get('description');
 $desc = $descField->isNotEmpty() ? (string)$descField->value() : $siteDesc;
 $desc = mb_substr($desc, 0, 160);
 
-
-$docroot = dirname(__DIR__, 4);
-$verFile = $docroot . '/_asset_version.txt';
-$assetVer = is_file($verFile) ? trim((string)file_get_contents($verFile)) : '';
-$assetVerQ = $assetVer !== '' ? ('?v=' . rawurlencode($assetVer)) : '';
-
 $canonicalField = $page->content()->get('canonical');
 $canonical = $canonicalField->isNotEmpty()
     ? (string)$canonicalField->value()
     : rtrim($siteUrl, '/') . $baseurl . '/' . ltrim($page->uri(), '/');
+
+$isProd = ((string)getenv('APP_ENV') === 'production');
 ?>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
@@ -46,17 +41,18 @@ $canonical = $canonicalField->isNotEmpty()
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<?= asset_preconnects() . "\n" ?>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@100..700&display=swap" rel="stylesheet">
 
-<link rel="stylesheet" href="https://cdn.masiarek.pl/bootstrap/v5.3.8/bootstrap.min.css" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+<link rel="stylesheet" href="<?= htmlspecialchars(asset_url('bootstrap/v5.3.8/bootstrap.min.css', 'cdn'), ENT_QUOTES, 'UTF-8') ?>" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
 
-<?php if ((string)getenv('APP_ENV') === 'production'): ?>
-    <link href="<?= $baseurl ?>/assets/css/style.min.css<?= $assetVerQ ?>" rel="stylesheet">
+<?php if ($isProd): ?>
+    <link href="<?= htmlspecialchars(asset_url('css/style.min.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
 <?php else: ?>
-    <link href="<?= $baseurl ?>/assets/css/style.css<?= $assetVerQ ?>" rel="stylesheet">
+    <link href="<?= htmlspecialchars(asset_url('css/style.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
 <?php endif; ?>
 
-<link href="<?= $baseurl ?>/assets/css/instafilters.min.css?v0.1.4" rel="stylesheet">
+<link href="<?= htmlspecialchars(asset_url('css/instafilters.min.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
 
 <script src="https://kit.fontawesome.com/cc759ba0dc.js" crossorigin="anonymous"></script>
 

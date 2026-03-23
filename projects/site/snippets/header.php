@@ -1,3 +1,8 @@
+<?php
+declare(strict_types=1);
+
+/** @var string $content */
+?>
 <!doctype html>
 <html lang="pl">
 <head>
@@ -5,8 +10,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?= esc($page->title()) ?></title>
 
-  <!-- Reuse Jekyll assets to keep the same styling -->
-  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="stylesheet" href="<?= htmlspecialchars(asset_url('main.css'), ENT_QUOTES, 'UTF-8') ?>">
 </head>
 <body>
 <header class="container">
