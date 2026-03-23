@@ -22,10 +22,12 @@ assets:
     local:
       base_url: ""
       prefix: "/assets"
+      preconnect: true
 
     cdn:
       base_url: "https://cdn.masiarek.pl"
       prefix: ""
+      preconnect: true
 
 collections:
   vinyls:
@@ -108,7 +110,7 @@ licenses:
     homepage: https://openpgpjs.org/
     source_url: https://github.com/openpgpjs/openpgpjs
     source: JS
-    
+
 include:
   - .htaccess
   - _config.yml

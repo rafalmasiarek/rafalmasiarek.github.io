@@ -71,15 +71,15 @@ layout: vinyls-shell
   </div>
 </div>
 
-<script src="https://cdn.masiarek.pl/bootstrap/v5.3.8/bootstrap.bundle.min.js"
+<script src='{{ "bootstrap/v5.3.8/bootstrap.bundle.min.js" | asset_url: "cdn" }}'
   integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"
   defer></script>
 {% if jekyll.environment == "production" %}
 <script data-cfasync="false"
-  src="{{ site.baseurl }}/assets/js/vinyl-loader.min.js?{{ site.time | date: '%s%N' }}"></script>
+  src='{{ "js/vinyl-loader.min.js" | asset_url }}'></script>
 <script data-cfasync="false"
-  src="{{ site.baseurl }}/assets/js/vinyl-router.min.js?{{ site.time | date: '%s%N' }}"></script>
+  src='{{ "js/vinyl-router.min.js" | asset_url }}'></script>
 {% else %}
-<script data-cfasync="false" src="{{ site.baseurl }}/assets/js/vinyl-loader.js?{{ site.time | date: '%s%N' }}"></script>
-<script data-cfasync="false" src="{{ site.baseurl }}/assets/js/vinyl-router.js?{{ site.time | date: '%s%N' }}"></script>
+<script data-cfasync="false" src='{{ "js/vinyl-loader.js" | asset_url }}'></script>
+<script data-cfasync="false" src='{{ "js/vinyl-router.js" | asset_url }}'></script>
 {% endif %}

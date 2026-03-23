@@ -18,15 +18,6 @@ canonical: "/vinyls/"
 
 {{ content }}
 
-<!--LEGACY WORKER-->
-<!--script data-cfasync="false">
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('{{ site.baseurl }}/sw-vinyls.js?{{ site.time | date: "%s%N" }}', { scope: '{{ site.baseurl }}/' })
-        .catch(err => console.warn('SW register failed', err));
-    });
-  }
-</script-->
 <script data-cfasync="false">
   (function () {
     if (!('serviceWorker' in navigator)) return;
