@@ -16,7 +16,7 @@ layout: base
 </div>
 
 {% if jekyll.environment == "production" %}
-<script src="{{ site.baseurl }}/assets/js/projects.min.js?{{ site.time | date: '%s%N' }}"></script>
+<script src='{{ "js/projects.min.js" | asset_url }}'></script>
 {% else %}
-<script src="{{ site.baseurl }}/assets/js/projects.js?{{ site.time | date: '%s%N' }}"></script>
+<script src='{{ "js/projects.js" | asset_url }}'></script>
 {% endif %}

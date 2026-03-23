@@ -1,0 +1,16 @@
+{% assign seen_hosts = "|" %}
+
+{% for source in site.assets.sources %}
+  {% assign source_cfg = source[1] %}
+  {% assign base_url = source_cfg.base_url | default: "" %}
+  {% assign use_preconnect = source_cfg.preconnect | default: false %}
+
+  {% if use_preconnect and base_url != "" and base_url contains "://" %}
+    {% assign host_key = "|" | append: base_url | append: "|" %}
+
+    {% unless seen_hosts contains host_key %}
+<link rel="preconnect" href="{{ base_url }}" crossorigin>
+      {% assign seen_hosts = seen_hosts | append: base_url | append: "|" %}
+    {% endunless %}
+  {% endif %}
+{% endfor %}
