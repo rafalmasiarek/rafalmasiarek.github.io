@@ -4,11 +4,32 @@
 # http://jch.penibelst.de/
 # © 2014–2015 Anatol Broder
 # MIT License
+#
+# Patched in 2026 by Rafal Masiarek <rafal@masiarek.pl>
+# - Added <!-- compress:off --> ... <!-- compress:on --> blocks (content inside is left untouched 1:1)
+# - Treats <script>...</script> and <style>...</style> like <pre>...</pre> (never compresses their contents)
 ---
 
 {% capture _LINE_FEED %}
 {% endcapture %}{% if site.compress_html.ignore.envs contains jekyll.environment or site.compress_html.ignore.envs ==
-"all" %}{{ content }}{% else %}{% capture _content %}{{ content }}{% endcapture %}{% assign _profile =
+"all" %}{{ content }}{% else %}{% capture _content %}{{ content }}{% endcapture %}
+
+{%- comment -%} compress:off blocks extraction (must run before any other transforms) {%- endcomment -%}
+{% assign _raw_blocks = "" | split: "" %}
+{% assign _parts = _content | split: "<!-- compress:off -->" %}
+{% capture _rebuilt %}{{ _parts.first }}{% endcapture %}
+{% for _p in _parts %}
+{% if forloop.first %}{% continue %}{% endif %}
+{% assign _seg = _p | split: "<!-- compress:on -->" %}
+{% assign _keep = _seg.first %}
+{% assign _tail = _seg.last %}
+{% assign _raw_blocks = _raw_blocks | push: _keep %}
+{% assign _idx = _raw_blocks.size | minus: 1 %}
+{% capture _rebuilt %}{{ _rebuilt }}@@COMPRESS_OFF_{{ _idx }}@@{{ _tail }}{% endcapture %}
+{% endfor %}
+{% assign _content = _rebuilt %}
+
+{% assign _profile =
 site.compress_html.profile %}{% if site.compress_html.endings == "all" %}{% assign _endings = "html head body li dt dd
 optgroup option colgroup caption thead tbody tfoot tr td th" | split: " " %}{% else %}{% assign _endings =
 site.compress_html.endings %}{% endif %}{% for _element in _endings %}{% capture _end %}</{{ _element }}>{% endcapture
@@ -24,7 +45,53 @@ _content | size | plus: 1 %}{% endif %}{% for _element in site.compress_html.sta
     _comments.first }}{% endunless %}{{ _comment_outside | split: _comments.last | first }}{% if _comment_outside
     contains _comments.last %}{{ _comments.last }}{% assign _carry = false %}{% else %}{% assign _carry = true %}{%
     endif %}{% endcapture %}{% assign _content = _content | remove_first: _comment %}{% endfor %}{% if _profile %}{%
-    assign _profile_comments = _content | size | plus: 1 %}{% endif %}{% endif %}{% assign _pre_befores = _content |
+    assign _profile_comments = _content | size | plus: 1 %}{% endif %}{% endif %}
+
+{%- comment -%}
+Protect <script>...</script> and <style>...</style like <pre>:
+we temporarily replace them with tokens before collapse/clippings,
+then restore them at the end unchanged.
+{%- endcomment -%}
+{% assign _script_blocks = "" | split: "" %}
+{% assign _style_blocks  = "" | split: "" %}
+
+{% assign _script_parts = _content | split: "<script" %}
+{% capture _script_rebuilt %}{{ _script_parts.first }}{% endcapture %}
+{% for _sp in _script_parts %}
+{% if forloop.first %}{% continue %}{% endif %}
+{% assign _seg = _sp | split: "</script>" %}
+{% assign _body = _seg.first %}
+{% assign _tail = _seg.last %}
+{% if _seg.size > 1 %}
+{% capture _full %}<script{{ _body }}</script>{% endcapture %}
+{% assign _script_blocks = _script_blocks | push: _full %}
+{% assign _idx = _script_blocks.size | minus: 1 %}
+{% capture _script_rebuilt %}{{ _script_rebuilt }}@@SCRIPT_BLOCK_{{ _idx }}@@{{ _tail }}{% endcapture %}
+{% else %}
+{% capture _script_rebuilt %}{{ _script_rebuilt }}<script{{ _body }}{% endcapture %}
+{% endif %}
+{% endfor %}
+{% assign _content = _script_rebuilt %}
+
+{% assign _style_parts = _content | split: "<style" %}
+{% capture _style_rebuilt %}{{ _style_parts.first }}{% endcapture %}
+{% for _st in _style_parts %}
+{% if forloop.first %}{% continue %}{% endif %}
+{% assign _seg = _st | split: "</style>" %}
+{% assign _body = _seg.first %}
+{% assign _tail = _seg.last %}
+{% if _seg.size > 1 %}
+{% capture _full %}<style{{ _body }}</style>{% endcapture %}
+{% assign _style_blocks = _style_blocks | push: _full %}
+{% assign _idx = _style_blocks.size | minus: 1 %}
+{% capture _style_rebuilt %}{{ _style_rebuilt }}@@STYLE_BLOCK_{{ _idx }}@@{{ _tail }}{% endcapture %}
+{% else %}
+{% capture _style_rebuilt %}{{ _style_rebuilt }}<style{{ _body }}{% endcapture %}
+{% endif %}
+{% endfor %}
+{% assign _content = _style_rebuilt %}
+
+{% assign _pre_befores = _content |
     split: "<pre" %}{% assign _content="" %}{% for _pre_before in _pre_befores %}{% assign _pres=_pre_before |
         split: "</pre>" %}{% assign _pres_after="" %}{% if _pres.size !=0 %}{% if site.compress_html.blanklines %}{%
         assign _lines=_pres.last | split: _LINE_FEED %}{% capture _pres_after %}{% for _line in _lines %}{% assign
@@ -40,7 +107,31 @@ _content | size | plus: 1 %}{% endif %}{% for _element in site.compress_html.sta
         %}{% endif %}{% for _element in _clippings %}{% assign _edges = " <e;<e; </e>;</e>;</e> ;</e>" | replace: "e",
             _element | split: ";" %}{% assign _content = _content | replace: _edges[0], _edges[1] | replace: _edges[2],
             _edges[3] | replace: _edges[4], _edges[5] %}{% endfor %}{% if _profile and _clippings %}{% assign
-            _profile_clippings = _content | size | plus: 1 %}{% endif %}{{ _content }}{% if _profile %} <table
+            _profile_clippings = _content | size | plus: 1 %}{% endif %}
+
+{%- comment -%} Restore protected <script> and <style> blocks {%- endcomment -%}
+{% if _script_blocks and _script_blocks.size > 0 %}
+{% for _b in _script_blocks %}
+{% capture _token %}@@SCRIPT_BLOCK_{{ forloop.index0 }}@@{% endcapture %}
+{% assign _content = _content | replace: _token, _b %}
+{% endfor %}
+{% endif %}
+{% if _style_blocks and _style_blocks.size > 0 %}
+{% for _b in _style_blocks %}
+{% capture _token %}@@STYLE_BLOCK_{{ forloop.index0 }}@@{% endcapture %}
+{% assign _content = _content | replace: _token, _b %}
+{% endfor %}
+{% endif %}
+
+{%- comment -%} Restore compress:off blocks (must be last) {%- endcomment -%}
+{% if _raw_blocks and _raw_blocks.size > 0 %}
+{% for _b in _raw_blocks %}
+{% capture _token %}@@COMPRESS_OFF_{{ forloop.index0 }}@@{% endcapture %}
+{% assign _content = _content | replace: _token, _b %}
+{% endfor %}
+{% endif %}
+
+{{ _content }}{% if _profile %} <table
                 id="compress_html_profile_{{ site.time | date: " %Y%m%d" }}" class="compress_html_profile">
                 <thead>
                     <tr>
