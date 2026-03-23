@@ -23,14 +23,14 @@
 <link rel="preconnect" href="https://cdn.masiarek.pl" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@100..700&display=swap" rel="stylesheet">
 
-<link rel="stylesheet" href="https://cdn.masiarek.pl/bootstrap/v5.3.8/bootstrap.min.css"
+<link rel="stylesheet" href="{{ "bootstrap/v5.3.8/bootstrap.min.css" | asset_url: "cdn" }}"
   integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
 {% if jekyll.environment == "production" %}
-<link href="{{ site.baseurl }}/assets/css/style.min.css?v={{ site.data.asset_version.version }}" rel="stylesheet">
+<link href="{{ "css/style.min.css" | asset_url }}" rel="stylesheet">
 {% else %}
-<link href="{{ site.baseurl }}/assets/css/style.css?v={{ site.data.asset_version.version }}" rel="stylesheet">
+<link href="{{ "css/style.css" | asset_url }}" rel="stylesheet">
 {% endif %}
-<link rel="stylesheet" href="https://cdn.masiarek.pl/instagram.css/@latest/instagram.min.css">
+<link rel="stylesheet" href="{{ "instagram.css/@latest/instagram.min.css" | asset_url: "cdn" }}">
 
 <script src="https://kit.fontawesome.com/cc759ba0dc.js" crossorigin="anonymous"></script>
 

@@ -4,13 +4,23 @@ declare(strict_types=1);
 
 use Kirby\Data\Yaml;
 
-$jekyllPath = dirname(__DIR__, 3) . '/_config.yml';
+$rootPath = dirname(__DIR__, 3);
+
+$jekyllConfigPaths = [
+    $rootPath . '/_config.yml',
+    $rootPath . '/_config.assets.yml',
+];
 
 $cfg = [];
-if (is_file($jekyllPath)) {
-    $parsed = Yaml::read($jekyllPath);
+
+foreach ($jekyllConfigPaths as $configPath) {
+    if (!is_file($configPath)) {
+        continue;
+    }
+
+    $parsed = Yaml::read($configPath);
     if (is_array($parsed)) {
-        $cfg = $parsed;
+        $cfg = array_replace_recursive($cfg, $parsed);
     }
 }
 
@@ -34,6 +44,6 @@ $cfg['url'] = $siteUrl !== ''
     : null;
 
 $cfg['jekyll_site_url'] = $siteUrl;
+$cfg['jekyll_root'] = $rootPath;
 
-// Return as Kirby options (top-level)
 return $cfg;
