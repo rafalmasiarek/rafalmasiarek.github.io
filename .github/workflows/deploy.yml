@@ -16,6 +16,18 @@ jobs:
           submodules: recursive
           fetch-depth: 1
 
+      - name: Resolve Kirby submodule metadata
+        id: kirby_meta
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          KIRBY_URL="$(git config --file .gitmodules --get submodule.projects/kirby.url)"
+          KIRBY_SHA="$(git ls-tree HEAD projects/kirby | awk '{print $3}')"
+
+          printf 'url=%s\n' "$KIRBY_URL" >> "$GITHUB_OUTPUT"
+          printf 'sha=%s\n' "$KIRBY_SHA" >> "$GITHUB_OUTPUT"
+
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
@@ -85,18 +97,24 @@ jobs:
             esac
           done
 
-      - name: Generate asset config
+      - name: Generate deploy config
         shell: bash
         run: |
           set -euo pipefail
           VER="${GITHUB_SHA}"
           TS="$(date +%s%6N)"
-          printf 'asset_build:\n  version: "%s"\n  timestamp: "%s"\n' "$VER" "$TS" > _config.assets.yml
+          printf 'asset_build:\n  version: "%s"\n  timestamp: "%s"\napp_env: "production"\n' "$VER" "$TS" > _config.deploy.yml
 
       - name: Build Jekyll site
-        run: bundle exec jekyll build --config _config.yml,_config.assets.yml
+        run: bundle exec jekyll build --config _config.yml,_config.deploy.yml
         env:
           JEKYLL_ENV: production
+
+      - name: Ensure Kirby submodule is not present in _site
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf _site/projects/kirby
 
       - name: Precompress assets in _site (gzip + brotli)
         shell: bash
@@ -132,8 +150,8 @@ jobs:
              | sed 's|^\./|/|; s|$|/|' \
              | sort -u" > rsync-exclude.txt
 
-          if [ -n "${{ secrets.RSYNC_EXCLUDES }}" ]; then
-            echo "${{ secrets.RSYNC_EXCLUDES }}" >> rsync-exclude.txt
+          if [ -n "${{ env.RSYNC_EXCLUDES }}" ]; then
+            echo "${{ env.RSYNC_EXCLUDES }}" >> rsync-exclude.txt
           fi
 
       - name: Debug rsync excludes
@@ -153,6 +171,31 @@ jobs:
             --delete \
             --exclude-from=rsync-exclude.txt \
             _site/ ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }}:${{ secrets.RSYNC_DEST_PATH }}
+
+      - name: Sync Kirby submodule on remote
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ssh -p ${{ secrets.RSYNC_SSH_PORT }} \
+            ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }} "
+              set -euo pipefail
+
+              APP_ROOT='${{ secrets.RSYNC_DEST_PATH }}'
+              KIRBY_DIR=\"\$APP_ROOT/projects/kirby\"
+              KIRBY_URL='${{ steps.kirby_meta.outputs.url }}'
+              KIRBY_SHA='${{ steps.kirby_meta.outputs.sha }}'
+
+              mkdir -p \"\$APP_ROOT/projects\"
+
+              if [ ! -d \"\$KIRBY_DIR/.git\" ]; then
+                rm -rf \"\$KIRBY_DIR\"
+                git clone \"\$KIRBY_URL\" \"\$KIRBY_DIR\"
+              fi
+
+              git -C \"\$KIRBY_DIR\" fetch --all --tags --prune
+              git -C \"\$KIRBY_DIR\" checkout --force \"\$KIRBY_SHA\"
+            "
 
       - name: Verify remote identity JSON files match build
         shell: bash
@@ -282,7 +325,6 @@ jobs:
 
           ROOT="_site/.well-known/identity"
 
-          # ---- META TXT (RAW, matches browser hashing) ----
           WANT_META="$(bin/identityctl meta-txt --root "$ROOT" --raw)"
           WANT_META_NORM="$(printf '%s' "$WANT_META" | tr -d '[:space:]')"
           echo "WANT_META_NORM=$WANT_META_NORM"
@@ -292,14 +334,12 @@ jobs:
 
           wait_cf_hard_gg_warn "${IDENTITY_META_FQDN}" "${WANT_META_NORM}"
 
-          # ---- APPLY + PRUNE ALL PGP/SSH KEYS ----
           bin/identityctl cf-apply-keys --type pgp --ttl 120 --root "$ROOT"
           bin/identityctl cf-prune-keys --type pgp --root "$ROOT"
 
           bin/identityctl cf-apply-keys --type ssh --ttl 120 --root "$ROOT"
           bin/identityctl cf-prune-keys --type ssh --root "$ROOT"
 
-          # ---- Verify stable aliases always match current ----
           CUR_PGP="$(jq -r '.pgp.current' "$ROOT/manifest.json")"
           CUR_SSH="$(jq -r '.ssh.current' "$ROOT/manifest.json")"
 
