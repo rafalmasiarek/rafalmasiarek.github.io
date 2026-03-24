@@ -25,8 +25,13 @@ jobs:
           KIRBY_URL="$(git config --file .gitmodules --get submodule.projects/kirby.url)"
           KIRBY_SHA="$(git ls-tree HEAD projects/kirby | awk '{print $3}')"
 
+          EXACT_TAG="$(git -C projects/kirby describe --tags --exact-match 2>/dev/null || true)"
+          DESCRIBE_TAG="$(git -C projects/kirby describe --tags --always 2>/dev/null || true)"
+
           printf 'url=%s\n' "$KIRBY_URL" >> "$GITHUB_OUTPUT"
           printf 'sha=%s\n' "$KIRBY_SHA" >> "$GITHUB_OUTPUT"
+          printf 'exact_tag=%s\n' "$EXACT_TAG" >> "$GITHUB_OUTPUT"
+          printf 'describe_tag=%s\n' "$DESCRIBE_TAG" >> "$GITHUB_OUTPUT"
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
@@ -110,12 +115,6 @@ jobs:
         env:
           JEKYLL_ENV: production
 
-      - name: Ensure Kirby submodule is not present in _site
-        shell: bash
-        run: |
-          set -euo pipefail
-          rm -rf _site/projects/kirby
-
       - name: Precompress assets in _site (gzip + brotli)
         shell: bash
         run: |
@@ -185,16 +184,46 @@ jobs:
               KIRBY_DIR=\"\$APP_ROOT/projects/kirby\"
               KIRBY_URL='${{ steps.kirby_meta.outputs.url }}'
               KIRBY_SHA='${{ steps.kirby_meta.outputs.sha }}'
+              KIRBY_EXACT_TAG='${{ steps.kirby_meta.outputs.exact_tag }}'
+              KIRBY_DESCRIBE_TAG='${{ steps.kirby_meta.outputs.describe_tag }}'
 
               mkdir -p \"\$APP_ROOT/projects\"
 
-              if [ ! -d \"\$KIRBY_DIR/.git\" ]; then
+              if [ -d \"\$KIRBY_DIR\" ] && [ ! -d \"\$KIRBY_DIR/.git\" ]; then
+                echo \"Kirby directory exists but is not a git repo, recreating...\"
                 rm -rf \"\$KIRBY_DIR\"
-                git clone \"\$KIRBY_URL\" \"\$KIRBY_DIR\"
               fi
 
-              git -C \"\$KIRBY_DIR\" fetch --all --tags --prune
-              git -C \"\$KIRBY_DIR\" checkout --force \"\$KIRBY_SHA\"
+              if [ ! -d \"\$KIRBY_DIR/.git\" ]; then
+                git clone \"\$KIRBY_URL\" \"\$KIRBY_DIR\"
+              else
+                git -C \"\$KIRBY_DIR\" remote set-url origin \"\$KIRBY_URL\" || true
+              fi
+
+              CURRENT_SHA=\"\$(git -C \"\$KIRBY_DIR\" rev-parse HEAD 2>/dev/null || true)\"
+
+              if [ \"\$CURRENT_SHA\" != \"\$KIRBY_SHA\" ]; then
+                git -C \"\$KIRBY_DIR\" fetch --all --tags --prune
+                git -C \"\$KIRBY_DIR\" -c advice.detachedHead=false checkout --force \"\$KIRBY_SHA\"
+
+                NEW_SHA=\"\$(git -C \"\$KIRBY_DIR\" rev-parse HEAD 2>/dev/null || true)\"
+
+                if [ -n \"\$KIRBY_EXACT_TAG\" ]; then
+                  echo \"Kirby bumped to tag: \$KIRBY_EXACT_TAG (SHA: \$NEW_SHA, matching submodule commit: \$KIRBY_SHA)\"
+                elif [ -n \"\$KIRBY_DESCRIBE_TAG\" ]; then
+                  echo \"Kirby bumped to SHA: \$NEW_SHA (nearest tag: \$KIRBY_DESCRIBE_TAG, matching submodule commit: \$KIRBY_SHA)\"
+                else
+                  echo \"Kirby bumped to SHA: \$NEW_SHA (matching submodule commit: \$KIRBY_SHA)\"
+                fi
+              else
+                if [ -n \"\$KIRBY_EXACT_TAG\" ]; then
+                  echo \"Kirby already at desired tag: \$KIRBY_EXACT_TAG (SHA: \$KIRBY_SHA, matching submodule commit)\"
+                elif [ -n \"\$KIRBY_DESCRIBE_TAG\" ]; then
+                  echo \"Kirby already at desired SHA: \$KIRBY_SHA (nearest tag: \$KIRBY_DESCRIBE_TAG, matching submodule commit)\"
+                else
+                  echo \"Kirby already at desired SHA: \$KIRBY_SHA (matching submodule commit)\"
+                fi
+              fi
             "
 
       - name: Verify remote identity JSON files match build
