@@ -25,13 +25,8 @@ jobs:
           KIRBY_URL="$(git config --file .gitmodules --get submodule.projects/kirby.url)"
           KIRBY_SHA="$(git ls-tree HEAD projects/kirby | awk '{print $3}')"
 
-          EXACT_TAG="$(git -C projects/kirby describe --tags --exact-match 2>/dev/null || true)"
-          DESCRIBE_TAG="$(git -C projects/kirby describe --tags --always 2>/dev/null || true)"
-
           printf 'url=%s\n' "$KIRBY_URL" >> "$GITHUB_OUTPUT"
           printf 'sha=%s\n' "$KIRBY_SHA" >> "$GITHUB_OUTPUT"
-          printf 'exact_tag=%s\n' "$EXACT_TAG" >> "$GITHUB_OUTPUT"
-          printf 'describe_tag=%s\n' "$DESCRIBE_TAG" >> "$GITHUB_OUTPUT"
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
@@ -124,7 +119,7 @@ jobs:
             ! -name ".*" \
             \( -name "*.html" -o -name "*.css" -o -name "*.js" \) -print0 \
           | while IFS= read -r -d '' f; do
-              gzip -kf -9 "$f"
+              gzip -knf -9 "$f"
               brotli -fk -q 11 "$f"
             done
 
@@ -154,19 +149,12 @@ jobs:
         env:
           RSYNC_EXCLUDES: ${{ vars.RSYNC_EXCLUDES }}
 
-      - name: Debug rsync excludes
-        run: |
-          set -euo pipefail
-          echo "---- rsync-exclude.txt ----"
-          cat rsync-exclude.txt
-          echo "---------------------------"
-
       - name: Deploy via rsync
         shell: bash
         run: |
           set -euo pipefail
 
-          rsync -avz \
+          rsync -a \
             -e "ssh -p ${{ secrets.RSYNC_SSH_PORT }}" \
             --delete \
             --exclude-from=rsync-exclude.txt \
