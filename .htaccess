@@ -1,5 +1,5 @@
-# Block access to Jekyll config and any backups/variants
-<FilesMatch "^_config\.ya?ml(\..*)?$">
+# Block access to Jekyll config files and any backups/variants
+<FilesMatch "^_config(\.[A-Za-z0-9_-]+)?\.ya?ml(\..*)?$">
   Require all denied
 </FilesMatch>
 
