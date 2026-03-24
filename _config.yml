@@ -46,6 +46,18 @@ nav:
   - title: I ❤️ OPENSOURCE
     url: /i-love-opensource
 
+
+robots:
+  enabled: true
+  user_agent: "*"
+  disallow:
+    - /
+  index: false
+  follow: false
+  noarchive: true
+  nosnippet: true
+  noimageindex: true
+
 socials:
   - title: Github
     url: "https://github.com/rafalmasiarek"
