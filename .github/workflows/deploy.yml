@@ -149,9 +149,10 @@ jobs:
              | sed 's|^\./|/|; s|$|/|' \
              | sort -u" > rsync-exclude.txt
 
-          if [ -n "${{ env.RSYNC_EXCLUDES }}" ]; then
-            echo "${{ env.RSYNC_EXCLUDES }}" >> rsync-exclude.txt
-          fi
+          printf '%s\n' "$RSYNC_EXCLUDES" >> rsync-exclude.txt
+
+        env:
+          RSYNC_EXCLUDES: ${{ vars.RSYNC_EXCLUDES }}
 
       - name: Debug rsync excludes
         run: |
