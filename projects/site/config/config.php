@@ -8,7 +8,7 @@ $rootPath = dirname(__DIR__, 3);
 
 $jekyllConfigPaths = [
     $rootPath . '/_config.yml',
-    $rootPath . '/_config.assets.yml',
+    $rootPath . '/_config.deploy.yml',
 ];
 
 $cfg = [];

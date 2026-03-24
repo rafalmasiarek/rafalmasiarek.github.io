@@ -28,7 +28,7 @@ $canonical = $canonicalField->isNotEmpty()
     ? (string)$canonicalField->value()
     : rtrim($siteUrl, '/') . $baseurl . '/' . ltrim($page->uri(), '/');
 
-$isProd = ((string)getenv('APP_ENV') === 'production');
+$isProd = ((string)option('app_env', 'development') === 'production');
 ?>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
@@ -51,7 +51,7 @@ $isProd = ((string)getenv('APP_ENV') === 'production');
 <?php else: ?>
     <link href="<?= htmlspecialchars(asset_url('css/style.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
 <?php endif; ?>
-
+<link href="<?= htmlspecialchars(asset_url('css/style.min.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
 <link href="<?= htmlspecialchars(asset_url('css/instafilters.min.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
 
 <script src="https://kit.fontawesome.com/cc759ba0dc.js" crossorigin="anonymous"></script>

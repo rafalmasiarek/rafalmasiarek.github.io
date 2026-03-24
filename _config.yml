@@ -114,6 +114,7 @@ licenses:
 include:
   - .htaccess
   - _config.yml
+  - _config.deploy.yml
   - .well-known
   - projects
   - "projects/**/.*"
@@ -127,3 +128,4 @@ exclude:
   - "projects/logs"
   - "projects/site/accounts"
   - "projects/site/sessions"
+  - "projects/kirby"
