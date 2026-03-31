@@ -251,6 +251,7 @@ jobs:
           SCHEMAS_URL: ${{ secrets.IDENTITY_SCHEMAS_URL }}
           MANIFEST_URL: ${{ secrets.IDENTITY_MANIFEST_URL }}
           IDENTITY_META_FQDN: ${{ secrets.IDENTITY_META_FQDN }}
+          IDENTITY_DNS_COMMENT: managed-by=identityctl;cleanup=keep;source=github-actions-deploy-${{ github.run_id }}
           MAX_TRIES: "60"
           SLEEP_S: "3"
         run: |
@@ -299,9 +300,25 @@ jobs:
             normalize_txt "$raw"
           }
 
-          wait_cf_hard_gg_warn() {
-            local fqdn="$1"
-            local want="$2"
+          wait_dns_txt() {
+            local fqdn=""
+            local want=""
+            local -a hard_providers=()
+            local -a soft_providers=()
+
+            while [ $# -gt 0 ]; do
+              case "$1" in
+                --fqdn) fqdn="$2"; shift 2 ;;
+                --want) want="$2"; shift 2 ;;
+                --hard) hard_providers+=("$2"); shift 2 ;;
+                --soft) soft_providers+=("$2"); shift 2 ;;
+                *) echo "ERROR: unknown arg: $1" >&2; return 2 ;;
+              esac
+            done
+
+            [ -n "$fqdn" ] || { echo "ERROR: --fqdn is required" >&2; return 2; }
+            [ -n "$want" ] || { echo "ERROR: --want is required" >&2; return 2; }
+            [ "${#hard_providers[@]}" -gt 0 ] || { echo "ERROR: at least one --hard provider is required" >&2; return 2; }
 
             check_provider_eq() {
               local provider="$1"
@@ -311,39 +328,50 @@ jobs:
               [ "$got" = "$want" ]
             }
 
-            MAX_TRIES="${MAX_TRIES:-40}"
-            SLEEP_S="${SLEEP_S:-3}"
+            wait_provider() {
+              local provider="$1"
+              local mode="$2"
+              local tries="${MAX_TRIES:-40}"
+              local sleep_s="${SLEEP_S:-3}"
+              local ok=0
 
-            ok_cf=0
-            for i in $(seq 1 "$MAX_TRIES"); do
-              echo "Check CF DoH ${fqdn} (${i}/${MAX_TRIES})..."
-              if check_provider_eq cf; then ok_cf=1; break; fi
-              sleep "$SLEEP_S"
-            done
+              for i in $(seq 1 "$tries"); do
+                echo "Check ${provider} DoH ${fqdn} (${i}/${tries})..."
+                if check_provider_eq "$provider"; then
+                  ok=1
+                  break
+                fi
+                sleep "$sleep_s"
+              done
 
-            if [ "$ok_cf" -ne 1 ]; then
-              echo "ERROR: CF DoH did not converge for ${fqdn} after ${MAX_TRIES} tries." >&2
-              echo "EXPECTED: $want" >&2
-              exit 1
-            fi
-
-            ok_gg=0
-            for i in $(seq 1 "$MAX_TRIES"); do
-              echo "Check GG DoH ${fqdn} (${i}/${MAX_TRIES})..."
-              if check_provider_eq gg; then ok_gg=1; break; fi
-              sleep "$SLEEP_S"
-            done
-
-            if [ "$ok_gg" -ne 1 ]; then
-              echo "::warning::Google DoH did not converge for ${fqdn} after ${MAX_TRIES} tries (CF is OK)."
-              echo "::warning::EXPECTED: $want"
-              GG_NOW="$(doh_get_txt_ad gg "$fqdn" 2>/dev/null || true)"
-              if [ -n "$GG_NOW" ]; then
-                echo "::warning::GG current (${fqdn}): $GG_NOW"
+              if [ "$ok" -eq 1 ]; then
+                echo "OK: ${provider} DoH matches for ${fqdn}."
+                return 0
               fi
-            else
-              echo "OK: Google DoH also matches for ${fqdn}."
-            fi
+
+              if [ "$mode" = "hard" ]; then
+                echo "ERROR: ${provider} DoH did not converge for ${fqdn} after ${tries} tries." >&2
+                echo "EXPECTED: $want" >&2
+                exit 1
+              fi
+
+              echo "::warning::${provider} DoH did not converge for ${fqdn} after ${tries} tries."
+              echo "::warning::EXPECTED: $want"
+              local now=""
+              now="$(doh_get_txt_ad "$provider" "$fqdn" 2>/dev/null || true)"
+              if [ -n "$now" ]; then
+                echo "::warning::${provider} current (${fqdn}): $now"
+              fi
+            }
+
+            local p
+            for p in "${hard_providers[@]}"; do
+              wait_provider "$p" hard
+            done
+
+            for p in "${soft_providers[@]}"; do
+              wait_provider "$p" soft
+            done
           }
 
           ROOT="_site/.well-known/identity"
@@ -353,14 +381,14 @@ jobs:
           echo "WANT_META_NORM=$WANT_META_NORM"
 
           echo "Upsert meta TXT -> ${IDENTITY_META_FQDN}"
-          bin/identityctl cf-set-meta --name "${IDENTITY_META_FQDN}" --ttl 120 --root "$ROOT" --raw
+          bin/identityctl cf-set-meta --name "${IDENTITY_META_FQDN}" --ttl 120 --comment "${IDENTITY_DNS_COMMENT}" --root "$ROOT" --raw
 
-          wait_cf_hard_gg_warn "${IDENTITY_META_FQDN}" "${WANT_META_NORM}"
+          wait_dns_txt --fqdn "${IDENTITY_META_FQDN}" --want "${WANT_META_NORM}" --hard cf --soft gg
 
-          bin/identityctl cf-apply-keys --type pgp --ttl 120 --root "$ROOT"
+          bin/identityctl cf-apply-keys --type pgp --ttl 120 --comment "${IDENTITY_DNS_COMMENT}" --root "$ROOT"
           bin/identityctl cf-prune-keys --type pgp --root "$ROOT"
 
-          bin/identityctl cf-apply-keys --type ssh --ttl 120 --root "$ROOT"
+          bin/identityctl cf-apply-keys --type ssh  --ttl 120 --comment "${IDENTITY_DNS_COMMENT}" --root "$ROOT"
           bin/identityctl cf-prune-keys --type ssh --root "$ROOT"
 
           CUR_PGP="$(jq -r '.pgp.current' "$ROOT/manifest.json")"
@@ -369,7 +397,7 @@ jobs:
           WANT_PGP_ALIAS="$(bin/identityctl key-txt --type pgp --ver "$CUR_PGP" --root "$ROOT" | tr -d '[:space:]')"
           WANT_SSH_ALIAS="$(bin/identityctl key-txt --type ssh --ver "$CUR_SSH" --root "$ROOT" | tr -d '[:space:]')"
 
-          wait_cf_hard_gg_warn "pgp._identity.${CF_ZONE_NAME}" "$WANT_PGP_ALIAS"
-          wait_cf_hard_gg_warn "ssh._identity.${CF_ZONE_NAME}" "$WANT_SSH_ALIAS"
+          wait_dns_txt --fqdn "pgp._identity.${CF_ZONE_NAME}" --want "$WANT_PGP_ALIAS" --hard cf --soft gg
+          wait_dns_txt --fqdn "ssh._identity.${CF_ZONE_NAME}" --want "$WANT_SSH_ALIAS" --hard cf --soft gg
 
           echo "OK: Identity DNS updated (meta + pgp + ssh), pruned, and aliases verified via CF DoH (AD=true)."
