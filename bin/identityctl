@@ -3,6 +3,7 @@ set -euo pipefail
 
 ROOT_DEFAULT=".well-known/identity"
 API="https://api.cloudflare.com/client/v4"
+DEFAULT_CF_COMMENT="managed-by=identityctl"
 
 log() { printf '%s\n' "$*" >&2; }
 die() { log "ERROR: $*"; exit 1; }
@@ -339,11 +340,17 @@ cf_create_txt() {
   local name="$1"
   local content="$2"
   local ttl="${3:-120}"
+  local comment="${4:-}"
   local zid
   zid="$(cf_zone_id)"
   local payload
-  payload="$(jq -cn --arg type "TXT" --arg name "$name" --arg content "$content" --argjson ttl "$ttl" \
-    '{type:$type,name:$name,content:$content,ttl:$ttl}')"
+  if [ -n "$comment" ]; then
+    payload="$(jq -cn --arg type "TXT" --arg name "$name" --arg content "$content" --arg comment "$comment" --argjson ttl "$ttl" \
+      '{type:$type,name:$name,content:$content,ttl:$ttl,comment:$comment}')"
+  else
+    payload="$(jq -cn --arg type "TXT" --arg name "$name" --arg content "$content" --argjson ttl "$ttl" \
+      '{type:$type,name:$name,content:$content,ttl:$ttl}')"
+  fi
   local out
   out="$(_curl_get "${API}/zones/${zid}/dns_records" -X POST "${CF_ARGS[@]}" --data "$payload")"
   local ok
@@ -359,11 +366,17 @@ cf_update_txt_by_id() {
   local name="$2"
   local content="$3"
   local ttl="${4:-120}"
+  local comment="${5:-}"
   local zid
   zid="$(cf_zone_id)"
   local payload
-  payload="$(jq -cn --arg type "TXT" --arg name "$name" --arg content "$content" --argjson ttl "$ttl" \
-    '{type:$type,name:$name,content:$content,ttl:$ttl}')"
+  if [ -n "$comment" ]; then
+    payload="$(jq -cn --arg type "TXT" --arg name "$name" --arg content "$content" --arg comment "$comment" --argjson ttl "$ttl" \
+      '{type:$type,name:$name,content:$content,ttl:$ttl,comment:$comment}')"
+  else
+    payload="$(jq -cn --arg type "TXT" --arg name "$name" --arg content "$content" --argjson ttl "$ttl" \
+      '{type:$type,name:$name,content:$content,ttl:$ttl}')"
+  fi
   local out
   out="$(_curl_get "${API}/zones/${zid}/dns_records/${rid}" -X PUT "${CF_ARGS[@]}" --data "$payload")"
   local ok
@@ -378,13 +391,14 @@ cf_upsert_txt() {
   local name="$1"
   local content="$2"
   local ttl="${3:-120}"
+  local comment="${4:-}"
   local out rid
   out="$(cf_find_record "TXT" "$name")"
   rid="$(jq -r '.result[0].id // empty' <<<"$out")"
   if [ -n "$rid" ]; then
-    cf_update_txt_by_id "$rid" "$name" "$content" "$ttl"
+    cf_update_txt_by_id "$rid" "$name" "$content" "$ttl" "$comment"
   else
-    cf_create_txt "$name" "$content" "$ttl"
+    cf_create_txt "$name" "$content" "$ttl" "$comment"
   fi
 }
 
@@ -477,11 +491,11 @@ Usage:
     Builds TXT for keys using manifest fields and sha256 fetched from pub URL.
     Fails if fetched sha256 != manifest .sha256 (pin safety).
 
-  identityctl cf-set-meta --name <fqdn> [--ttl <sec>] [--root <dir>] [--raw]
-  identityctl cf-set-key --type <pgp|ssh> [--ttl <sec>] [--root <dir>]
+  identityctl cf-set-meta --name <fqdn> [--ttl <sec>] [--comment <text>] [--root <dir>] [--raw]
+  identityctl cf-set-key --type <pgp|ssh> [--ttl <sec>] [--comment <text>] [--root <dir>]
     (legacy) updates only current key DNS from manifest
 
-  identityctl cf-apply-keys --type <pgp|ssh> [--ttl <sec>] [--root <dir>]
+  identityctl cf-apply-keys --type <pgp|ssh> [--ttl <sec>] [--comment <text>] [--root <dir>]
     Upserts ALL versioned keys from manifest + stable alias:
       pgp._identity.<zone> -> pgp.current
       ssh._identity.<zone> -> ssh.current
@@ -617,11 +631,12 @@ main() {
 
     cf-set-meta)
       have jq || die "cf-set-meta requires jq (run in CI)"
-      local name="" ttl="120" raw=0
+      local name="" ttl="120" raw=0 comment="$DEFAULT_CF_COMMENT"
       while [ $# -gt 0 ]; do
         case "$1" in
           --name) name="$2"; shift 2;;
           --ttl) ttl="$2"; shift 2;;
+          --comment) comment="$2"; shift 2;;
           --root) root="$2"; shift 2;;
           --raw) raw=1; shift 1;;
           *) die "unknown arg: $1";;
@@ -631,16 +646,17 @@ main() {
 
       local meta
       meta="$("$0" meta-txt --root "$root" $( [ "$raw" -eq 1 ] && printf '%s' '--raw' ))"
-      cf_upsert_txt "$name" "$meta" "$ttl"
+      cf_upsert_txt "$name" "$meta" "$ttl" "$comment"
       ;;
 
     cf-set-key)
       have jq || die "cf-set-key requires jq (run in CI)"
-      local type="" ttl="120"
+      local type="" ttl="120" comment="$DEFAULT_CF_COMMENT"
       while [ $# -gt 0 ]; do
         case "$1" in
           --type) type="$2"; shift 2;;
           --ttl) ttl="$2"; shift 2;;
+          --comment) comment="$2"; shift 2;;
           --root) root="$2"; shift 2;;
           *) die "unknown arg: $1";;
         esac
@@ -650,17 +666,18 @@ main() {
       local dns txt
       dns="$("$0" show-dns --type "$type" --root "$root")"
       txt="$("$0" key-txt --type "$type" --root "$root")"
-      cf_upsert_txt "$dns" "$txt" "$ttl"
+      cf_upsert_txt "$dns" "$txt" "$ttl" "$comment"
       ;;
 
     # NEW: upsert ALL versions + stable alias -> current
     cf-apply-keys)
       have jq || die "cf-apply-keys requires jq (run in CI)"
-      local type="" ttl="120"
+      local type="" ttl="120" comment="$DEFAULT_CF_COMMENT"
       while [ $# -gt 0 ]; do
         case "$1" in
           --type) type="$2"; shift 2;;
           --ttl) ttl="$2"; shift 2;;
+          --comment) comment="$2"; shift 2;;
           --root) root="$2"; shift 2;;
           *) die "unknown arg: $1";;
         esac
@@ -679,7 +696,7 @@ main() {
         dns="$(jq -r ".${type}.versions.\"${ver}\".dns" "$manifest")"
         [ -n "$dns" ] || die "missing ${type}.versions[${ver}].dns"
         txt="$("$0" key-txt --type "$type" --ver "$ver" --root "$root")"
-        cf_upsert_txt "$dns" "$txt" "$ttl"
+        cf_upsert_txt "$dns" "$txt" "$ttl" "$comment"
       done < <(jq -r ".${type}.versions | keys[]" "$manifest")
 
       # Stable alias always points to current
@@ -690,7 +707,7 @@ main() {
         alias_name="ssh._identity.${CF_ZONE_NAME}"
       fi
       alias_txt="$("$0" key-txt --type "$type" --ver "$cur" --root "$root")"
-      cf_upsert_txt "$alias_name" "$alias_txt" "$ttl"
+      cf_upsert_txt "$alias_name" "$alias_txt" "$ttl" "$comment"
 
       log "OK: applied ${type} keys (all versions + alias ${alias_name} -> current=${cur})"
       ;;
