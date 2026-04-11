@@ -19,10 +19,7 @@ module Jekyll
       "changelog_entry_tpl" => <<~LIQUID.chomp,
         <article id="{{ entry.anchor_id }}" class="legal-changelog-entry">
           <header class="legal-changelog-header">
-            <h2 class="legal-changelog-version">
-              {% if page.lang == 'pl' %}Wersja{% else %}Version{% endif %}
-              <span>{{ entry.version }}</span>
-            </h2>
+            <h2 class="legal-changelog-version">v<span>{{ entry.version }}</span></h2>
 
             <div class="legal-changelog-meta">
               <time datetime="{{ entry.date | date_to_xmlschema }}">
@@ -110,8 +107,8 @@ module Jekyll
       { "data" => data, "content" => content_part }
     end
 
-    # nil  -> tagu brak
-    # ""   -> {% legal %}
+    # nil      -> no tag
+    # ""       -> {% legal %}
     # "en/1.0" -> {% legal en/1.0 %}
     def find_legal_ref_in_content(content)
       return nil if content.to_s.empty?
@@ -452,44 +449,15 @@ module Jekyll
 
     def default_changelog_content
       <<~LIQUID
-        <div class="legal-disclaimer">
-          <div class="lang-nav d-emoji">
-            <a href="{{ '/terms-and-conditions/' | prepend: site.baseurl_root }}">🇬🇧</a> /
-            <a href="{{ '/pl/terms-and-conditions/' | prepend: site.baseurl_root }}">🇵🇱</a>
-          </div>
-
-          <br>
-
-          <h1 class="page-title">
-            {% if page.lang == 'pl' %}
-              Historia zmian — {{ page.legal_parent_title }}
-            {% else %}
-              Change history — {{ page.legal_parent_title }}
-            {% endif %}
-          </h1>
-
-          <br>
-
-          <p>
-            <a href="{{ page.legal_parent_url | relative_url }}">
-              {% if page.lang == 'pl' %}← Wróć do dokumentu{% else %}← Back to document{% endif %}
-            </a>
-          </p>
-
-          <br>
-
-          {% if page.legal_changelog_entries_html and page.legal_changelog_entries_html != '' %}
-            {{ page.legal_changelog_entries_html }}
-          {% else %}
-            <p>
-              {% if page.lang == 'pl' %}
-                Brak historii zmian.
-              {% else %}
-                No change history available.
-              {% endif %}
-            </p>
-          {% endif %}
-        </div>
+        <h1 class="page-title">Change history — {{ page.legal_parent_title }}</h1>
+        <br>
+        <p><a href="{{ page.legal_parent_url | relative_url }}">← Back to document</a></p>
+        <br>
+        {% if page.legal_changelog_entries_html and page.legal_changelog_entries_html != '' %}
+          {{ page.legal_changelog_entries_html }}
+        {% else %}
+          <p>No change history available.</p>
+        {% endif %}
       LIQUID
     end
   end
