@@ -13,8 +13,45 @@ module Jekyll
 
     DEFAULT_CONFIG = {
       "root" => "legal",
-      "changelog_layout" => "legal-changelog",
-      "changelog_entry_include" => "",
+      "changelog_layout" => "",
+      "changelog_page_include" => "",
+      "changelog_entry_tpl" => <<~LIQUID.chomp,
+        <article id="{{ entry.anchor_id }}" class="legal-changelog-entry">
+          <h2>
+            {% if page.lang == 'pl' %}Wersja{% else %}Version{% endif %}
+            {{ entry.version }}
+          </h2>
+
+          <p>
+            <strong>{{ entry.date | date: '%d-%B-%Y %R' }}</strong>
+
+            {% if page.legal_git_support and entry.git_commit_short %}
+              —
+              {% if entry.git_commit_url %}
+                <a href="{{ entry.git_commit_url }}" target="_blank" rel="noopener noreferrer">
+                  {{ entry.git_commit_short }}
+                </a>
+              {% else %}
+                {{ entry.git_commit_short }}
+              {% endif %}
+            {% endif %}
+          </p>
+
+          {% if entry.summary and entry.summary != '' %}
+            <p>{{ entry.summary }}</p>
+          {% endif %}
+
+          {% if entry.changes and entry.changes.size > 0 %}
+            <ul>
+              {% for change in entry.changes %}
+                <li>{{ change }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+
+          <hr>
+        </article>
+      LIQUID
       "git_support" => false,
       "git_commit_url_template" => ""
     }.freeze
@@ -60,7 +97,6 @@ module Jekyll
       { "data" => data, "content" => content_part }
     end
 
-    # Zwraca:
     # nil  -> tagu brak
     # ""   -> {% legal %}
     # "en/1.0" -> {% legal en/1.0 %}
@@ -356,7 +392,8 @@ module Jekyll
         "legal_current_changes" => normalize_changes(data["changes"]),
         "legal_changelog_url" => build_changelog_url(page.url),
         "legal_current_anchor_id" => version_anchor_id(version),
-        "legal_changelog_entry_include" => config(site)["changelog_entry_include"].to_s.strip,
+        "legal_changelog_page_include" => config(site)["changelog_page_include"].to_s.strip,
+        "legal_changelog_entry_tpl" => config(site)["changelog_entry_tpl"].to_s,
         "legal_rendered_content" => parsed["content"].to_s
       }
 
@@ -369,17 +406,76 @@ module Jekyll
 
       result
     end
+
+    def default_changelog_content
+      <<~LIQUID
+        <div class="legal-disclaimer">
+          <div class="lang-nav d-emoji">
+            <a href="{{ '/terms-and-conditions/' | prepend: site.baseurl_root }}">🇬🇧</a> /
+            <a href="{{ '/pl/terms-and-conditions/' | prepend: site.baseurl_root }}">🇵🇱</a>
+          </div>
+
+          <br>
+
+          <h1 class="page-title">
+            {% if page.lang == 'pl' %}
+              Historia zmian — {{ page.legal_parent_title }}
+            {% else %}
+              Change history — {{ page.legal_parent_title }}
+            {% endif %}
+          </h1>
+
+          <br>
+
+          <p>
+            <a href="{{ page.legal_parent_url | relative_url }}">
+              {% if page.lang == 'pl' %}← Wróć do dokumentu{% else %}← Back to document{% endif %}
+            </a>
+          </p>
+
+          <br>
+
+          {% if page.legal_changelog and page.legal_changelog.size > 0 %}
+            {% for entry in page.legal_changelog %}
+        #{indent_liquid(config_entry_tpl_placeholder, 6)}
+            {% endfor %}
+          {% else %}
+            <p>
+              {% if page.lang == 'pl' %}
+                Brak historii zmian.
+              {% else %}
+                No change history available.
+              {% endif %}
+            </p>
+          {% endif %}
+        </div>
+      LIQUID
+    end
+
+    def config_entry_tpl_placeholder
+      "{{ __LEGAL_CHANGELOG_ENTRY_TPL__ }}"
+    end
+
+    def indent_liquid(text, spaces)
+      indent = " " * spaces
+      text.to_s.lines.map { |line| line.strip.empty? ? line : "#{indent}#{line}" }.join
+    end
+
+    def compiled_default_changelog_content(site)
+      entry_tpl = config(site)["changelog_entry_tpl"].to_s
+      default_changelog_content.sub(config_entry_tpl_placeholder, entry_tpl)
+    end
   end
 
   class LegalGeneratedChangelogPage < PageWithoutAFile
-    def initialize(site, base, dir, data = {})
+    def initialize(site, base, dir, data = {}, content = "")
       @site = site
       @base = base
       @dir = dir
       @name = "index.html"
 
       process(@name)
-      self.content = ""
+      self.content = content
       self.data = data
     end
   end
@@ -393,7 +489,6 @@ module Jekyll
         raw_ref = LegalVersions.find_legal_ref_in_content(page.content)
         next if raw_ref.nil?
 
-        # "" oznacza {% legal %} bez argumentu
         page.data["legal_ref"] = raw_ref
 
         data = LegalVersions.legal_data_for_page(site, page)
@@ -401,7 +496,6 @@ module Jekyll
           page.data[key] = value
         end
 
-        # KLUCZOWE: podmieniamy marker przed renderem Liquid/Markdown
         page.content = LegalVersions.replace_legal_tag(page.content, page.data["legal_rendered_content"])
 
         changelog_url = page.data["legal_changelog_url"].to_s
@@ -409,12 +503,23 @@ module Jekyll
 
         dir = changelog_url.sub(%r!\A/!, "").sub(%r!/\z!, "")
 
+        layout_name = LegalVersions.config(site)["changelog_layout"].to_s.strip
+        layout_name = "base" if layout_name.empty?
+
+        page_include = page.data["legal_changelog_page_include"].to_s.strip
+        generated_content =
+          if page_include.empty?
+            LegalVersions.compiled_default_changelog_content(site)
+          else
+            "{% include #{page_include} %}"
+          end
+
         generated = LegalGeneratedChangelogPage.new(
           site,
           site.source,
           dir,
           {
-            "layout" => LegalVersions.config(site)["changelog_layout"],
+            "layout" => layout_name,
             "title" => page.data["title"],
             "lang" => page.data["lang"],
             "permalink" => changelog_url,
@@ -428,8 +533,10 @@ module Jekyll
             "legal_parent_url" => page.url,
             "legal_parent_title" => page.data["title"],
             "legal_git_support" => LegalVersions.git_enabled?(site),
-            "legal_changelog_entry_include" => page.data["legal_changelog_entry_include"]
-          }
+            "legal_changelog_entry_tpl" => page.data["legal_changelog_entry_tpl"],
+            "legal_changelog_page_include" => page.data["legal_changelog_page_include"]
+          },
+          generated_content
         )
 
         site.pages << generated
