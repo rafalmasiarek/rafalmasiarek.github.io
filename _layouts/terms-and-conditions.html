@@ -12,6 +12,11 @@ layout: base
   <br>
   {{ content }}
   <br>
-  <p class="last-modified-at">Last modification: {{ page.last_modified_at | date: '%d-%B-%Y %R' }}</p>
+  <p class="last-modified-at">
+    {% if page.lang == 'pl' %}Ostatnia zmiana:{% else %}Last modification:{% endif %}
+    <a href="{{ page.legal_last_changes_url | relative_url }}">
+      {{ page.legal_last_modified_at | date: '%d-%B-%Y %R' }}
+    </a>
+  </p>
   <br>
 </div>

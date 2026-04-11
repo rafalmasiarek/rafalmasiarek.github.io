@@ -123,6 +123,12 @@ licenses:
     source_url: https://github.com/openpgpjs/openpgpjs
     source: JS
 
+legal_versions:
+  root: legal
+  changelog_layout: legal-changelog
+  git_support: true
+  git_commit_url_template: "https://github.com/rafalmasiarek/rafalmasiarek.github.io/commit/%{commit}"
+
 include:
   - .htaccess
   - _config.yml
@@ -132,6 +138,7 @@ include:
   - "projects/**/.*"
 
 exclude:
+  - "legal"
   - "**/*.md.overwrite"
   - "projects/content"
   - "projects/storage"
