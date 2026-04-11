@@ -16,53 +16,53 @@ module Jekyll
       "changelog_layout" => "",
       "changelog_page_include" => "",
       "changelog_entry_tpl" => <<~LIQUID.chomp,
-          <article id="{{ entry.anchor_id }}" class="legal-changelog-entry">
-            <header class="legal-changelog-header">
-              <h2 class="legal-changelog-version">
-                {% if page.lang == 'pl' %}Wersja{% else %}Version{% endif %}
-                <span>{{ entry.version }}</span>
-              </h2>
-        
-              <div class="legal-changelog-meta">
-                <time datetime="{{ entry.date | date_to_xmlschema }}">
-                  {{ entry.date | date: '%d-%B-%Y %R' }}
-                </time>
-        
-                {% if page.legal_git_support and entry.git_commit_short %}
-                  <span class="legal-changelog-sep">•</span>
-        
-                  {% if entry.git_commit_url %}
-                    <a
-                      class="legal-changelog-commit"
-                      href="{{ entry.git_commit_url }}"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {{ entry.git_commit_short }}
-                    </a>
-                  {% else %}
-                    <span class="legal-changelog-commit">
-                      {{ entry.git_commit_short }}
-                    </span>
-                  {% endif %}
+        <article id="{{ entry.anchor_id }}" class="legal-changelog-entry">
+          <header class="legal-changelog-header">
+            <h2 class="legal-changelog-version">
+              {% if page.lang == 'pl' %}Wersja{% else %}Version{% endif %}
+              <span>{{ entry.version }}</span>
+            </h2>
+
+            <div class="legal-changelog-meta">
+              <time datetime="{{ entry.date | date_to_xmlschema }}">
+                {{ entry.date | date: '%d-%B-%Y %R' }}
+              </time>
+
+              {% if page.legal_git_support and entry.git_commit_short %}
+                <span class="legal-changelog-sep">•</span>
+
+                {% if entry.git_commit_url %}
+                  <a
+                    class="legal-changelog-commit"
+                    href="{{ entry.git_commit_url }}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {{ entry.git_commit_short }}
+                  </a>
+                {% else %}
+                  <span class="legal-changelog-commit">
+                    {{ entry.git_commit_short }}
+                  </span>
                 {% endif %}
-              </div>
-            </header>
-        
-            {% if entry.summary and entry.summary != '' %}
-              <p class="legal-changelog-summary">
-                {{ entry.summary }}
-              </p>
-            {% endif %}
-        
-            {% if entry.changes and entry.changes.size > 0 %}
-              <ul class="legal-changelog-list">
-                {% for change in entry.changes %}
-                  <li>{{ change }}</li>
-                {% endfor %}
-              </ul>
-            {% endif %}
-          </article>
+              {% endif %}
+            </div>
+          </header>
+
+          {% if entry.summary and entry.summary != '' %}
+            <p class="legal-changelog-summary">
+              <strong>{{ entry.summary }}</strong>
+            </p>
+          {% endif %}
+
+          {% if entry.changes and entry.changes.size > 0 %}
+            <ul class="legal-changelog-list">
+              {% for change in entry.changes %}
+                <li>{{ change }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </article>
       LIQUID
       "git_support" => false,
       "git_commit_url_template" => ""
