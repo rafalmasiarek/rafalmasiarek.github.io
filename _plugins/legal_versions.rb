@@ -6,6 +6,7 @@ require "date"
 require "pathname"
 require "rubygems/version"
 require "English"
+require "liquid"
 
 module Jekyll
   module LegalVersions
@@ -385,6 +386,32 @@ module Jekyll
       end.reverse
     end
 
+    def render_entry_template(site, page, entry, tpl)
+      template = Liquid::Template.parse(tpl.to_s)
+
+      assigns = {
+        "page" => page.data.merge(
+          "legal_git_support" => git_enabled?(site)
+        ),
+        "entry" => entry,
+        "site" => site.config
+      }
+
+      template.render!(
+        assigns,
+        registers: {
+          site: site,
+          page: page
+        }
+      )
+    rescue => e
+      raise "Failed to render changelog_entry_tpl for #{page.path} / entry #{entry['version']}: #{e.class}: #{e.message}"
+    end
+
+    def render_entries_html(site, page, entries, tpl)
+      entries.map { |entry| render_entry_template(site, page, entry, tpl) }.join("\n")
+    end
+
     def legal_data_for_page(site, page)
       resolved_ref = resolved_ref_for_page(site, page)
       source_path = legal_source_path(site, resolved_ref)
@@ -394,6 +421,9 @@ module Jekyll
 
       version = data["version"].to_s.strip
       version = version_from_ref(resolved_ref) if version.empty?
+
+      changelog_entries = build_changelog_entries(site, resolved_ref, page)
+      changelog_entry_tpl = config(site)["changelog_entry_tpl"].to_s
 
       result = {
         "legal_ref" => resolved_ref,
@@ -405,12 +435,13 @@ module Jekyll
         "legal_changelog_url" => build_changelog_url(page.url),
         "legal_current_anchor_id" => version_anchor_id(version),
         "legal_changelog_page_include" => config(site)["changelog_page_include"].to_s.strip,
-        "legal_changelog_entry_tpl" => config(site)["changelog_entry_tpl"].to_s,
-        "legal_rendered_content" => parsed["content"].to_s
+        "legal_changelog_entry_tpl" => changelog_entry_tpl,
+        "legal_rendered_content" => parsed["content"].to_s,
+        "legal_changelog" => changelog_entries
       }
 
       result["legal_last_changes_url"] = "#{result["legal_changelog_url"]}##{result["legal_current_anchor_id"]}"
-      result["legal_changelog"] = build_changelog_entries(site, resolved_ref, page)
+      result["legal_changelog_entries_html"] = render_entries_html(site, page, changelog_entries, changelog_entry_tpl)
 
       if git_enabled?(site)
         result["legal_last_modified_commit"] = compact_git_commit(site, source_path)
@@ -447,10 +478,8 @@ module Jekyll
 
           <br>
 
-          {% if page.legal_changelog and page.legal_changelog.size > 0 %}
-            {% for entry in page.legal_changelog %}
-        #{indent_liquid(config_entry_tpl_placeholder, 6)}
-            {% endfor %}
+          {% if page.legal_changelog_entries_html and page.legal_changelog_entries_html != '' %}
+            {{ page.legal_changelog_entries_html }}
           {% else %}
             <p>
               {% if page.lang == 'pl' %}
@@ -462,20 +491,6 @@ module Jekyll
           {% endif %}
         </div>
       LIQUID
-    end
-
-    def config_entry_tpl_placeholder
-      "{{ __LEGAL_CHANGELOG_ENTRY_TPL__ }}"
-    end
-
-    def indent_liquid(text, spaces)
-      indent = " " * spaces
-      text.to_s.lines.map { |line| line.strip.empty? ? line : "#{indent}#{line}" }.join
-    end
-
-    def compiled_default_changelog_content(site)
-      entry_tpl = config(site)["changelog_entry_tpl"].to_s
-      default_changelog_content.sub(config_entry_tpl_placeholder, entry_tpl)
     end
   end
 
@@ -521,7 +536,7 @@ module Jekyll
         page_include = page.data["legal_changelog_page_include"].to_s.strip
         generated_content =
           if page_include.empty?
-            LegalVersions.compiled_default_changelog_content(site)
+            LegalVersions.default_changelog_content
           else
             "{% include #{page_include} %}"
           end
@@ -540,6 +555,7 @@ module Jekyll
             "legal_last_modified_at" => page.data["legal_last_modified_at"],
             "legal_last_modified_commit" => page.data["legal_last_modified_commit"],
             "legal_changelog" => page.data["legal_changelog"],
+            "legal_changelog_entries_html" => page.data["legal_changelog_entries_html"],
             "legal_changelog_url" => page.data["legal_changelog_url"],
             "legal_last_changes_url" => page.data["legal_last_changes_url"],
             "legal_parent_url" => page.url,
