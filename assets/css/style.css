@@ -1289,7 +1289,105 @@ footer .navigation a {
 }
 
 /* =============================================================================
-   19) Media queries
+   19) Legal changelog
+============================================================================= */
+
+.legal-changelog-entry {
+  margin: 0 0 1rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  border-radius: 10px;
+  background: #fafafa;
+}
+
+.legal-changelog-entry:last-child {
+  margin-bottom: 0;
+}
+
+.legal-changelog-entry p,
+.legal-changelog-entry header p,
+.legal-changelog-entry .legal-changelog-meta,
+.legal-changelog-entry .legal-changelog-summary {
+  margin: 0;
+}
+
+.legal-changelog-entry h2,
+.legal-changelog-entry h3,
+.legal-changelog-entry h4 {
+  margin: 0;
+  font-size: 1em;
+  line-height: 1.35;
+}
+
+.legal-changelog-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem 1rem;
+  margin-bottom: 0.45rem;
+}
+
+.legal-changelog-version {
+  margin: 0;
+  font-weight: 700;
+}
+
+.legal-changelog-version span {
+  font-weight: 700;
+}
+
+.legal-changelog-meta {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.92em;
+  line-height: 1.35;
+  opacity: 0.88;
+}
+
+.legal-changelog-sep {
+  opacity: 0.55;
+}
+
+.legal-changelog-commit {
+  font-family: "Roboto Mono", monospace;
+  text-decoration: none;
+}
+
+.legal-changelog-commit:hover {
+  text-decoration: underline;
+}
+
+.legal-changelog-summary {
+  margin: 0 0 0.45rem;
+  line-height: 1.5;
+}
+
+.legal-changelog-list {
+  margin: 0.2rem 0 0;
+  padding-left: 1.15rem;
+  list-style-position: outside;
+}
+
+.legal-changelog-list li {
+  margin: 0.16rem 0;
+  line-height: 1.45;
+  padding-left: 0;
+}
+
+.legal-changelog-list li > ul,
+.legal-changelog-list li > ol {
+  margin-top: 0.25rem;
+}
+
+.legal-changelog-entry hr {
+  display: none;
+}
+
+/* =============================================================================
+   20) Media queries
 ============================================================================= */
 
 @media screen and (min-width:1367px) {
@@ -1350,5 +1448,25 @@ footer .navigation a {
 @media (max-width: 720px) {
   .ssh-gen__grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .legal-changelog-entry {
+    padding: 0.9rem 0.95rem;
+  }
+
+  .legal-changelog-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+
+  .legal-changelog-meta {
+    font-size: 0.88em;
+  }
+
+  .legal-changelog-list {
+    padding-left: 1rem;
   }
 }
