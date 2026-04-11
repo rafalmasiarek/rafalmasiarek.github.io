@@ -125,7 +125,8 @@ licenses:
 
 legal_versions:
   root: legal
-  changelog_layout: legal-changelog
+  changelog_layout: base
+  changelog_page_include: changelog-page.html
   git_support: true
   git_commit_url_template: "https://github.com/rafalmasiarek/rafalmasiarek.github.io/commit/%{commit}"
 
