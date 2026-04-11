@@ -1,0 +1,80 @@
+<div class="legal-disclaimer">
+  <div class="lang-nav d-emoji">
+    <a href="{{ '/terms-and-conditions/' | prepend: site.baseurl_root }}">🇬🇧</a> /
+    <a href="{{ '/pl/terms-and-conditions/' | prepend: site.baseurl_root }}">🇵🇱</a>
+  </div>
+
+  <br>
+
+  <h1 class="page-title">
+    {% if page.lang == 'pl' %}
+      Historia zmian — {{ page.legal_parent_title }}
+    {% else %}
+      Change history — {{ page.legal_parent_title }}
+    {% endif %}
+  </h1>
+
+  <br>
+
+  <p>
+    <a href="{{ page.legal_parent_url | relative_url }}">
+      {% if page.lang == 'pl' %}← Wróć do dokumentu{% else %}← Back to document{% endif %}
+    </a>
+  </p>
+
+  <br>
+
+  {% assign custom_entry_include = page.legal_changelog_entry_include | strip %}
+
+  {% if page.legal_changelog and page.legal_changelog.size > 0 %}
+    {% for entry in page.legal_changelog %}
+      {% if custom_entry_include != '' %}
+        {% include {{ custom_entry_include }} entry=entry page=page %}
+      {% else %}
+        <article id="{{ entry.anchor_id }}" class="legal-changelog-entry">
+          <h2>
+            {% if page.lang == 'pl' %}Wersja{% else %}Version{% endif %}
+            {{ entry.version }}
+          </h2>
+
+          <p>
+            <strong>{{ entry.date | date: '%d-%B-%Y %R' }}</strong>
+
+            {% if page.legal_git_support and entry.git_commit_short %}
+              —
+              {% if entry.git_commit_url %}
+                <a href="{{ entry.git_commit_url }}" target="_blank" rel="noopener noreferrer">
+                  {{ entry.git_commit_short }}
+                </a>
+              {% else %}
+                {{ entry.git_commit_short }}
+              {% endif %}
+            {% endif %}
+          </p>
+
+          {% if entry.summary and entry.summary != '' %}
+            <p>{{ entry.summary }}</p>
+          {% endif %}
+
+          {% if entry.changes and entry.changes.size > 0 %}
+            <ul>
+              {% for change in entry.changes %}
+                <li>{{ change }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+
+          <hr>
+        </article>
+      {% endif %}
+    {% endfor %}
+  {% else %}
+    <p>
+      {% if page.lang == 'pl' %}
+        Brak historii zmian.
+      {% else %}
+        No change history available.
+      {% endif %}
+    </p>
+  {% endif %}
+</div>
