@@ -19,6 +19,8 @@ module Jekyll
       "git_commit_url_template" => ""
     }.freeze
 
+    LEGAL_TAG_REGEX = /\{%\s*legal(?:\s+([^\s%]+))?\s*%\}/.freeze
+
     def config(site)
       DEFAULT_CONFIG.merge(site.config["legal_versions"] || {})
     end
@@ -59,16 +61,20 @@ module Jekyll
     end
 
     # Zwraca:
-    # - ""   dla {% legal %}
-    # - "en/1.0" dla {% legal en/1.0 %}
-    # - nil gdy tagu brak
+    # nil  -> tagu brak
+    # ""   -> {% legal %}
+    # "en/1.0" -> {% legal en/1.0 %}
     def find_legal_ref_in_content(content)
       return nil if content.to_s.empty?
 
-      match = content.match(/\{%\s*legal(?:\s+([^\s%]+))?\s*%\}/)
+      match = content.match(LEGAL_TAG_REGEX)
       return nil unless match
 
       match[1].to_s.strip
+    end
+
+    def replace_legal_tag(content, replacement)
+      content.to_s.sub(LEGAL_TAG_REGEX, replacement.to_s)
     end
 
     def version_from_ref(ref)
@@ -350,7 +356,8 @@ module Jekyll
         "legal_current_changes" => normalize_changes(data["changes"]),
         "legal_changelog_url" => build_changelog_url(page.url),
         "legal_current_anchor_id" => version_anchor_id(version),
-        "legal_changelog_entry_include" => config(site)["changelog_entry_include"].to_s.strip
+        "legal_changelog_entry_include" => config(site)["changelog_entry_include"].to_s.strip,
+        "legal_rendered_content" => parsed["content"].to_s
       }
 
       result["legal_last_changes_url"] = "#{result["legal_changelog_url"]}##{result["legal_current_anchor_id"]}"
@@ -361,46 +368,6 @@ module Jekyll
       end
 
       result
-    end
-  end
-
-  class LegalTag < Liquid::Tag
-    def initialize(tag_name, markup, tokens)
-      super
-      @raw_ref = markup.to_s.strip
-    end
-
-    def render(context)
-      site = context.registers[:site]
-      page = context.registers[:page]
-
-      resolved_ref =
-        if @raw_ref.empty?
-          page["legal_ref"].to_s.strip
-        else
-          @raw_ref
-        end
-
-      if resolved_ref.empty?
-        raise "Could not resolve legal reference for page #{page['path'] || page['url'] || 'unknown'}"
-      end
-
-      source_path = LegalVersions.legal_source_path(site, resolved_ref)
-
-      unless File.exist?(source_path)
-        raise "Missing legal file #{source_path} referenced from #{page['path'] || page['url'] || 'unknown'}"
-      end
-
-      parsed = LegalVersions.parse_file(source_path)
-      data = parsed["data"]
-
-      unless LegalVersions.published?(data)
-        raise "Non-public legal file #{source_path} referenced from #{page['path'] || page['url'] || 'unknown'}"
-      end
-
-      page["legal_ref"] = resolved_ref if page.respond_to?(:[]=)
-
-      parsed["content"].to_s
     end
   end
 
@@ -417,14 +384,25 @@ module Jekyll
     end
   end
 
-  class LegalChangelogGenerator < Generator
+  class LegalVersionsGenerator < Generator
     safe true
     priority :low
 
     def generate(site)
       site.pages.each do |page|
-        ref = page.data["legal_ref"].to_s.strip
-        next if ref.empty?
+        raw_ref = LegalVersions.find_legal_ref_in_content(page.content)
+        next if raw_ref.nil?
+
+        # "" oznacza {% legal %} bez argumentu
+        page.data["legal_ref"] = raw_ref
+
+        data = LegalVersions.legal_data_for_page(site, page)
+        data.each do |key, value|
+          page.data[key] = value
+        end
+
+        # KLUCZOWE: podmieniamy marker przed renderem Liquid/Markdown
+        page.content = LegalVersions.replace_legal_tag(page.content, page.data["legal_rendered_content"])
 
         changelog_url = page.data["legal_changelog_url"].to_s
         next if changelog_url.empty?
@@ -457,21 +435,5 @@ module Jekyll
         site.pages << generated
       end
     end
-  end
-end
-
-Liquid::Template.register_tag("legal", Jekyll::LegalTag)
-
-Jekyll::Hooks.register [:pages], :pre_render do |page, _payload|
-  site = page.site
-  raw_ref = Jekyll::LegalVersions.find_legal_ref_in_content(page.content)
-  next if raw_ref.nil?
-
-  # "" oznacza {% legal %} bez argumentu
-  page.data["legal_ref"] = raw_ref
-
-  data = Jekyll::LegalVersions.legal_data_for_page(site, page)
-  data.each do |key, value|
-    page.data[key] = value
   end
 end
