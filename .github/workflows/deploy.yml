@@ -220,69 +220,129 @@ jobs:
               fi
             "
 
-      - name: Recreate symlinks from deploy map
+      - name: Apply deploy map on remote
         shell: bash
         run: |
           set -euo pipefail
 
-          ruby <<'RUBY' > deploy-map.json
-          require 'yaml'
-          require 'json'
-
-          map = YAML.load_file('deploy-map.yml') || {}
-          puts JSON.generate(map)
-          RUBY
-
           ssh -p ${{ secrets.RSYNC_SSH_PORT }} \
             ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }} \
-            "cat > '${{ secrets.RSYNC_DEST_PATH }}/.deploy-map.json'" < deploy-map.json
+            "cat > '${{ secrets.RSYNC_DEST_PATH }}/.deploy-map.yml'" < deploy-map.yml
 
           ssh -p ${{ secrets.RSYNC_SSH_PORT }} \
             ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }} "
               set -euo pipefail
               export APP_ROOT='${{ secrets.RSYNC_DEST_PATH }}'
-              export MAP_FILE='${{ secrets.RSYNC_DEST_PATH }}/.deploy-map.json'
+              export DEPLOY_MAP='${{ secrets.RSYNC_DEST_PATH }}/.deploy-map.yml'
 
-              php <<'PHP'
-          <?php
-          $appRoot = getenv('APP_ROOT');
-          $mapFile = getenv('MAP_FILE');
+              ruby <<'RUBY'
+          require 'yaml'
+          require 'fileutils'
 
-          $json = file_get_contents($mapFile);
-          $map = json_decode($json, true);
+          app_root = ENV.fetch('APP_ROOT')
+          map_file = ENV.fetch('DEPLOY_MAP')
 
-          if (!is_array($map)) {
-              fwrite(STDERR, "Invalid deploy map\n");
-              exit(1);
-          }
+          abort(\"Missing deploy map: #{map_file}\") unless File.file?(map_file)
 
-          foreach (($map['symlinks'] ?? []) as $item) {
-              $link = trim((string)($item['link'] ?? ''), '/');
-              $target = trim((string)($item['target'] ?? ''), '/');
+          map = YAML.load_file(map_file) || {}
 
-              if ($link === '' || $target === '') {
-                  continue;
-              }
+          normalize_rel = lambda do |value|
+            value.to_s.strip.sub(%r{^/+}, '').sub(%r{/+$}, '')
+          end
 
-              $linkPath = $appRoot . '/' . $link;
+          set_mode = lambda do |path, mode|
+            next if mode.nil?
+            mode_str = mode.to_s.strip
+            next if mode_str.empty?
+            File.chmod(mode_str.to_i(8), path)
+          end
 
-              if (is_link($linkPath)) {
-                  $current = readlink($linkPath);
-                  if ($current === $target) {
-                      echo "symlink ok: {$link} -> {$target}\n";
-                      continue;
-                  }
+          Array(map['dirs']).each do |item|
+            item = { 'path' => item } if item.is_a?(String)
+            abort('Invalid dirs entry') unless item.is_a?(Hash)
 
-                  unlink($linkPath);
-              } elseif (file_exists($linkPath)) {
-                  fwrite(STDERR, "Refusing to replace non-symlink path: {$linkPath}\n");
-                  exit(1);
-              }
+            rel = normalize_rel.call(item['path'])
+            next if rel.empty?
 
-              symlink($target, $linkPath);
-              echo "created symlink: {$link} -> {$target}\n";
-          }
-          PHP
+            full = File.join(app_root, rel)
+
+            if File.exist?(full) && !File.directory?(full)
+              abort(\"Refusing to replace non-directory path: #{full}\")
+            end
+
+            unless File.directory?(full)
+              FileUtils.mkdir_p(full)
+              puts \"created dir: #{rel}\"
+            else
+              puts \"dir ok: #{rel}\"
+            end
+
+            set_mode.call(full, item['mode'])
+          end
+
+          Array(map['files']).each do |item|
+            abort('Invalid files entry') unless item.is_a?(Hash)
+
+            rel = normalize_rel.call(item['path'])
+            next if rel.empty?
+
+            full = File.join(app_root, rel)
+            parent = File.dirname(full)
+            content = item.key?('content') ? item['content'].to_s : ''
+
+            if File.directory?(full)
+              abort(\"Refusing to replace directory with file: #{full}\")
+            end
+
+            FileUtils.mkdir_p(parent) unless Dir.exist?(parent)
+
+            if File.symlink?(full)
+              abort(\"Refusing to replace symlink with file: #{full}\")
+            end
+
+            if File.file?(full)
+              current = File.read(full)
+              if current == content
+                puts \"file ok: #{rel}\"
+              else
+                File.write(full, content)
+                puts \"updated file: #{rel}\"
+              end
+            else
+              File.write(full, content)
+              puts \"created file: #{rel}\"
+            end
+
+            set_mode.call(full, item['mode'])
+          end
+
+          Array(map['symlinks']).each do |item|
+            abort('Invalid symlinks entry') unless item.is_a?(Hash)
+
+            link = normalize_rel.call(item['link'])
+            target = item['target'].to_s.strip.sub(%r{/+$}, '')
+            next if link.empty? || target.empty?
+
+            full_link = File.join(app_root, link)
+
+            if File.symlink?(full_link)
+              current = File.readlink(full_link)
+              if current == target
+                puts \"symlink ok: #{link} -> #{target}\"
+                next
+              end
+
+              File.delete(full_link)
+            elsif File.exist?(full_link)
+              abort(\"Refusing to replace non-symlink path: #{full_link}\")
+            end
+
+            File.symlink(target, full_link)
+            puts \"created symlink: #{link} -> #{target}\"
+          end
+
+          File.delete(map_file) if File.file?(map_file)
+          RUBY
             "
 
       - name: Verify remote identity JSON files match build
