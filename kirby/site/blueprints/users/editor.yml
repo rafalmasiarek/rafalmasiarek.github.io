@@ -1,0 +1,22 @@
+title: Editor
+
+permissions:
+  access:
+    panel: true
+    site: true
+
+fields:
+  name:
+    label: Name
+    type: text
+
+  email:
+    label: Email
+    type: email
+
+  sites:
+    label: Pages access
+    type: checkboxes
+    options:
+      projects: Projects
+      articles: Articles

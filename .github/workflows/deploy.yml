@@ -14,7 +14,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           submodules: recursive
-          fetch-depth: 1
+          fetch-depth: 0
 
       - name: Resolve Kirby submodule metadata
         id: kirby_meta
@@ -22,8 +22,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          KIRBY_URL="$(git config --file .gitmodules --get submodule.projects/kirby.url)"
-          KIRBY_SHA="$(git ls-tree HEAD projects/kirby | awk '{print $3}')"
+          KIRBY_URL="$(git config --file .gitmodules --get submodule.kirby/core.url)"
+          KIRBY_SHA="$(git ls-tree HEAD kirby/core | awk '{print $3}')"
 
           printf 'url=%s\n' "$KIRBY_URL" >> "$GITHUB_OUTPUT"
           printf 'sha=%s\n' "$KIRBY_SHA" >> "$GITHUB_OUTPUT"
@@ -170,11 +170,11 @@ jobs:
               set -euo pipefail
 
               APP_ROOT='${{ secrets.RSYNC_DEST_PATH }}'
-              KIRBY_DIR=\"\$APP_ROOT/projects/kirby\"
+              KIRBY_DIR=\"\$APP_ROOT/kirby/core\"
               KIRBY_URL='${{ steps.kirby_meta.outputs.url }}'
               KIRBY_SHA='${{ steps.kirby_meta.outputs.sha }}'
 
-              mkdir -p \"\$APP_ROOT/projects\"
+              mkdir -p \"\$APP_ROOT/kirby\"
 
               if [ -d \"\$KIRBY_DIR\" ] && [ ! -d \"\$KIRBY_DIR/.git\" ]; then
                 echo \"Kirby directory exists but is not a git repo, recreating...\"
@@ -218,6 +218,71 @@ jobs:
                   echo \"Kirby already at desired SHA: \$CURRENT_SHA (matching submodule commit)\"
                 fi
               fi
+            "
+
+      - name: Recreate symlinks from deploy map
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ruby <<'RUBY' > deploy-map.json
+          require 'yaml'
+          require 'json'
+
+          map = YAML.load_file('deploy-map.yml') || {}
+          puts JSON.generate(map)
+          RUBY
+
+          ssh -p ${{ secrets.RSYNC_SSH_PORT }} \
+            ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }} \
+            "cat > '${{ secrets.RSYNC_DEST_PATH }}/.deploy-map.json'" < deploy-map.json
+
+          ssh -p ${{ secrets.RSYNC_SSH_PORT }} \
+            ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }} "
+              set -euo pipefail
+              export APP_ROOT='${{ secrets.RSYNC_DEST_PATH }}'
+              export MAP_FILE='${{ secrets.RSYNC_DEST_PATH }}/.deploy-map.json'
+
+              php <<'PHP'
+          <?php
+          $appRoot = getenv('APP_ROOT');
+          $mapFile = getenv('MAP_FILE');
+
+          $json = file_get_contents($mapFile);
+          $map = json_decode($json, true);
+
+          if (!is_array($map)) {
+              fwrite(STDERR, "Invalid deploy map\n");
+              exit(1);
+          }
+
+          foreach (($map['symlinks'] ?? []) as $item) {
+              $link = trim((string)($item['link'] ?? ''), '/');
+              $target = trim((string)($item['target'] ?? ''), '/');
+
+              if ($link === '' || $target === '') {
+                  continue;
+              }
+
+              $linkPath = $appRoot . '/' . $link;
+
+              if (is_link($linkPath)) {
+                  $current = readlink($linkPath);
+                  if ($current === $target) {
+                      echo "symlink ok: {$link} -> {$target}\n";
+                      continue;
+                  }
+
+                  unlink($linkPath);
+              } elseif (file_exists($linkPath)) {
+                  fwrite(STDERR, "Refusing to replace non-symlink path: {$linkPath}\n");
+                  exit(1);
+              }
+
+              symlink($target, $linkPath);
+              echo "created symlink: {$link} -> {$target}\n";
+          }
+          PHP
             "
 
       - name: Verify remote identity JSON files match build

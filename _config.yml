@@ -7,11 +7,17 @@ github_repo: "https://github.com/rafalmasiarek/rafalmasiarek.github.io"
 
 recaptcha_site_key: "6LfvSI4rAAAAABdOXvYNnDMZEzd_K57A94LlEghS"
 
-# plugins
 plugins:
   - jekyll-last-modified-at
   - jekyll-sitemap
   - jekyll-assets
+
+kirby:
+  multisite:
+    hosts: {}
+    routes:
+      "/projects": projects
+      "/articles": articles
 
 assets:
   default_strategy: "config_version"
@@ -45,7 +51,6 @@ nav:
     url: /vinyls
   - title: I ❤️ OPENSOURCE
     url: /i-love-opensource
-
 
 robots:
   enabled: true
