@@ -220,6 +220,37 @@ jobs:
               fi
             "
 
+      - name: Generate deploy map JSON
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ruby <<'RUBY' > deploy-map.json
+          require 'yaml'
+          require 'json'
+
+          map = YAML.load_file('deploy-map.yml') || {}
+
+          unless map.is_a?(Hash)
+            abort('deploy-map.yml must contain a mapping at root')
+          end
+
+          map['dirs'] ||= []
+          map['files'] ||= []
+          map['symlinks'] ||= []
+
+          puts JSON.pretty_generate(map)
+          RUBY
+
+      - name: Upload deploy map JSON
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ssh -p ${{ secrets.RSYNC_SSH_PORT }} \
+            ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }} \
+            "cat > '${{ secrets.RSYNC_DEST_PATH }}/.deploy-map.json'" < deploy-map.json
+
       - name: Apply deploy map on remote
         shell: bash
         run: |
@@ -227,123 +258,191 @@ jobs:
 
           ssh -p ${{ secrets.RSYNC_SSH_PORT }} \
             ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }} \
-            "cat > '${{ secrets.RSYNC_DEST_PATH }}/.deploy-map.yml'" < deploy-map.yml
+            "APP_ROOT='${{ secrets.RSYNC_DEST_PATH }}' DEPLOY_MAP='${{ secrets.RSYNC_DEST_PATH }}/.deploy-map.json' python3 - <<'PY'"
+          import os
+          import json
+          import base64
+          import stat
+          import sys
+
+          app_root = os.environ.get("APP_ROOT", "").rstrip("/")
+          map_file = os.environ.get("DEPLOY_MAP", "")
+
+          if not app_root or not map_file:
+              print("Missing APP_ROOT or DEPLOY_MAP", file=sys.stderr)
+              sys.exit(1)
+
+          if not os.path.isfile(map_file):
+              print(f"Missing deploy map: {map_file}", file=sys.stderr)
+              sys.exit(1)
+
+          with open(map_file, "r", encoding="utf-8") as f:
+              deploy_map = json.load(f)
+
+          results = []
+
+          def normalize_rel(value):
+              s = str(value or "").strip().strip("/")
+              return s
+
+          def join_app(rel):
+              return os.path.join(app_root, rel)
+
+          def add_result(entry_type, command, rc, success, changed=False, error=None, **extra):
+              item = {
+                  "type": entry_type,
+                  "command": command,
+                  "rc": rc,
+                  "success": bool(success),
+                  "changed": bool(changed),
+                  "error": error,
+              }
+              item.update(extra)
+              results.append(item)
+
+          def set_mode(path, mode):
+              if mode is None:
+                  return
+              mode_str = str(mode).strip()
+              if not mode_str:
+                  return
+              os.chmod(path, int(mode_str, 8))
+
+          overall_success = True
+
+          try:
+              for item in deploy_map.get("dirs", []):
+                  if isinstance(item, str):
+                      item = {"path": item}
+                  if not isinstance(item, dict):
+                      raise RuntimeError("Invalid dirs entry")
+
+                  rel = normalize_rel(item.get("path", ""))
+                  if not rel:
+                      continue
+
+                  full = join_app(rel)
+                  command = f"mkdir -p {full}"
+
+                  try:
+                      if os.path.exists(full) and not os.path.isdir(full):
+                          raise RuntimeError(f"Refusing to replace non-directory path: {full}")
+
+                      changed = False
+                      if not os.path.isdir(full):
+                          os.makedirs(full, exist_ok=True)
+                          changed = True
+
+                      set_mode(full, item.get("mode"))
+                      add_result("dir", command, 0, True, changed=changed, path=rel)
+                  except Exception as e:
+                      overall_success = False
+                      add_result("dir", command, 1, False, changed=False, error=str(e), path=rel)
+                      raise
+
+              for item in deploy_map.get("files", []):
+                  if not isinstance(item, dict):
+                      raise RuntimeError("Invalid files entry")
+
+                  rel = normalize_rel(item.get("path", ""))
+                  if not rel:
+                      continue
+
+                  full = join_app(rel)
+                  parent = os.path.dirname(full)
+                  content = str(item.get("content", ""))
+                  command = f"write file {full}"
+
+                  try:
+                      if os.path.isdir(full):
+                          raise RuntimeError(f"Refusing to replace directory with file: {full}")
+                      if os.path.islink(full):
+                          raise RuntimeError(f"Refusing to replace symlink with file: {full}")
+
+                      os.makedirs(parent, exist_ok=True)
+
+                      changed = True
+                      existed = os.path.isfile(full)
+                      if existed:
+                          with open(full, "r", encoding="utf-8") as f:
+                              current = f.read()
+                          if current == content:
+                              changed = False
+
+                      if changed:
+                          tmp = full + ".tmp"
+                          with open(tmp, "w", encoding="utf-8") as f:
+                              f.write(content)
+                          os.replace(tmp, full)
+
+                      set_mode(full, item.get("mode"))
+                      add_result("file", command, 0, True, changed=changed, path=rel)
+                  except Exception as e:
+                      overall_success = False
+                      add_result("file", command, 1, False, changed=False, error=str(e), path=rel)
+                      raise
+
+              for item in deploy_map.get("symlinks", []):
+                  if not isinstance(item, dict):
+                      raise RuntimeError("Invalid symlinks entry")
+
+                  link = normalize_rel(item.get("link", ""))
+                  target = str(item.get("target", "")).strip().rstrip("/")
+                  if not link or not target:
+                      continue
+
+                  full_link = join_app(link)
+                  command = f"ln -s {target} {full_link}"
+
+                  try:
+                      changed = False
+
+                      if os.path.islink(full_link):
+                          current = os.readlink(full_link)
+                          if current != target:
+                              os.unlink(full_link)
+                              os.symlink(target, full_link)
+                              changed = True
+                      elif os.path.exists(full_link):
+                          raise RuntimeError(f"Refusing to replace non-symlink path: {full_link}")
+                      else:
+                          os.symlink(target, full_link)
+                          changed = True
+
+                      add_result("symlink", command, 0, True, changed=changed, link=link, target=target)
+                  except Exception as e:
+                      overall_success = False
+                      add_result("symlink", command, 1, False, changed=False, error=str(e), link=link, target=target)
+                      raise
+
+          except Exception:
+              pass
+
+          result_payload = {
+              "success": overall_success,
+              "app_root": app_root,
+              "results": results,
+          }
+
+          result_file = os.path.join(app_root, ".deploy-map.result.json")
+          with open(result_file, "w", encoding="utf-8") as f:
+              json.dump(result_payload, f, indent=2, ensure_ascii=False)
+              f.write("\n")
+
+          print(json.dumps(result_payload, indent=2, ensure_ascii=False))
+
+          if not overall_success:
+              sys.exit(1)
+          PY
+
+      - name: Show remote deploy map result
+        shell: bash
+        run: |
+          set -euo pipefail
 
           ssh -p ${{ secrets.RSYNC_SSH_PORT }} \
-            ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }} "
-              set -euo pipefail
-              export APP_ROOT='${{ secrets.RSYNC_DEST_PATH }}'
-              export DEPLOY_MAP='${{ secrets.RSYNC_DEST_PATH }}/.deploy-map.yml'
-
-              ruby <<'RUBY'
-          require 'yaml'
-          require 'fileutils'
-
-          app_root = ENV.fetch('APP_ROOT')
-          map_file = ENV.fetch('DEPLOY_MAP')
-
-          abort(\"Missing deploy map: #{map_file}\") unless File.file?(map_file)
-
-          map = YAML.load_file(map_file) || {}
-
-          normalize_rel = lambda do |value|
-            value.to_s.strip.sub(%r{^/+}, '').sub(%r{/+$}, '')
-          end
-
-          set_mode = lambda do |path, mode|
-            next if mode.nil?
-            mode_str = mode.to_s.strip
-            next if mode_str.empty?
-            File.chmod(mode_str.to_i(8), path)
-          end
-
-          Array(map['dirs']).each do |item|
-            item = { 'path' => item } if item.is_a?(String)
-            abort('Invalid dirs entry') unless item.is_a?(Hash)
-
-            rel = normalize_rel.call(item['path'])
-            next if rel.empty?
-
-            full = File.join(app_root, rel)
-
-            if File.exist?(full) && !File.directory?(full)
-              abort(\"Refusing to replace non-directory path: #{full}\")
-            end
-
-            unless File.directory?(full)
-              FileUtils.mkdir_p(full)
-              puts \"created dir: #{rel}\"
-            else
-              puts \"dir ok: #{rel}\"
-            end
-
-            set_mode.call(full, item['mode'])
-          end
-
-          Array(map['files']).each do |item|
-            abort('Invalid files entry') unless item.is_a?(Hash)
-
-            rel = normalize_rel.call(item['path'])
-            next if rel.empty?
-
-            full = File.join(app_root, rel)
-            parent = File.dirname(full)
-            content = item.key?('content') ? item['content'].to_s : ''
-
-            if File.directory?(full)
-              abort(\"Refusing to replace directory with file: #{full}\")
-            end
-
-            FileUtils.mkdir_p(parent) unless Dir.exist?(parent)
-
-            if File.symlink?(full)
-              abort(\"Refusing to replace symlink with file: #{full}\")
-            end
-
-            if File.file?(full)
-              current = File.read(full)
-              if current == content
-                puts \"file ok: #{rel}\"
-              else
-                File.write(full, content)
-                puts \"updated file: #{rel}\"
-              end
-            else
-              File.write(full, content)
-              puts \"created file: #{rel}\"
-            end
-
-            set_mode.call(full, item['mode'])
-          end
-
-          Array(map['symlinks']).each do |item|
-            abort('Invalid symlinks entry') unless item.is_a?(Hash)
-
-            link = normalize_rel.call(item['link'])
-            target = item['target'].to_s.strip.sub(%r{/+$}, '')
-            next if link.empty? || target.empty?
-
-            full_link = File.join(app_root, link)
-
-            if File.symlink?(full_link)
-              current = File.readlink(full_link)
-              if current == target
-                puts \"symlink ok: #{link} -> #{target}\"
-                next
-              end
-
-              File.delete(full_link)
-            elsif File.exist?(full_link)
-              abort(\"Refusing to replace non-symlink path: #{full_link}\")
-            end
-
-            File.symlink(target, full_link)
-            puts \"created symlink: #{link} -> #{target}\"
-          end
-
-          File.delete(map_file) if File.file?(map_file)
-          RUBY
-            "
+            ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }} \
+            "cat '${{ secrets.RSYNC_DEST_PATH }}/.deploy-map.result.json'"
 
       - name: Verify remote identity JSON files match build
         shell: bash
