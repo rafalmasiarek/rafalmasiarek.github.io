@@ -249,9 +249,16 @@ jobs:
           if not isinstance(data, dict):
               raise SystemExit("deploy-map.yml must contain a mapping at root")
 
-          data.setdefault("dirs", [])
-          data.setdefault("files", [])
-          data.setdefault("symlinks", [])
+          data["dirs"] = data.get("dirs") or []
+          data["files"] = data.get("files") or []
+          data["symlinks"] = data.get("symlinks") or []
+
+          for key in ("dirs", "files", "symlinks"):
+              value = data.get(key)
+              if value is None:
+                  data[key] = []
+              elif not isinstance(value, list):
+                  raise SystemExit(f"{key} must be a list")
 
           Path("deploy-map.json").write_text(
               json.dumps(data, indent=2, ensure_ascii=False) + "\n",
