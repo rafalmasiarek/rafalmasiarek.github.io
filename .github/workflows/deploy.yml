@@ -220,6 +220,12 @@ jobs:
               fi
             "
 
+      - name: Install PyYAML
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install PyYAML
+
       - name: Generate deploy map artifacts
         shell: bash
         run: |
@@ -475,9 +481,23 @@ jobs:
         run: |
           set -euo pipefail
 
-          ssh -p ${{ secrets.RSYNC_SSH_PORT }} \
-            ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }} \
-            "cat '${{ secrets.RSYNC_DEST_PATH }}/.deploy-map.result.json'"
+          RESULT_JSON="$(
+            ssh -p ${{ secrets.RSYNC_SSH_PORT }} \
+              ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }} "
+                RESULT='${{ secrets.RSYNC_DEST_PATH }}/.deploy-map.result.json'
+                if [ -f \"\$RESULT\" ]; then
+                  cat \"\$RESULT\"
+                else
+                  echo ''
+                fi
+              "
+          )"
+
+          if [ -n "$RESULT_JSON" ]; then
+            printf '%s\n' "$RESULT_JSON" | jq .
+          else
+            echo 'deploy map result file not found'
+          fi
 
       - name: Verify remote identity JSON files match build
         shell: bash
