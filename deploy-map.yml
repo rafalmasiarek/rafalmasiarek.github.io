@@ -1,3 +1,30 @@
+dirs:
+  # examples:
+  # - path: kirby/sites/articles/content
+  # - path: kirby/sites/articles/media
+  # - path: kirby/sites/articles/storage
+  # - path: kirby/sites/articles/cache
+  # - path: kirby/sites/articles/logs
+  #
+  # optional mode:
+  # - path: some/dir
+  #   mode: "0775"
+
+files:
+  # examples:
+  # - path: kirby/sites/articles/site/config/config.php
+  #   mode: "0644"
+  #   content: |
+  #     <?php
+  #
+  #     return [
+  #         'debug' => true,
+  #     ];
+  #
+  # - path: some/file.txt
+  #   content: |
+  #     hello world
+
 symlinks:
   - link: projects
     target: kirby
