@@ -220,29 +220,230 @@ jobs:
               fi
             "
 
-      - name: Generate deploy map JSON
+      - name: Generate deploy map artifacts
         shell: bash
         run: |
           set -euo pipefail
 
-          ruby <<'RUBY' > deploy-map.json
-          require 'yaml'
-          require 'json'
+          python3 <<'PY'
+          import base64
+          import json
+          import shlex
+          from pathlib import Path
 
-          map = YAML.load_file('deploy-map.yml') || {}
+          import yaml
 
-          unless map.is_a?(Hash)
-            abort('deploy-map.yml must contain a mapping at root')
-          end
+          root = Path("deploy-map.yml")
+          if not root.is_file():
+              raise SystemExit("deploy-map.yml not found")
 
-          map['dirs'] ||= []
-          map['files'] ||= []
-          map['symlinks'] ||= []
+          with root.open("r", encoding="utf-8") as f:
+              data = yaml.safe_load(f) or {}
 
-          puts JSON.pretty_generate(map)
-          RUBY
+          if not isinstance(data, dict):
+              raise SystemExit("deploy-map.yml must contain a mapping at root")
 
-      - name: Upload deploy map JSON
+          data.setdefault("dirs", [])
+          data.setdefault("files", [])
+          data.setdefault("symlinks", [])
+
+          Path("deploy-map.json").write_text(
+              json.dumps(data, indent=2, ensure_ascii=False) + "\n",
+              encoding="utf-8",
+          )
+
+          def norm_rel(value: object) -> str:
+              return str(value or "").strip().strip("/")
+
+          def shq(value: str) -> str:
+              return shlex.quote(value)
+
+          lines: list[str] = []
+          lines.append("#!/usr/bin/env bash")
+          lines.append("set -euo pipefail")
+          lines.append(': "${APP_ROOT:?APP_ROOT is required}"')
+          lines.append('RESULT_FILE="$APP_ROOT/.deploy-map.result.json"')
+          lines.append('TMP_RESULTS="$APP_ROOT/.deploy-map.result.jsonl"')
+          lines.append('OVERALL_SUCCESS=true')
+          lines.append('rm -f "$TMP_RESULTS"')
+
+          lines.extend([
+              "json_escape() {",
+              '  local s="${1-}"',
+              r'''  s="${s//\\/\\\\}"''',
+              r'''  s="${s//\"/\\\"}"''',
+              r'''  s="${s//$'\n'/\\n}"''',
+              r'''  s="${s//$'\r'/\\r}"''',
+              r'''  s="${s//$'\t'/\\t}"''',
+              '''  printf '%s' "$s"''',
+              "}",
+              "",
+              "json_string_or_null() {",
+              '  local s="${1-}"',
+              '  if [ -z "$s" ]; then',
+              "    printf 'null'",
+              "  else",
+              '''    printf '"%s"' "$(json_escape "$s")"''',
+              "  fi",
+              "}",
+              "",
+              "append_result() {",
+              '  local type="${1-}"',
+              '  local path="${2-}"',
+              '  local link="${3-}"',
+              '  local target="${4-}"',
+              '  local command="${5-}"',
+              '  local rc="${6-0}"',
+              '  local success="${7-false}"',
+              '  local changed="${8-false}"',
+              '  local error="${9-}"',
+              "  {",
+              "    printf '{'",
+              '''    printf '"type":"%s",' "$(json_escape "$type")"''',
+              '''    printf '"path":%s,' "$(json_string_or_null "$path")"''',
+              '''    printf '"link":%s,' "$(json_string_or_null "$link")"''',
+              '''    printf '"target":%s,' "$(json_string_or_null "$target")"''',
+              '''    printf '"command":%s,' "$(json_string_or_null "$command")"''',
+              '''    printf '"rc":%s,' "$rc"''',
+              '''    printf '"success":%s,' "$success"''',
+              '''    printf '"changed":%s,' "$changed"''',
+              '''    printf '"error":%s' "$(json_string_or_null "$error")"''',
+              r"""    printf '}\n'""",
+              '  } >> "$TMP_RESULTS"',
+              "}",
+              "",
+              "write_result_file() {",
+              "  {",
+              r"""    printf '{\n'""",
+              '''    printf '  "success": %s,\n' "$OVERALL_SUCCESS"''',
+              '''    printf '  "app_root": "%s",\n' "$(json_escape "$APP_ROOT")"''',
+              r"""    printf '  "results": [\n'""",
+              "    first=1",
+              '    if [ -f "$TMP_RESULTS" ]; then',
+              '      while IFS= read -r line; do',
+              '        [ -n "$line" ] || continue',
+              '        if [ "$first" -eq 0 ]; then',
+              r"""          printf ',\n'""",
+              "        fi",
+              '''        printf '    %s' "$line"''',
+              "        first=0",
+              '      done < "$TMP_RESULTS"',
+              "    fi",
+              r"""    printf '\n  ]\n'""",
+              r"""    printf '}\n'""",
+              '  } > "$RESULT_FILE"',
+              "}",
+              "",
+              "fail_now() {",
+              "  OVERALL_SUCCESS=false",
+              "  write_result_file",
+              "  exit 1",
+              "}",
+          ])
+
+          for item in data["dirs"]:
+              if isinstance(item, str):
+                  item = {"path": item}
+              if not isinstance(item, dict):
+                  raise SystemExit("Invalid dirs entry")
+
+              rel = norm_rel(item.get("path", ""))
+              if not rel:
+                  continue
+
+              mode = str(item.get("mode", "")).strip()
+              lines.append(f"rel={shq(rel)}")
+              lines.append('full="$APP_ROOT/$rel"')
+              lines.append('command="mkdir -p $full"')
+              lines.append('changed=false')
+              lines.append('if [ -e "$full" ] && [ ! -d "$full" ]; then')
+              lines.append('  append_result "dir" "$rel" "" "" "$command" 1 false false "Refusing to replace non-directory path: $full"')
+              lines.append('  fail_now')
+              lines.append('fi')
+              lines.append('if [ ! -d "$full" ]; then')
+              lines.append('  mkdir -p "$full"')
+              lines.append('  changed=true')
+              lines.append('fi')
+              if mode:
+                  lines.append(f'chmod {shq(mode)} "$full"')
+              lines.append('append_result "dir" "$rel" "" "" "$command" 0 true "$changed" ""')
+
+          for item in data["files"]:
+              if not isinstance(item, dict):
+                  raise SystemExit("Invalid files entry")
+
+              rel = norm_rel(item.get("path", ""))
+              if not rel:
+                  continue
+
+              mode = str(item.get("mode", "")).strip()
+              content = str(item.get("content", ""))
+              encoded = base64.b64encode(content.encode("utf-8")).decode("ascii")
+
+              lines.append(f"rel={shq(rel)}")
+              lines.append('full="$APP_ROOT/$rel"')
+              lines.append('parent="$(dirname "$full")"')
+              lines.append('command="write file $full"')
+              lines.append('changed=true')
+              lines.append('if [ -d "$full" ]; then')
+              lines.append('  append_result "file" "$rel" "" "" "$command" 1 false false "Refusing to replace directory with file: $full"')
+              lines.append('  fail_now')
+              lines.append('fi')
+              lines.append('if [ -L "$full" ]; then')
+              lines.append('  append_result "file" "$rel" "" "" "$command" 1 false false "Refusing to replace symlink with file: $full"')
+              lines.append('  fail_now')
+              lines.append('fi')
+              lines.append('mkdir -p "$parent"')
+              lines.append('tmp="$full.tmp"')
+              lines.append(f"printf '%s' {shq(encoded)} | base64 -d > \"$tmp\"")
+              lines.append('if [ -f "$full" ] && cmp -s "$tmp" "$full"; then')
+              lines.append('  changed=false')
+              lines.append('  rm -f "$tmp"')
+              lines.append('else')
+              lines.append('  mv "$tmp" "$full"')
+              lines.append('fi')
+              if mode:
+                  lines.append(f'chmod {shq(mode)} "$full"')
+              lines.append('append_result "file" "$rel" "" "" "$command" 0 true "$changed" ""')
+
+          for item in data["symlinks"]:
+              if not isinstance(item, dict):
+                  raise SystemExit("Invalid symlinks entry")
+
+              link = norm_rel(item.get("link", ""))
+              target = str(item.get("target", "")).strip().rstrip("/")
+              if not link or not target:
+                  continue
+
+              lines.append(f"link_rel={shq(link)}")
+              lines.append(f"target={shq(target)}")
+              lines.append('full_link="$APP_ROOT/$link_rel"')
+              lines.append('command="ln -s $target $full_link"')
+              lines.append('changed=false')
+              lines.append('if [ -L "$full_link" ]; then')
+              lines.append('  current="$(readlink "$full_link")"')
+              lines.append('  if [ "$current" != "$target" ]; then')
+              lines.append('    rm -f "$full_link"')
+              lines.append('    ln -s "$target" "$full_link"')
+              lines.append('    changed=true')
+              lines.append('  fi')
+              lines.append('elif [ -e "$full_link" ]; then')
+              lines.append('  append_result "symlink" "" "$link_rel" "$target" "$command" 1 false false "Refusing to replace non-symlink path: $full_link"')
+              lines.append('  fail_now')
+              lines.append('else')
+              lines.append('  ln -s "$target" "$full_link"')
+              lines.append('  changed=true')
+              lines.append('fi')
+              lines.append('append_result "symlink" "" "$link_rel" "$target" "$command" 0 true "$changed" ""')
+
+          lines.append("write_result_file")
+
+          Path("deploy-map.apply.sh").write_text("\n".join(lines) + "\n", encoding="utf-8")
+          PY
+
+          chmod +x deploy-map.apply.sh
+
+      - name: Upload deploy map artifacts
         shell: bash
         run: |
           set -euo pipefail
@@ -251,6 +452,14 @@ jobs:
             ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }} \
             "cat > '${{ secrets.RSYNC_DEST_PATH }}/.deploy-map.json'" < deploy-map.json
 
+          ssh -p ${{ secrets.RSYNC_SSH_PORT }} \
+            ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }} \
+            "cat > '${{ secrets.RSYNC_DEST_PATH }}/.deploy-map.apply.sh'" < deploy-map.apply.sh
+
+          ssh -p ${{ secrets.RSYNC_SSH_PORT }} \
+            ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }} \
+            "chmod 700 '${{ secrets.RSYNC_DEST_PATH }}/.deploy-map.apply.sh'"
+
       - name: Apply deploy map on remote
         shell: bash
         run: |
@@ -258,184 +467,10 @@ jobs:
 
           ssh -p ${{ secrets.RSYNC_SSH_PORT }} \
             ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }} \
-            "APP_ROOT='${{ secrets.RSYNC_DEST_PATH }}' DEPLOY_MAP='${{ secrets.RSYNC_DEST_PATH }}/.deploy-map.json' python3 - <<'PY'"
-          import os
-          import json
-          import base64
-          import stat
-          import sys
-
-          app_root = os.environ.get("APP_ROOT", "").rstrip("/")
-          map_file = os.environ.get("DEPLOY_MAP", "")
-
-          if not app_root or not map_file:
-              print("Missing APP_ROOT or DEPLOY_MAP", file=sys.stderr)
-              sys.exit(1)
-
-          if not os.path.isfile(map_file):
-              print(f"Missing deploy map: {map_file}", file=sys.stderr)
-              sys.exit(1)
-
-          with open(map_file, "r", encoding="utf-8") as f:
-              deploy_map = json.load(f)
-
-          results = []
-
-          def normalize_rel(value):
-              s = str(value or "").strip().strip("/")
-              return s
-
-          def join_app(rel):
-              return os.path.join(app_root, rel)
-
-          def add_result(entry_type, command, rc, success, changed=False, error=None, **extra):
-              item = {
-                  "type": entry_type,
-                  "command": command,
-                  "rc": rc,
-                  "success": bool(success),
-                  "changed": bool(changed),
-                  "error": error,
-              }
-              item.update(extra)
-              results.append(item)
-
-          def set_mode(path, mode):
-              if mode is None:
-                  return
-              mode_str = str(mode).strip()
-              if not mode_str:
-                  return
-              os.chmod(path, int(mode_str, 8))
-
-          overall_success = True
-
-          try:
-              for item in deploy_map.get("dirs", []):
-                  if isinstance(item, str):
-                      item = {"path": item}
-                  if not isinstance(item, dict):
-                      raise RuntimeError("Invalid dirs entry")
-
-                  rel = normalize_rel(item.get("path", ""))
-                  if not rel:
-                      continue
-
-                  full = join_app(rel)
-                  command = f"mkdir -p {full}"
-
-                  try:
-                      if os.path.exists(full) and not os.path.isdir(full):
-                          raise RuntimeError(f"Refusing to replace non-directory path: {full}")
-
-                      changed = False
-                      if not os.path.isdir(full):
-                          os.makedirs(full, exist_ok=True)
-                          changed = True
-
-                      set_mode(full, item.get("mode"))
-                      add_result("dir", command, 0, True, changed=changed, path=rel)
-                  except Exception as e:
-                      overall_success = False
-                      add_result("dir", command, 1, False, changed=False, error=str(e), path=rel)
-                      raise
-
-              for item in deploy_map.get("files", []):
-                  if not isinstance(item, dict):
-                      raise RuntimeError("Invalid files entry")
-
-                  rel = normalize_rel(item.get("path", ""))
-                  if not rel:
-                      continue
-
-                  full = join_app(rel)
-                  parent = os.path.dirname(full)
-                  content = str(item.get("content", ""))
-                  command = f"write file {full}"
-
-                  try:
-                      if os.path.isdir(full):
-                          raise RuntimeError(f"Refusing to replace directory with file: {full}")
-                      if os.path.islink(full):
-                          raise RuntimeError(f"Refusing to replace symlink with file: {full}")
-
-                      os.makedirs(parent, exist_ok=True)
-
-                      changed = True
-                      existed = os.path.isfile(full)
-                      if existed:
-                          with open(full, "r", encoding="utf-8") as f:
-                              current = f.read()
-                          if current == content:
-                              changed = False
-
-                      if changed:
-                          tmp = full + ".tmp"
-                          with open(tmp, "w", encoding="utf-8") as f:
-                              f.write(content)
-                          os.replace(tmp, full)
-
-                      set_mode(full, item.get("mode"))
-                      add_result("file", command, 0, True, changed=changed, path=rel)
-                  except Exception as e:
-                      overall_success = False
-                      add_result("file", command, 1, False, changed=False, error=str(e), path=rel)
-                      raise
-
-              for item in deploy_map.get("symlinks", []):
-                  if not isinstance(item, dict):
-                      raise RuntimeError("Invalid symlinks entry")
-
-                  link = normalize_rel(item.get("link", ""))
-                  target = str(item.get("target", "")).strip().rstrip("/")
-                  if not link or not target:
-                      continue
-
-                  full_link = join_app(link)
-                  command = f"ln -s {target} {full_link}"
-
-                  try:
-                      changed = False
-
-                      if os.path.islink(full_link):
-                          current = os.readlink(full_link)
-                          if current != target:
-                              os.unlink(full_link)
-                              os.symlink(target, full_link)
-                              changed = True
-                      elif os.path.exists(full_link):
-                          raise RuntimeError(f"Refusing to replace non-symlink path: {full_link}")
-                      else:
-                          os.symlink(target, full_link)
-                          changed = True
-
-                      add_result("symlink", command, 0, True, changed=changed, link=link, target=target)
-                  except Exception as e:
-                      overall_success = False
-                      add_result("symlink", command, 1, False, changed=False, error=str(e), link=link, target=target)
-                      raise
-
-          except Exception:
-              pass
-
-          result_payload = {
-              "success": overall_success,
-              "app_root": app_root,
-              "results": results,
-          }
-
-          result_file = os.path.join(app_root, ".deploy-map.result.json")
-          with open(result_file, "w", encoding="utf-8") as f:
-              json.dump(result_payload, f, indent=2, ensure_ascii=False)
-              f.write("\n")
-
-          print(json.dumps(result_payload, indent=2, ensure_ascii=False))
-
-          if not overall_success:
-              sys.exit(1)
-          PY
+            "APP_ROOT='${{ secrets.RSYNC_DEST_PATH }}' '${{ secrets.RSYNC_DEST_PATH }}/.deploy-map.apply.sh'"
 
       - name: Show remote deploy map result
+        if: always()
         shell: bash
         run: |
           set -euo pipefail
