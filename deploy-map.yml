@@ -1,0 +1,6 @@
+symlinks:
+  - link: projects
+    target: kirby
+
+  - link: articles
+    target: kirby

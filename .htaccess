@@ -12,11 +12,11 @@
   RewriteRule ^sw-vinyls\.js$ - [G,L]
   RewriteRule ^sw-vinyls\.js\.br$ - [G,L]
 
-  # ----------------------------
-  # Kirby under /projects
-  # ----------------------------
-  # If request is /projects or /projects/*, let Kirby handle it.
-  RewriteRule ^projects(/.*)?$ /projects/index.php [QSA,L]
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # RewriteRule ^(projects|articles)(/.*)?$ /kirby/index.php [QSA,L]
 
   # CSS
   RewriteCond %{HTTP:Accept-Encoding} br
