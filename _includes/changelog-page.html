@@ -1,0 +1,12 @@
+<div class="legal-disclaimer">
+  <h1 class="page-title">
+      Changelog - <a href="{{ page.legal_parent_url | relative_url }}">{{ page.legal_parent_title }} ↗</a>
+  </h1>
+  <br>
+
+  {% if page.legal_changelog_entries_html and page.legal_changelog_entries_html != '' %}
+    {{ page.legal_changelog_entries_html }}
+  {% else %}
+    <p> No change history available.</p>
+  {% endif %}
+</div>
