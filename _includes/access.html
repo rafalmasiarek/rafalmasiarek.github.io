@@ -28,7 +28,7 @@
 
 <div class="tab-content pt-3" id="sshAccessTabsContent">
 
-  <!-- TAB 1: Your existing dynamic helper -->
+  <!-- TAB 1: Dynamic helper -->
   <div class="tab-pane fade show active" id="pane-one-liner" role="tabpanel" aria-labelledby="tab-one-liner">
 
     <div class="ssh-gen__notice">
@@ -69,7 +69,7 @@
               <div>
                 <div class="ssh-gen__option-title">Update key only (manual run)</div>
                 <div class="ssh-gen__hint">
-                  For an existing user: refresh the key according to the DNS fingerprint.
+                  For an existing user: refresh the key according to the published fingerprint.
                   Does not use <code>sudo</code>.
                 </div>
               </div>
@@ -154,64 +154,84 @@
   <div class="tab-pane fade" id="pane-ansible" role="tabpanel" aria-labelledby="tab-ansible">
 
     <div class="alert alert-secondary">
-      Use these as ready-to-paste building blocks. Replace <code>rm</code> if needed.
-      For <code>add</code>/<code>remove</code you typically want <code>become: true</code>.
+      Recommended for managed servers. Install the role directly from Git, then call it in your playbook.
+      Replace <code>rm</code> only if you need a different account name.
     </div>
 
     <div class="card mb-3">
       <div class="card-header d-flex align-items-center justify-content-between">
-        <strong>Add access</strong>
+        <strong>requirements.yml</strong>
+        <button class="btn btn-sm btn-outline-secondary js-copy-snippet" type="button" data-copy-target="#ansible-requirements">Copy</button>
+      </div>
+      <div class="card-body">
+        <pre class="mb-0"><code id="ansible-requirements">roles:
+  - name: rm_access
+    src: git+https://github.com/rafalmasiarek/rm-ansible-access-key-role.git
+    version: main</code></pre>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <strong>Install the role</strong>
+        <button class="btn btn-sm btn-outline-secondary js-copy-snippet" type="button" data-copy-target="#ansible-install">Copy</button>
+      </div>
+      <div class="card-body">
+        <pre class="mb-0"><code id="ansible-install">ansible-galaxy role install -r requirements.yml</code></pre>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <strong>Playbook: add access</strong>
         <button class="btn btn-sm btn-outline-secondary js-copy-snippet" type="button" data-copy-target="#ansible-add">Copy</button>
       </div>
       <div class="card-body">
-        <pre class="mb-0"><code id="ansible-add">- name: Install SSH access (managed)
+        <pre class="mb-0"><code id="ansible-add">- name: Install SSH access
   hosts: all
   become: true
-  tasks:
-    - name: Run access installer
-      ansible.builtin.shell: |
-        set -euo pipefail
-        curl -Ls "https://access.masiarek.pl" | sudo bash -s -- add --username rm --sudo
-      args:
-        executable: /bin/bash</code></pre>
+
+  roles:
+    - role: rm_access
+      vars:
+        rm_access_action: add
+        rm_access_username: rm
+        rm_access_sudo: true</code></pre>
       </div>
     </div>
 
     <div class="card mb-3">
       <div class="card-header d-flex align-items-center justify-content-between">
-        <strong>Remove access</strong>
+        <strong>Playbook: remove access</strong>
         <button class="btn btn-sm btn-outline-secondary js-copy-snippet" type="button" data-copy-target="#ansible-remove">Copy</button>
       </div>
       <div class="card-body">
-        <pre class="mb-0"><code id="ansible-remove">- name: Remove SSH access (managed)
+        <pre class="mb-0"><code id="ansible-remove">- name: Remove SSH access
   hosts: all
   become: true
-  tasks:
-    - name: Run access remover
-      ansible.builtin.shell: |
-        set -euo pipefail
-        curl -Ls "https://access.masiarek.pl" | sudo bash -s -- remove --username rm
-      args:
-        executable: /bin/bash</code></pre>
+
+  roles:
+    - role: rm_access
+      vars:
+        rm_access_action: remove
+        rm_access_username: rm</code></pre>
       </div>
     </div>
 
     <div class="card">
       <div class="card-header d-flex align-items-center justify-content-between">
-        <strong>Update key only (no sudo)</strong>
+        <strong>Playbook: update key only</strong>
         <button class="btn btn-sm btn-outline-secondary js-copy-snippet" type="button" data-copy-target="#ansible-update">Copy</button>
       </div>
       <div class="card-body">
-        <pre class="mb-0"><code id="ansible-update">- name: Update SSH key for current user (managed)
+        <pre class="mb-0"><code id="ansible-update">- name: Update SSH key only
   hosts: all
   become: false
-  tasks:
-    - name: Run key updater
-      ansible.builtin.shell: |
-        set -euo pipefail
-        curl -Ls "https://access.masiarek.pl" | bash -s -- update
-      args:
-        executable: /bin/bash</code></pre>
+
+  roles:
+    - role: rm_access
+      vars:
+        rm_access_action: update</code></pre>
       </div>
     </div>
 
@@ -221,34 +241,37 @@
   <div class="tab-pane fade" id="pane-terraform" role="tabpanel" aria-labelledby="tab-terraform">
 
     <div class="alert alert-secondary">
-      Terraform uses SSH provisioners. This is the most direct “run on the instance” approach.
-      Use <code>sudo</code> where appropriate.
+      Recommended for new EC2 instances. Use <code>user_data</code> with cloud-init <code>runcmd</code>
+      so access is configured during first boot.
     </div>
 
     <div class="card mb-3">
       <div class="card-header d-flex align-items-center justify-content-between">
-        <strong>null_resource + remote-exec (add)</strong>
-        <button class="btn btn-sm btn-outline-secondary js-copy-snippet" type="button" data-copy-target="#tf-add">Copy</button>
+        <strong>aws_instance + cloud-init (add)</strong>
+        <button class="btn btn-sm btn-outline-secondary js-copy-snippet" type="button" data-copy-target="#tf-ec2-add">Copy</button>
       </div>
       <div class="card-body">
-        <pre class="mb-0"><code id="tf-add">resource "null_resource" "ssh_access_add" {
-  triggers = {
-    // Change this to force re-run
-    version = "1"
-  }
+        <pre class="mb-0"><code id="tf-ec2-add">resource "aws_instance" "rm_access" {
+  ami                    = "ami-xxxxxxxxxxxxxxxxx"
+  instance_type          = "t3.micro"
+  subnet_id              = "subnet-xxxxxxxx"
+  vpc_security_group_ids = ["sg-xxxxxxxx"]
 
-  connection {
-    type        = "ssh"
-    host        = var.host
-    user        = var.ssh_user
-    private_key = file(var.private_key_path)
-  }
+  user_data = &lt;&lt;-EOF
+    #cloud-config
+    runcmd:
+      - |
+        set -euo pipefail
+        t=$(mktemp)
+        e=$(curl -fsSL -D - https://access.masiarek.pl -o "$t" | tr -d '\r' | sed -n 's/^X-Script-Fingerprint: sha256://Ip' | tail -n1)
+        test -n "$e"
+        test "$(sha256sum "$t" | cut -d' ' -f1)" = "$e"
+        bash "$t" -- add --username rm --sudo
+        rm -f "$t"
+  EOF
 
-  provisioner "remote-exec" {
-    inline = [
-      "set -euo pipefail",
-      "curl -Ls \"https://access.masiarek.pl\" | sudo bash -s -- add --username rm --sudo"
-    ]
+  tags = {
+    Name = "rm-access-ec2"
   }
 }</code></pre>
       </div>
@@ -256,27 +279,39 @@
 
     <div class="card mb-3">
       <div class="card-header d-flex align-items-center justify-content-between">
-        <strong>null_resource + remote-exec (remove)</strong>
-        <button class="btn btn-sm btn-outline-secondary js-copy-snippet" type="button" data-copy-target="#tf-remove">Copy</button>
+        <strong>aws_launch_template + cloud-init (add)</strong>
+        <button class="btn btn-sm btn-outline-secondary js-copy-snippet" type="button" data-copy-target="#tf-lt-add">Copy</button>
       </div>
       <div class="card-body">
-        <pre class="mb-0"><code id="tf-remove">resource "null_resource" "ssh_access_remove" {
-  triggers = {
-    version = "1"
-  }
+        <pre class="mb-0"><code id="tf-lt-add">locals {
+  rm_access_cloud_init = &lt;&lt;-EOF
+    #cloud-config
+    runcmd:
+      - |
+        set -euo pipefail
+        t=$(mktemp)
+        e=$(curl -fsSL -D - https://access.masiarek.pl -o "$t" | tr -d '\r' | sed -n 's/^X-Script-Fingerprint: sha256://Ip' | tail -n1)
+        test -n "$e"
+        test "$(sha256sum "$t" | cut -d' ' -f1)" = "$e"
+        bash "$t" -- add --username rm --sudo
+        rm -f "$t"
+  EOF
+}
 
-  connection {
-    type        = "ssh"
-    host        = var.host
-    user        = var.ssh_user
-    private_key = file(var.private_key_path)
-  }
+resource "aws_launch_template" "rm_access" {
+  name_prefix            = "rm-access-"
+  image_id               = "ami-xxxxxxxxxxxxxxxxx"
+  instance_type          = "t3.micro"
+  vpc_security_group_ids = ["sg-xxxxxxxx"]
 
-  provisioner "remote-exec" {
-    inline = [
-      "set -euo pipefail",
-      "curl -Ls \"https://access.masiarek.pl\" | sudo bash -s -- remove --username rm"
-    ]
+  user_data = base64encode(local.rm_access_cloud_init)
+
+  tag_specifications {
+    resource_type = "instance"
+
+    tags = {
+      Name = "rm-access-from-lt"
+    }
   }
 }</code></pre>
       </div>
@@ -284,29 +319,20 @@
 
     <div class="card">
       <div class="card-header d-flex align-items-center justify-content-between">
-        <strong>remote-exec (update, no sudo)</strong>
-        <button class="btn btn-sm btn-outline-secondary js-copy-snippet" type="button" data-copy-target="#tf-update">Copy</button>
+        <strong>cloud-init command only</strong>
+        <button class="btn btn-sm btn-outline-secondary js-copy-snippet" type="button" data-copy-target="#tf-runcmd-only">Copy</button>
       </div>
       <div class="card-body">
-        <pre class="mb-0"><code id="tf-update">resource "null_resource" "ssh_access_update" {
-  triggers = {
-    version = "1"
-  }
-
-  connection {
-    type        = "ssh"
-    host        = var.host
-    user        = var.ssh_user
-    private_key = file(var.private_key_path)
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "set -euo pipefail",
-      "curl -Ls \"https://access.masiarek.pl\" | bash -s -- update"
-    ]
-  }
-}</code></pre>
+        <pre class="mb-0"><code id="tf-runcmd-only">#cloud-config
+runcmd:
+  - |
+    set -euo pipefail
+    t=$(mktemp)
+    e=$(curl -fsSL -D - https://access.masiarek.pl -o "$t" | tr -d '\r' | sed -n 's/^X-Script-Fingerprint: sha256://Ip' | tail -n1)
+    test -n "$e"
+    test "$(sha256sum "$t" | cut -d' ' -f1)" = "$e"
+    bash "$t" -- add --username rm --sudo
+    rm -f "$t"</code></pre>
       </div>
     </div>
 
@@ -316,7 +342,7 @@
   <div class="tab-pane fade" id="pane-salt" role="tabpanel" aria-labelledby="tab-salt">
 
     <div class="alert alert-secondary">
-      Salt can run the command via <code>cmd.run</code>. Use <code>runas</code>/<code>shell</code> as needed.
+      Salt can run the installer through <code>cmd.run</code>. These examples verify the published script hash before execution.
     </div>
 
     <div class="card mb-3">
@@ -329,7 +355,12 @@
   cmd.run:
     - name: |
         set -euo pipefail
-        curl -Ls "https://access.masiarek.pl" | sudo bash -s -- add --username rm --sudo
+        t=$(mktemp)
+        e=$(curl -fsSL -D - https://access.masiarek.pl -o "$t" | tr -d '\r' | sed -n 's/^X-Script-Fingerprint: sha256://Ip' | tail -n1)
+        test -n "$e"
+        test "$(sha256sum "$t" | cut -d' ' -f1)" = "$e"
+        sudo bash "$t" -- add --username rm --sudo
+        rm -f "$t"
     - shell: /bin/bash</code></pre>
       </div>
     </div>
@@ -344,7 +375,12 @@
   cmd.run:
     - name: |
         set -euo pipefail
-        curl -Ls "https://access.masiarek.pl" | sudo bash -s -- remove --username rm
+        t=$(mktemp)
+        e=$(curl -fsSL -D - https://access.masiarek.pl -o "$t" | tr -d '\r' | sed -n 's/^X-Script-Fingerprint: sha256://Ip' | tail -n1)
+        test -n "$e"
+        test "$(sha256sum "$t" | cut -d' ' -f1)" = "$e"
+        sudo bash "$t" -- remove --username rm
+        rm -f "$t"
     - shell: /bin/bash</code></pre>
       </div>
     </div>
@@ -359,7 +395,12 @@
   cmd.run:
     - name: |
         set -euo pipefail
-        curl -Ls "https://access.masiarek.pl" | bash -s -- update
+        t=$(mktemp)
+        e=$(curl -fsSL -D - https://access.masiarek.pl -o "$t" | tr -d '\r' | sed -n 's/^X-Script-Fingerprint: sha256://Ip' | tail -n1)
+        test -n "$e"
+        test "$(sha256sum "$t" | cut -d' ' -f1)" = "$e"
+        bash "$t" -- update
+        rm -f "$t"
     - shell: /bin/bash</code></pre>
       </div>
     </div>
