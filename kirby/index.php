@@ -85,7 +85,7 @@ echo (new App([
         'kirby'    => __DIR__ . '/core',
         'site'     => $resolvedSiteRoot,
         'content'  => $siteBaseRoot . '/content',
-        'media'    => $siteBaseRoot . '/media',
+        'media'    => __DIR__ . '/media',
         'storage'  => $siteBaseRoot . '/storage',
         'cache'    => $siteBaseRoot . '/cache',
         'logs'     => $siteBaseRoot . '/logs',
