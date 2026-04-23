@@ -5,12 +5,6 @@ defaults:
   inactivity_days: 30
   comment_marker_prefix: triage-bot
 
-aliases:
-  repo_owner:
-    type: users
-    users:
-      - rafalmasiarek
-
 rules:
   - name: welcome-new-non-dependency-issues
     enabled: true
