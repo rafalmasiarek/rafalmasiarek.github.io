@@ -36,7 +36,7 @@ rules:
       - issues.edited
     if:
       type: issue
-      title_matches: '(?i)bug|error|exception|fail'
+      title_matches: '/bug|error|exception|fail/i'
     then:
       add_labels: [bug, triaged]
       comment_once_key: bug-routed
