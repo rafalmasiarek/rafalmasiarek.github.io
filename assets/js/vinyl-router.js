@@ -37,6 +37,40 @@
   const VINYLS_ABS = SITE_BASE + '/vinyls';
   const PLACEHOLDER_COVER = 'https://placehold.co/600x600?text=No+cover';
 
+  const USE_HASH_PUBLIC_URLS = (function () {
+    const v = window.__VINYLS_PUBLIC_URLS_USE_HASH__;
+    if (v === undefined || v === null) return true;
+    if (typeof v === 'boolean') return v;
+    if (typeof v === 'number') return v !== 0;
+    if (typeof v === 'string') {
+      const s = v.trim().toLowerCase();
+      if (['1', 'true', 'yes', 'on'].includes(s)) return true;
+      if (['0', 'false', 'no', 'off', ''].includes(s)) return false;
+    }
+    return true;
+  })();
+
+  function vinylPublicUrl(slug) {
+    const s = encodeURIComponent(slug || '');
+    return USE_HASH_PUBLIC_URLS
+      ? `${VINYLS_ABS}/#/${s}`
+      : `${VINYLS_ABS}/${s}`;
+  }
+
+  function setMeta(attr, key, value) {
+    if (!value) return;
+
+    let el = document.head.querySelector(`meta[${attr}="${CSS.escape(key)}"]`);
+
+    if (!el) {
+      el = document.createElement('meta');
+      el.setAttribute(attr, key);
+      document.head.appendChild(el);
+    }
+
+    el.setAttribute('content', value);
+  }
+
   let __restoreScrollY = 0;
   let __restoreSlug = null;
 
@@ -63,7 +97,7 @@
     const message =
       `Hi,\n` +
       `I'd like to ask a question / make an offer about your record: ${artist} - ${title}.\n\n` +
-      `Link: ${VINYLS_ABS}/#/${encodeURIComponent(detail?.slug || '')}\n`;
+      `Link: ${vinylPublicUrl(detail?.slug || '')}\n`;
 
     const url = new URL(SITE_BASE + '/contact', window.location.origin);
 
@@ -186,6 +220,7 @@
     const siteName = document.querySelector('header .username a')?.textContent || 'Vinyls';
     const title = v?.title || 'Untitled';
     const artist = v?.artist || 'Unknown';
+    const publicUrl = vinylPublicUrl(v?.slug || '');
 
     document.title = `${title} – ${artist} | ${siteName}`;
 
@@ -194,7 +229,24 @@
     if (meta) meta.setAttribute('content', desc);
 
     const canonical = document.getElementById('canonical-link');
-    if (canonical) canonical.href = `${VINYLS_ABS}/`;
+    if (canonical) canonical.href = publicUrl;
+
+    setMeta('property', 'og:type', 'website');
+    setMeta('property', 'og:site_name', siteName);
+    setMeta('property', 'og:title', `${title} — ${artist}`);
+    setMeta('property', 'og:description', desc);
+    setMeta('property', 'og:image', v?.cover || '');
+    setMeta('property', 'og:image:secure_url', v?.cover || '');
+    setMeta('property', 'og:image:width', '600');
+    setMeta('property', 'og:image:height', '600');
+    setMeta('property', 'og:image:alt', `${title} — ${artist}`);
+    setMeta('property', 'og:url', publicUrl);
+    setMeta('property', 'og:locale', 'pl_PL');
+
+    setMeta('name', 'twitter:card', 'summary_large_image');
+    setMeta('name', 'twitter:title', `${title} — ${artist}`);
+    setMeta('name', 'twitter:description', desc);
+    setMeta('name', 'twitter:image', v?.cover || '');
 
     injectAlbumJsonLd(v);
     injectBreadcrumbsJsonLd(v);
@@ -213,7 +265,7 @@
       byArtist: v?.artist ? { '@type': 'MusicGroup', name: v.artist } : undefined,
       image: v?.cover || undefined,
       datePublished: v?.year ? String(v.year) : undefined,
-      url: `${VINYLS_ABS}/#/${encodeURIComponent(v?.slug || '')}`,
+      url: vinylPublicUrl(v?.slug || ''),
     });
     document.head.appendChild(s);
   }
@@ -230,7 +282,7 @@
       itemListElement: [
         { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_BASE + '/' },
         { '@type': 'ListItem', position: 2, name: 'Vinyls', item: `${VINYLS_ABS}/` },
-        { '@type': 'ListItem', position: 3, name: v?.title || 'Record', item: `${VINYLS_ABS}/#/${encodeURIComponent(v?.slug || '')}` },
+        { '@type': 'ListItem', position: 3, name: v?.title || 'Record', item: vinylPublicUrl(v?.slug || '') },
       ],
     });
     document.head.appendChild(s);

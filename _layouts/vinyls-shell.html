@@ -14,6 +14,10 @@ canonical: "/vinyls/"
   window.__SITE_BASE__ = "{{ __site_abs }}";
   window.__VINYLS_API__ = "{{ __site_abs }}/api/v1/vinyls";
   window.__VINYLS_PER_PAGE__ = "{{ site.vinyls_per_page | default: 9 }}";
+
+  // false = public URLs use /vinyls/slug for the Cloudflare Worker
+  // true  = rollback to legacy /vinyls/#/slug URLs
+  window.__VINYLS_PUBLIC_URLS_USE_HASH__ = false;
 </script>
 
 {{ content }}

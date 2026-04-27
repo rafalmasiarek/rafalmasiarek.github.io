@@ -37,6 +37,26 @@
   const PER_PAGE = Number.isFinite(+window.__VINYLS_PER_PAGE__) ? +window.__VINYLS_PER_PAGE__ : 9;
   const PLACEHOLDER_COVER = 'https://placehold.co/600x600?text=No+cover';
 
+  const USE_HASH_PUBLIC_URLS = (function () {
+    const v = window.__VINYLS_PUBLIC_URLS_USE_HASH__;
+    if (v === undefined || v === null) return true;
+    if (typeof v === 'boolean') return v;
+    if (typeof v === 'number') return v !== 0;
+    if (typeof v === 'string') {
+      const s = v.trim().toLowerCase();
+      if (['1', 'true', 'yes', 'on'].includes(s)) return true;
+      if (['0', 'false', 'no', 'off', ''].includes(s)) return false;
+    }
+    return true;
+  })();
+
+  function vinylPublicUrl(slug) {
+    const s = encodeURIComponent(slug || '');
+    return USE_HASH_PUBLIC_URLS
+      ? `${VINYLS_ABS}/#/${s}`
+      : `${VINYLS_ABS}/${s}`;
+  }
+
   let currentPage = 1;
   let hasMore = true;
   let loading = false;
@@ -198,7 +218,7 @@
       itemListElement: items.map((v, i) => ({
         '@type': 'ListItem',
         position: pageOffset + i + 1,
-        url: `${VINYLS_ABS}/#/${encodeURIComponent(v.slug)}`
+        url: vinylPublicUrl(v.slug)
       }))
     });
     document.head.appendChild(s);
