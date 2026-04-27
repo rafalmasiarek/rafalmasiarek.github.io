@@ -76,15 +76,16 @@ if (!$siteKey) {
 $siteBaseRoot = __DIR__ . '/sites/' . $siteKey;
 $globalSiteRoot = __DIR__ . '/site';
 $localSiteRoot  = $siteBaseRoot . '/site';
+$resolvedSiteRoot = is_dir($localSiteRoot) ? $localSiteRoot : $globalSiteRoot;
 
 echo (new App([
     'roots' => [
         'index'    => __DIR__,
         'base'     => __DIR__,
         'kirby'    => __DIR__ . '/core',
-        'site'     => $globalSiteRoot,
+        'site'     => $resolvedSiteRoot,
         'content'  => $siteBaseRoot . '/content',
-        'media'    => $siteBaseRoot . '/media',
+        'media'    => __DIR__ . '/media',
         'storage'  => $siteBaseRoot . '/storage',
         'cache'    => $siteBaseRoot . '/cache',
         'logs'     => $siteBaseRoot . '/logs',
