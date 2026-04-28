@@ -12,7 +12,7 @@
  * - Updates meta tags (title/description/canonical) and injects JSON-LD
  * - Coordinates "apply artist filter" when switching from detail back to list
  *
- * Copyright (c) 2025 Rafał Masiarek. All rights reserved.
+ * Copyright (c) 2025 RafaĹ Masiarek. All rights reserved.
  *
  * This file is proprietary and confidential. Unauthorized copying,
  * distribution, modification, or use of this file, in whole or in part,
@@ -76,8 +76,21 @@
 
   let __pendingArtist = null;
 
-  function slugFromHash() {
-    return (location.hash || '').replace(/^#\/?/, '') || null;
+  function slugFromLocation() {
+    if (USE_HASH_PUBLIC_URLS) {
+      return (location.hash || '').replace(/^#\/?/, '') || null;
+    }
+
+    const basePath = new URL(VINYLS_ABS, window.location.origin).pathname.replace(/\/+$/, '');
+    const path = location.pathname.replace(/\/+$/, '');
+
+    if (path === basePath) return null;
+
+    if (path.startsWith(basePath + '/')) {
+      return decodeURIComponent(path.slice(basePath.length + 1));
+    }
+
+    return null;
   }
 
   function byId(id) {
@@ -205,7 +218,7 @@
 
   function setListHead() {
     const siteName = document.querySelector('header .username a')?.textContent || '';
-    document.title = `My Vinyl Collection – ${siteName}`;
+    document.title = `My Vinyl Collection â ${siteName}`;
 
     const meta = document.getElementById('meta-desc');
     if (meta) meta.setAttribute('content', 'Browse my vinyl record collection.');
@@ -222,7 +235,7 @@
     const artist = v?.artist || 'Unknown';
     const publicUrl = vinylPublicUrl(v?.slug || '');
 
-    document.title = `${title} – ${artist} | ${siteName}`;
+    document.title = `${title} â ${artist} | ${siteName}`;
 
     const desc = `${title} by ${artist}${v?.year ? `, released ${v.year}` : ''}. View details from my vinyl collection.`;
     const meta = document.getElementById('meta-desc');
@@ -233,18 +246,18 @@
 
     setMeta('property', 'og:type', 'website');
     setMeta('property', 'og:site_name', siteName);
-    setMeta('property', 'og:title', `${title} — ${artist}`);
+    setMeta('property', 'og:title', `${title} â ${artist}`);
     setMeta('property', 'og:description', desc);
     setMeta('property', 'og:image', v?.cover || '');
     setMeta('property', 'og:image:secure_url', v?.cover || '');
     setMeta('property', 'og:image:width', '600');
     setMeta('property', 'og:image:height', '600');
-    setMeta('property', 'og:image:alt', `${title} — ${artist}`);
+    setMeta('property', 'og:image:alt', `${title} â ${artist}`);
     setMeta('property', 'og:url', publicUrl);
     setMeta('property', 'og:locale', 'pl_PL');
 
     setMeta('name', 'twitter:card', 'summary_large_image');
-    setMeta('name', 'twitter:title', `${title} — ${artist}`);
+    setMeta('name', 'twitter:title', `${title} â ${artist}`);
     setMeta('name', 'twitter:description', desc);
     setMeta('name', 'twitter:image', v?.cover || '');
 
@@ -332,7 +345,7 @@
       window.scrollTo({ top: __restoreScrollY, behavior: 'auto' });
 
       if (__restoreSlug) {
-        const href = `#/${encodeURIComponent(__restoreSlug)}`;
+        const href = vinylPublicUrl(__restoreSlug);
         const anchor = document.querySelector(`a.card-link[href="${CSS.escape(href)}"]`);
         if (anchor) anchor.focus({ preventScroll: true });
       }
@@ -442,7 +455,7 @@
 
       const full = Math.max(0, Math.min(5, Math.round(n)));
       let stars = '';
-      for (let i = 1; i <= 5; i++) stars += i <= full ? '★ ' : '☆ ';
+      for (let i = 1; i <= 5; i++) stars += i <= full ? 'â ' : 'â ';
       starsEl.textContent = stars.trim();
       wrap.classList.remove('d-none');
     })(v);
@@ -485,14 +498,14 @@
     };
     pre.src = nextSrc;
 
-    const want = '#/' + encodeURIComponent(slug);
-    if (location.hash !== want) history.replaceState(null, '', want);
+    const want = vinylPublicUrl(slug);
+    if (location.href !== want) history.replaceState(null, '', want);
 
     window.scrollTo({ top: 0, behavior: 'auto' });
   }
 
   function route() {
-    const slug = slugFromHash();
+    const slug = slugFromLocation();
     if (slug) showDetail(slug);
     else showList();
   }

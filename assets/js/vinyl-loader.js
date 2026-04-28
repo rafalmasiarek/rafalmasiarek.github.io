@@ -11,7 +11,7 @@
  * - Builds and handles artist filter buttons (facets or inferred counts)
  * - Exposes small helpers used by the router (grades, notes/tracklist rendering)
  *
- * Copyright (c) 2025 Rafał Masiarek. All rights reserved.
+ * Copyright (c) 2025 Rafał Masiarek. All rights reserved.
  *
  * This file is proprietary and confidential. Unauthorized copying,
  * distribution, modification, or use of this file, in whole or in part,
@@ -381,7 +381,7 @@
     col.className = 'col-md-4';
 
     const a = document.createElement('a');
-    a.href = '#/' + encodeURIComponent(v.slug);
+    a.href = vinylPublicUrl(v.slug);
     a.className = 'text-decoration-none text-dark card-link';
 
     const card = document.createElement('div');
@@ -391,7 +391,7 @@
     img.className = 'card-img-top';
     img.loading = 'lazy';
     img.fetchPriority = 'low';
-    img.src = 'data:image/svg+xml;base64,PHN2ZyBoZWlnaHQ9IjEwIiB3aWR0aD0iMTYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIvPg==';
+    img.src = 'data:image/svg+xml;base64,PHN2ZyBoZWlnaHQ9IjEwIiB3aWR0aD0iMTYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZyIvPg==';
     img.dataset.src = v.cover || PLACEHOLDER_COVER;
     img.alt = v.title || '';
 
