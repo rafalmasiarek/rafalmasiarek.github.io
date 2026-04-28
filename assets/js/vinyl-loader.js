@@ -50,6 +50,12 @@
     return true;
   })();
 
+  if (!USE_HASH_PUBLIC_URLS && location.hash && /^#\/.+/.test(location.hash)) {
+    const slug = decodeURIComponent(location.hash.replace(/^#\/?/, ''));
+    location.replace(`${VINYLS_ABS}/${slug}`);
+    return;
+  }
+
   function vinylPublicUrl(slug) {
     const s = encodeURIComponent(slug || '');
     return USE_HASH_PUBLIC_URLS
