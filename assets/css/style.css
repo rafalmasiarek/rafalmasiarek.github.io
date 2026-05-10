@@ -574,6 +574,18 @@ textarea.input {
    11) Projects
 ============================================================================= */
 
+.projects-heading {
+  font-size: 1.5em;
+  margin-top: 1.6em;
+  margin-bottom: 0.6em;
+  font-weight: 700;
+}
+
+.projects-heading span {
+  opacity: 0.65;
+  margin-right: 0.25em;
+}
+
 .project-card {
   transition: transform 0.2s;
 }
