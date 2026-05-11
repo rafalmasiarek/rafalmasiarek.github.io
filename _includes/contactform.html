@@ -58,7 +58,7 @@
     </div>
 </form>
 
-<script src="{{ site.baseurl }}/assets/js/form-prefill.min.js?v={{ site.data.asset_version.version }}"
+<script src="{{ "js/form-prefill.min.js" | asset_url }}"
     data-cfasync="false"></script>
 {% if jekyll.environment == "production" %}
 <script src="{{ "openpgpjs/v6/openpgp.min.js" | asset_url: "cdn" }}"
@@ -66,12 +66,8 @@
     defer></script>
 <script src="https://www.google.com/recaptcha/api.js?render={{ site.recaptcha_site_key }}" async defer
     data-cfasync="false"></script>
-<script src="{{ "js/form-prefill.min.js" | asset_url }}"
-    data-cfasync="false"></script>
 <script src="{{ "js/contactform_v2.min.js" | asset_url }}"></script>
 {% else %}
-<script src="{{ "js/form-prefill.js" | asset_url }}"
-    data-cfasync="false"></script>
 <script src="{{ "openpgpjs/v6/openpgp.js" | asset_url: "cdn" }}"
     integrity="sha384-PHyi81GYKgQMOc0auAlfWNCtsoWaCqJXBXSrsfs6zO9EO45elOl7G2Pi8KsmG/ev" crossorigin="anonymous"
     defer></script>
