@@ -58,7 +58,7 @@
     </div>
 </form>
 
-<script src="{{ "js-form-prefill/@latest/form-prefill.min.js" | asset_url }}"
+<script src="{{ "js-form-prefill/@latest/form-prefill.min.js" | asset_url: "cdn" }}"
     data-cfasync="false"></script>
 {% if jekyll.environment == "production" %}
 <script src="{{ "openpgpjs/v6/openpgp.min.js" | asset_url: "cdn" }}"
