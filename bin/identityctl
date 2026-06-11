@@ -334,6 +334,27 @@ cf_find_record() {
   _curl_get "${API}/zones/${zid}/dns_records?type=${type}&name=${name}" "${CF_ARGS[@]}"
 }
 
+cf_quote_txt_content() {
+  local s="$1"
+
+  # Already wrapped in outer quotes.
+  if [[ "$s" == \"*\" && "$s" == *\" ]]; then
+    printf '%s' "$s"
+    return 0
+  fi
+
+  # Suspicious: only one outer quote.
+  if [[ "$s" == \"* || "$s" == *\" ]]; then
+    die "malformed TXT content quotes: $s"
+  fi
+
+  # Escape characters significant inside quoted TXT strings.
+  s="${s//\\/\\\\}"
+  s="${s//\"/\\\"}"
+
+  printf '"%s"' "$s"
+}
+
 cf_create_txt() {
   cf_require
   cf_args
@@ -341,6 +362,9 @@ cf_create_txt() {
   local content="$2"
   local ttl="${3:-120}"
   local comment="${4:-}"
+
+  content="$(cf_quote_txt_content "$content")"
+
   local zid
   zid="$(cf_zone_id)"
   local payload
@@ -367,6 +391,9 @@ cf_update_txt_by_id() {
   local content="$3"
   local ttl="${4:-120}"
   local comment="${5:-}"
+
+  content="$(cf_quote_txt_content "$content")"
+
   local zid
   zid="$(cf_zone_id)"
   local payload
@@ -402,7 +429,6 @@ cf_upsert_txt() {
   fi
 }
 
-# NEW: delete by record id
 cf_delete_record_by_id() {
   cf_require
   cf_args
@@ -415,7 +441,6 @@ cf_delete_record_by_id() {
   log "OK: deleted record id=${rid}"
 }
 
-# NEW: list all TXT records ending with a suffix, output: "<name>\t<id>"
 cf_list_txt_by_suffix() {
   cf_require
   cf_args
@@ -669,7 +694,6 @@ main() {
       cf_upsert_txt "$dns" "$txt" "$ttl" "$comment"
       ;;
 
-    # NEW: upsert ALL versions + stable alias -> current
     cf-apply-keys)
       have jq || die "cf-apply-keys requires jq (run in CI)"
       local type="" ttl="120" comment="$DEFAULT_CF_COMMENT"
@@ -712,7 +736,6 @@ main() {
       log "OK: applied ${type} keys (all versions + alias ${alias_name} -> current=${cur})"
       ;;
 
-    # NEW: delete managed key TXT records not present in manifest
     cf-prune-keys)
       have jq || die "cf-prune-keys requires jq (run in CI)"
       local type=""
