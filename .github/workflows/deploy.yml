@@ -50,7 +50,7 @@ jobs:
           bundle install --jobs 4 --retry 3
 
       - name: Set up Node.js (for minifiers)
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: "20"
 
