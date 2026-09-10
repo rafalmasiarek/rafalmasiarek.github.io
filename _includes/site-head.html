@@ -5,6 +5,9 @@
 {% robots_meta %}
 <meta name="llms" content="{{ __site_abs }}/llms.txt">
 <link rel="help" type="text/plain" href="{{ __site_abs }}/llms.txt">
+{% if page.url == "/terms-and-conditions/" %}
+<link rel="alternate" type="text/plain" href="{{ __site_abs }}/terms-and-conditions.txt">
+{% endif %}
 
 <title>
   {% if page.title %}
