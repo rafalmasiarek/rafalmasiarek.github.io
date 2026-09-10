@@ -50,6 +50,8 @@
 <IfModule mod_mime.c>
   AddType text/css .css.br
   AddType application/javascript .js.br
+  AddDefaultCharset UTF-8
+  AddCharset UTF-8 .html .htm .txt .md .xml .json .css .js .map .webmanifest .svg
 </IfModule>
 
 ErrorDocument 404 /404.html

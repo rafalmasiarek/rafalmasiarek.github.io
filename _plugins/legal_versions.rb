@@ -587,7 +587,7 @@ module Jekyll
 
           {% endfor %}
 
-          #{page.data["legal_rendered_content"]}
+          #{page.data["legal_rendered_content"].sub(/\{%\s*licenses_table\s*%\}/, "{% licenses_markdown %}")}
         LIQUID
 
         site.pages << LegalGeneratedTextPage.new(
