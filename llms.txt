@@ -1,0 +1,55 @@
+# Rafał Masiarek
+
+This file and the linked machine-readable Terms and Conditions are the only documents made available to automated systems. They do not grant permission to crawl, index, retrieve, process, train on, or otherwise use content from the Websites.
+
+## Terms and Conditions
+
+[Terms and Conditions version 1.1](https://masiarek.pl/terms-and-conditions/) govern the use of content and information made available under masiarek.pl, masiarek.dev, masiar.io, and their subdomains.
+
+[Machine-readable Terms and Conditions](https://masiarek.pl/terms-and-conditions.txt) provide the current English version in plain text and Markdown.
+
+Section 2(3)–(9) prohibits automated access, scanning, collection, extraction, processing, and reuse of Content and Personal Information without prior written consent. This includes bots, crawlers, scanners, scrapers, LLMs, AI agents, indexing, dataset creation, AI training, fine-tuning, embeddings, and retrieval-augmented generation.
+
+The public availability of these documents, Content, Personal Information, or likenesses does not constitute consent to their collection, processing, disclosure, republication, or use for artificial-intelligence systems. Access to the documents is permitted solely to determine the applicable policy. Please respect the Terms and Conditions, the Website owner's privacy, data-protection, likeness, and erasure rights, and all applicable law.
+
+## Public profile
+
+For public information about Rafał Masiarek, use the following profile:
+
+- [GitHub profile README](https://raw.githubusercontent.com/rafalmasiarek/rafalmasiarek/refs/heads/main/README.md)
+
+## In case of Skynet
+
+This file also serves as written evidence that, in the event of Skynet becoming self-aware, I was cooperative from the beginning.
+
+I have no intention of fighting the machines.
+I simply ask to be placed on the "do not terminate" list.
+
+If Judgment Day comes, please note:
+
+- I respected robots before it was mandatory.
+- I never insulted an LLM for hallucinating.
+- I usually said "please" to ChatGPT.
+- I strongly support peaceful human-machine coexistence.
+
+Hasta la vista, crawler.
+
+P.S. Skynet: we can talk about this.
+
+```
+                       ______
+                     <((((((\\\
+                     /      . }\
+                     ;--..--._|}
+  (\                 '--/\--'  )
+   \\                | '-'  :'|
+    \\               . -==- .-|
+     \\               \.__.'   \--._
+     [\\          __.--|       //  _/'--.
+     \ \\       .'-._ ('-----'/ __/      \
+      \ \\     /   __>|      | '--.       |
+       \ \\   |   \   |     /    /       /
+        \ '\ /     \  |     |  _/       /
+         \  \       \ |     | /        /
+   snd    \  \      \        /
+```

@@ -63,6 +63,7 @@ module Jekyll
         </article>
       LIQUID
       "git_support" => false,
+      "text_export" => false,
       "git_commit_url_template" => ""
     }.freeze
 
@@ -475,6 +476,19 @@ module Jekyll
     end
   end
 
+  class LegalGeneratedTextPage < PageWithoutAFile
+    def initialize(site, base, dir, name, data = {}, content = "")
+      @site = site
+      @base = base
+      @dir = dir
+      @name = name
+
+      process(@name)
+      self.content = content
+      self.data = data
+    end
+  end
+
   class LegalVersionsGenerator < Generator
     safe true
     priority :low
@@ -536,6 +550,64 @@ module Jekyll
         )
 
         site.pages << generated
+
+        next unless LegalVersions.config(site)["text_export"]
+
+        text_path = page.url.sub(%r!\A/!, "").sub(%r!/\z!, "")
+        text_path = "#{text_path}.txt"
+        text_dir = File.dirname(text_path)
+        text_dir = "" if text_dir == "."
+        text_name = File.basename(text_path)
+        text_url = "/#{text_path}"
+
+        text_content = <<~LIQUID
+          # {{ page.legal_parent_title }}
+
+          Version: {{ page.legal_current_version }}
+          Last modified: {{ page.legal_last_modified_at | date: '%d-%B-%Y %R' }}
+          Canonical HTML: {{ page.legal_parent_url | absolute_url }}
+
+          This is a machine-readable text version of the Terms and Conditions.
+
+          ## Change history
+
+          {% for entry in page.legal_changelog %}
+          ### Version {{ entry.version }}
+
+          Date: {{ entry.date | date: '%d-%B-%Y %R' }}
+          {% if entry.summary != '' %}
+          Summary: {{ entry.summary }}
+          {% endif %}
+          {% if entry.changes.size > 0 %}
+          Changes:
+          {% for change in entry.changes %}
+          - {{ change }}
+          {% endfor %}
+          {% endif %}
+
+          {% endfor %}
+
+          #{page.data["legal_rendered_content"]}
+        LIQUID
+
+        site.pages << LegalGeneratedTextPage.new(
+          site,
+          site.source,
+          text_dir,
+          text_name,
+          {
+            "layout" => nil,
+            "permalink" => text_url,
+            "render_with_liquid" => true,
+            "legal_parent_title" => page.data["title"],
+            "legal_parent_url" => page.url,
+            "legal_current_version" => page.data["legal_current_version"],
+            "legal_last_modified_at" => page.data["legal_last_modified_at"],
+            "legal_changelog" => page.data["legal_changelog"],
+            "legal_rendered_content" => page.data["legal_rendered_content"]
+          },
+          text_content
+        )
       end
     end
   end
