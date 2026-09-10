@@ -8,6 +8,12 @@ module Jekyll
     API_URL = "https://masiarek.pl/api/v1/licenses"
 
     def render(context)
+      build_html(licenses(context))
+    end
+
+    protected
+
+    def licenses(context)
       site = context.registers[:site]
       licenses = []
       licenses += parse_gemfile(File.join(site.source, "Gemfile.lock"))
@@ -21,7 +27,7 @@ module Jekyll
         end
       end
 
-      build_html(licenses)
+      licenses
     end
 
     private
@@ -110,7 +116,39 @@ module Jekyll
       HTML
     end
   end
+
+  class LicensesMarkdownTag < LicensesTableTag
+    def render(context)
+      build_markdown(licenses(context))
+    end
+
+    private
+
+    def build_markdown(licenses)
+      rows = licenses.map do |pkg|
+        link = [pkg["homepage"], pkg["source_url"]].find { |url| url && !url.to_s.strip.empty? }
+        name = link ? "[#{markdown_cell(pkg["name"])}](#{link})" : markdown_cell(pkg["name"])
+
+        [
+          name,
+          markdown_cell(pkg["version"]),
+          markdown_cell(pkg["license"] || "unknown"),
+          markdown_cell(pkg["source"] || "unknown")
+        ].join(" | ")
+      end
+
+      [
+        "| Name | Version | License | Source |",
+        "| --- | --- | --- | --- |",
+        *rows.map { |row| "| #{row} |" }
+      ].join("\n")
+    end
+
+    def markdown_cell(value)
+      value.to_s.gsub(/[\r\n]+/, " ").gsub("|", "\\|")
+    end
+  end
 end
 
 Liquid::Template.register_tag('licenses_table', Jekyll::LicensesTableTag)
-
+Liquid::Template.register_tag('licenses_markdown', Jekyll::LicensesMarkdownTag)
