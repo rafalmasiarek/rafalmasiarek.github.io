@@ -81,6 +81,8 @@ module Jekyll
       directives << "noarchive" if cfg["noarchive"]
       directives << "nosnippet" if cfg["nosnippet"]
       directives << "noimageindex" if cfg["noimageindex"]
+      directives << "noai" if cfg["noai"]
+      directives << "noimageai" if cfg["noimageai"]
 
       %(<meta name="robots" content="#{directives.join(', ')}">)
     end
