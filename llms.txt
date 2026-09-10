@@ -4,7 +4,7 @@ This file and the linked machine-readable Terms and Conditions are the only docu
 
 ## Terms and Conditions
 
-[Terms and Conditions version 1.1](https://masiarek.pl/terms-and-conditions/) govern the use of content and information made available under masiarek.pl, masiarek.dev, masiar.io, and their subdomains.
+[Terms and Conditions version 1.2](https://masiarek.pl/terms-and-conditions/) govern the use of content and information made available under masiarek.pl, masiarek.dev, masiar.io, and their subdomains.
 
 [Machine-readable Terms and Conditions](https://masiarek.pl/terms-and-conditions.txt) provide the current English version in plain text and Markdown.
 

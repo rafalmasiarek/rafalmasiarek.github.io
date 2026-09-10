@@ -65,8 +65,17 @@ robots:
   noarchive: true
   nosnippet: true
   noimageindex: true
-  noai: true
-  noimageai: true
+  block_ai: true
+  custom_block: |
+    # Applicable machine-readable Terms and Conditions v1.2:
+    # https://masiarek.pl/terms-and-conditions.txt
+    # Terms Section 2(3) prohibits automated access, scanning, collection, extraction,
+    # and sharing of Content. Section 2(4) expressly includes bots, crawlers, spiders,
+    # scanners, scrapers, LLMs, AI agents, indexing, datasets, training, fine-tuning,
+    # embeddings, retrieval-augmented generation, and other AI uses.
+    # Terms Section 2(5)-(9) prohibits unauthorised use of Personal Information and
+    # likenesses, and reserves privacy, data-protection, and erasure rights.
+    # Terms Section 2(10) expressly reserves rights against text and data mining.
 
 socials:
   - title: Github

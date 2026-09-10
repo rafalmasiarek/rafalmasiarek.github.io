@@ -6,4 +6,4 @@ skip_title: true
 lang: pl
 ---
 
-{% legal pl/1.1 %}
+{% legal pl/1.2 %}
