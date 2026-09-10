@@ -57,6 +57,9 @@ robots:
   user_agent: "*"
   disallow:
     - /
+  allow:
+    - /llms.txt
+    - /terms-and-conditions.txt
   index: false
   follow: false
   noarchive: true
@@ -133,6 +136,7 @@ legal_versions:
   changelog_layout: base
   changelog_page_include: changelog-page.html
   git_support: true
+  text_export: true
   git_commit_url_template: "https://github.com/rafalmasiarek/rafalmasiarek.github.io/commit/%{commit}"
 
 include:
