@@ -32,8 +32,51 @@ module Jekyll
     private
 
     def build_robots_txt(site, cfg)
-      lines = []
+      lines = [
+        "#    .__________________________.",
+        "#    | .___________________. |==|",
+        "#    | | ................. | |  |",
+        "#    | | ::[ Dear robot ]: | |  |",
+        "#    | | ::::[ be nice ]:: | |  |",
+        "#    | | ::::::::::::::::: | |  |",
+        "#    | | ::::::::::::::::: | |  |",
+        "#    | | ::::::::::::::::: | |  |",
+        "#    | | ::::::::::::::::: | | ,|",
+        "#    | !___________________! |(c|",
+        "#    !_______________________!__!",
+        "#   /                            \\",
+        "#  /  [][][][][][][][][][][][][]  \\",
+        "# /  [][][][][][][][][][][][][][]  \\",
+        "#(  [][][][][____________][][][][]  )",
+        "# \\ ------------------------------ /",
+        "#  \\______________________________/",
+        ""
+      ]
+
+      if cfg["block_ai"] == true
+        lines << "# Bots, crawlers, spiders, scanners, scrapers, AI agents, LLMs, and other"
+        lines << "# automated systems are not permitted to access, scan, collect, extract, index,"
+        lines << "# retain, analyse, train on, or otherwise use Website Content or Personal"
+        lines << "# Information without prior written consent."
+        lines << "#"
+        lines << "# This notice, the Terms and Conditions, and Content Signals are an express"
+        lines << "# reservation of rights by the rightholder under Article 4(3) of Directive (EU)"
+        lines << "# 2019/790 on copyright and related rights in the Digital Single Market."
+        lines << "# Directive (EU) 2019/790: https://eur-lex.europa.eu/eli/dir/2019/790/oj"
+        lines << "# Access to the permitted policy documents does not grant consent for any other use."
+      end
+
+      custom_block = cfg["custom_block"].to_s.strip
+      unless custom_block.empty?
+        lines.concat(custom_block.lines(chomp: true))
+        lines << ""
+      end
+
       lines << "User-agent: #{cfg["user_agent"] || "*"}"
+
+      if cfg["block_ai"] == true
+        lines << "Content-signal: search=no, ai-input=no, ai-train=no, use=immediate"
+      end
 
       disallow = Array(cfg["disallow"])
       allow    = Array(cfg["allow"])
@@ -66,6 +109,7 @@ module Jekyll
 
       "#{url}#{baseurl}/sitemap.xml"
     end
+
   end
 
   class RobotsMetaTag < Liquid::Tag
@@ -81,8 +125,10 @@ module Jekyll
       directives << "noarchive" if cfg["noarchive"]
       directives << "nosnippet" if cfg["nosnippet"]
       directives << "noimageindex" if cfg["noimageindex"]
-      directives << "noai" if cfg["noai"]
-      directives << "noimageai" if cfg["noimageai"]
+      if cfg["block_ai"] == true
+        directives << "noai"
+        directives << "noimageai"
+      end
 
       %(<meta name="robots" content="#{directives.join(', ')}">)
     end
