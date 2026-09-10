@@ -65,6 +65,8 @@ robots:
   noarchive: true
   nosnippet: true
   noimageindex: true
+  noai: true
+  noimageai: true
 
 socials:
   - title: Github
