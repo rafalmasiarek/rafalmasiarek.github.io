@@ -72,6 +72,7 @@ robots:
     ai_train: "no"
     use: immediate
   custom_block: |
+    #
     # Applicable machine-readable Terms and Conditions v1.2:
     # https://masiarek.pl/terms-and-conditions.txt
     # Terms Section 2(3) prohibits automated access, scanning, collection, extraction,
