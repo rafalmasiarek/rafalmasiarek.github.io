@@ -73,10 +73,8 @@ module Jekyll
       end
 
       lines << "User-agent: #{cfg["user_agent"] || "*"}"
-
-      if cfg["block_ai"] == true
-        lines << "Content-signal: search=no, ai-input=no, ai-train=no, use=immediate"
-      end
+      signal = content_signal(cfg)
+      lines << signal unless signal.empty?
 
       disallow = Array(cfg["disallow"])
       allow    = Array(cfg["allow"])
@@ -108,6 +106,29 @@ module Jekyll
       return "" if url.empty?
 
       "#{url}#{baseurl}/sitemap.xml"
+    end
+
+    def content_signal(cfg)
+      settings = cfg["content_signals"]
+      return "" unless settings.is_a?(Hash)
+
+      names = {
+        "search" => "search",
+        "ai_input" => "ai-input",
+        "ai_train" => "ai-train",
+        "use" => "use"
+      }
+
+      values = names.filter_map do |config_name, signal_name|
+        value = settings[config_name]
+        next if value.nil? || value.to_s.strip.empty?
+
+        "#{signal_name}=#{value}"
+      end
+
+      return "" if values.empty?
+
+      "Content-signal: #{values.join(", ")}"
     end
 
   end

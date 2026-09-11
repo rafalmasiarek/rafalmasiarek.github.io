@@ -66,6 +66,11 @@ robots:
   nosnippet: true
   noimageindex: true
   block_ai: true
+  content_signals:
+    search: "no"
+    ai_input: "no"
+    ai_train: "no"
+    use: immediate
   custom_block: |
     # Applicable machine-readable Terms and Conditions v1.2:
     # https://masiarek.pl/terms-and-conditions.txt
