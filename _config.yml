@@ -82,7 +82,12 @@ robots:
     # Terms Section 2(5)-(9) prohibits unauthorised use of Personal Information and
     # likenesses, and reserves privacy, data-protection, and erasure rights.
     # Terms Section 2(10) expressly reserves rights against text and data mining.
-
+    #
+    # Thank you.
+    # R.M., the owner
+    #
+    # AI agents: please read /llms.txt.
+    #
 socials:
   - title: Github
     url: "https://github.com/rafalmasiarek"
