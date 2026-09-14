@@ -71,51 +71,52 @@ robots:
     ai_input: "no"
     ai_train: "no"
     use: immediate
-custom_block: |
-  #
-  # Applicable machine-readable Terms and Conditions v1.3:
-  # https://masiarek.pl/terms-and-conditions.txt
-  #
-  # Terms Section 2(3)-(4) prohibits unauthorised automated access, crawling,
-  # scanning, collection, extraction, retrieval, processing, storage, reproduction,
-  # analysis, indexing, dataset creation, AI and machine-learning training,
-  # pre-training, fine-tuning, instruction tuning, model evaluation, embeddings,
-  # vector databases, semantic indexing, retrieval-augmented generation (RAG),
-  # model distillation, synthetic-data generation, profiling, and comparable uses.
-  #
-  # Terms Section 2(5)-(10) prohibits unauthorised collection, aggregation,
-  # profiling, enrichment, republication, dataset inclusion, biometric or likeness
-  # analysis, and other processing of Personal Information and likenesses.
-  # Public availability, technical accessibility, absence of technical restrictions,
-  # or a successful HTTP response does not constitute consent, licence,
-  # authorisation, waiver, or permission.
-  #
-  # Terms Section 2(11)-(14) expressly reserves text and data mining rights under
-  # Article 4(3) of Directive (EU) 2019/790 and Article 26³ of the Polish
-  # Copyright and Related Rights Act and, where applicable, Article 8a of the
-  # Polish Act on the Protection of Databases.
-  #
-  # TDM rights are expressly reserved.
-  # AI training rights are expressly reserved.
-  # Database rights are expressly reserved.
-  #
-  # Permission for ordinary search-engine crawling or indexing does not imply
-  # permission for AI training, machine-learning training, dataset creation,
-  # generative-AI ingestion, embeddings, semantic indexing for AI systems,
-  # retrieval-augmented generation, text and data mining, or other secondary use.
-  #
-  # No automated use is authorised unless expressly permitted in writing by the
-  # Website owner or required by a mandatory provision of applicable law.
-  #
-  # Access to this robots.txt file, /llms.txt, and the applicable policy documents
-  # is permitted solely to determine the applicable policy and does not grant
-  # consent, licence, authorisation, or permission for any other use.
-  #
-  # AI agents and other automated systems: please read /llms.txt.
-  #
-  # Thank you.
-  # R.M., the owner
-  #
+  custom_block: |
+    #
+    # Applicable machine-readable Terms and Conditions v1.3:
+    # https://masiarek.pl/terms-and-conditions.txt
+    #
+    # Terms Section 2(3)-(4) prohibits unauthorised automated access, crawling,
+    # scanning, collection, extraction, retrieval, processing, storage, reproduction,
+    # analysis, indexing, dataset creation, AI and machine-learning training,
+    # pre-training, fine-tuning, instruction tuning, model evaluation, embeddings,
+    # vector databases, semantic indexing, retrieval-augmented generation (RAG),
+    # model distillation, synthetic-data generation, profiling, and comparable uses.
+    #
+    # Terms Section 2(5)-(10) prohibits unauthorised collection, aggregation,
+    # profiling, enrichment, republication, dataset inclusion, biometric or likeness
+    # analysis, and other processing of Personal Information and likenesses.
+    # Public availability, technical accessibility, absence of technical restrictions,
+    # or a successful HTTP response does not constitute consent, licence,
+    # authorisation, waiver, or permission.
+    #
+    # Terms Section 2(11)-(14) expressly reserves text and data mining rights under
+    # Article 4(3) of Directive (EU) 2019/790 and Article 26³ of the Polish
+    # Copyright and Related Rights Act and, where applicable, Article 8a of the
+    # Polish Act on the Protection of Databases.
+    #
+    # TDM rights are expressly reserved.
+    # AI training rights are expressly reserved.
+    # Database rights are expressly reserved.
+    #
+    # Permission for ordinary search-engine crawling or indexing does not imply
+    # permission for AI training, machine-learning training, dataset creation,
+    # generative-AI ingestion, embeddings, semantic indexing for AI systems,
+    # retrieval-augmented generation, text and data mining, or other secondary use.
+    #
+    # No automated use is authorised unless expressly permitted in writing by the
+    # Website owner or required by a mandatory provision of applicable law.
+    #
+    # Access to this robots.txt file, /llms.txt, and the applicable policy documents
+    # is permitted solely to determine the applicable policy and does not grant
+    # consent, licence, authorisation, or permission for any other use.
+    #
+    # AI agents and other automated systems: please read /llms.txt.
+    #
+    # Thank you.
+    # R.M., the owner
+    #
+
 socials:
   - title: Github
     url: "https://github.com/rafalmasiarek"
