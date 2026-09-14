@@ -186,11 +186,9 @@ Access to this file and the linked policy documents is permitted solely for the 
 
 The Websites are operated by their owner from Poland.
 
-The Websites are hosted on infrastructure located in Poland.
-
 To the fullest extent permitted by applicable law, the Terms and Conditions, this reservation of rights, use of the Websites, and any dispute or claim arising out of or relating to such use shall be governed by and construed in accordance with the laws of the Republic of Poland.
 
-Nothing in this provision is intended to exclude any mandatory provision of applicable law that cannot lawfully be excluded or derogated from.
+Nothing in this provision is intended to exclude any mandatory provision of applicable law that cannot lawfully be excluded, restricted, or derogated from.
 
 The express reservation of text-and-data-mining rights contained in this document is intended, in particular, to operate under:
 
