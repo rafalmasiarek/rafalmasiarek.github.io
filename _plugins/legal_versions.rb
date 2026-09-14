@@ -389,8 +389,58 @@ module Jekyll
       if raw_ref.empty?
         latest_public_ref(site, page)
       else
-        ensure_public_ref!(site, page, raw_ref)
+        family_ref = latest_ref_in_family(site, raw_ref)
+        ensure_public_ref!(site, page, family_ref || raw_ref)
       end
+    end
+
+    # True if candidate_version is exactly requested_version, or a patch
+    # release within it (e.g. requested "1.3" matches candidate "1.3" and
+    # "1.3.1", but not "1.30" or "1.3a"). Lets a {% legal en/1.3 %} tag
+    # keep resolving to the latest hotfix release (1.3.1, 1.3.2, ...)
+    # without the tag ever needing to be touched again -- only a genuine
+    # new substantive version (e.g. 1.4) requires updating the tag.
+    def matches_version_family?(candidate_version, requested_version)
+      candidate_version == requested_version || candidate_version.start_with?("#{requested_version}.")
+    end
+
+    # Given a ref like "en/1.3", finds the highest published version
+    # (by version_sort_key, tie-broken by date) whose version number is
+    # requested_version itself or a patch release within it, in the same
+    # language directory as ref. Returns nil (caller falls back to the
+    # literal ref) if nothing in that family is found.
+    def latest_ref_in_family(site, ref)
+      lang_dir = File.dirname(ref.to_s)
+      requested_version = File.basename(ref.to_s)
+
+      search_dir = File.join(root_dir(site), lang_dir)
+      return nil unless Dir.exist?(search_dir)
+
+      files = Dir.glob(File.join(search_dir, "*.md"))
+
+      candidates = files.filter_map do |path|
+        parsed = parse_file(path)
+        data = parsed["data"]
+        next unless published?(data)
+
+        version = data["version"].to_s.strip
+        version = File.basename(path, ".md") if version.empty?
+        next unless matches_version_family?(version, requested_version)
+
+        {
+          "ref" => ref_from_absolute_path(site, path),
+          "version" => version,
+          "date" => resolve_date(site, data, path)
+        }
+      rescue => e
+        raise "Failed to parse legal file #{path}: #{e.class}: #{e.message}"
+      end
+
+      return nil if candidates.empty?
+
+      candidates.max_by do |c|
+        [version_sort_key(c["version"]), c["date"] || Time.at(0)]
+      end["ref"]
     end
 
     def changelog_scope_dir(site, ref, page)
