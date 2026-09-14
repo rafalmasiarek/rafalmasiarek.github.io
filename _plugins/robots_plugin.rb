@@ -59,11 +59,15 @@ module Jekyll
         lines << "# retain, analyse, train on, or otherwise use Website Content or Personal"
         lines << "# Information without prior written consent."
         lines << "#"
-        lines << "# This notice, the Terms and Conditions, and Content Signals are an express"
-        lines << "# reservation of rights by the rightholder under Article 4(3) of Directive (EU)"
-        lines << "# 2019/790 on copyright and related rights in the Digital Single Market."
+        lines << "# This notice, the Terms and Conditions, and applicable machine-readable signals"
+        lines << "# constitute an express reservation of rights by the rightholder under Article 4(3)"
+        lines << "# of Directive (EU) 2019/790 on copyright and related rights in the Digital Single Market."
+        lines << "# This reservation is also intended to operate under Article 26³ of the Polish"
+        lines << "# Copyright and Related Rights Act and, where applicable, Article 8a of the Polish"
+        lines << "# Act on the Protection of Databases."
         lines << "# Directive (EU) 2019/790: https://eur-lex.europa.eu/eli/dir/2019/790/oj"
-        lines << "# Access to the permitted policy documents does not grant consent for any other use."
+        lines << "# Access to permitted policy documents is allowed solely to determine the applicable policy"
+        lines << "# and does not grant consent, licence, authorisation, or permission for any other use."
       end
 
       custom_block = cfg["custom_block"].to_s.strip
