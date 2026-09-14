@@ -15,7 +15,7 @@ layout: base
   <p class="last-modified-at">
     {% if page.lang == 'pl' %}Ostatnia zmiana:{% else %}Last modification:{% endif %}
     <a href="{{ page.legal_last_changes_url | relative_url }}">
-      {{ page.legal_last_modified_at | date: '%d-%B-%Y %R' }}
+      {{ page.legal_last_modified_at | date: '%d-%B-%Y %R %Z' }}
     </a>
   </p>
   <br>

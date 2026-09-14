@@ -7,6 +7,7 @@ require "pathname"
 require "rubygems/version"
 require "English"
 require "liquid"
+require "tzinfo"
 
 module Jekyll
   module LegalVersions
@@ -23,7 +24,7 @@ module Jekyll
 
             <div class="legal-changelog-meta">
               <time datetime="{{ entry.date | date_to_xmlschema }}">
-                {{ entry.date | date: '%d-%B-%Y %R' }}
+                {{ entry.date | date: '%d-%B-%Y %R %Z' }}
               </time>
 
               {% if page.legal_git_support and entry.git_commit_short %}
@@ -192,6 +193,25 @@ module Jekyll
       !!config(site)["git_support"]
     end
 
+    # All dates shown for a legal document (changelog entries, "last
+    # modified", hotfix commit dates) are normalised to a single,
+    # explicitly configured timezone (site.config["timezone"], default
+    # Europe/Warsaw) regardless of the timezone the underlying git commit
+    # happened to be authored in. This keeps every displayed date
+    # unambiguous and consistent across commits made from different
+    # machines/environments.
+    def display_timezone(site)
+      site.config["timezone"].to_s.strip.empty? ? "Europe/Warsaw" : site.config["timezone"].to_s.strip
+    end
+
+    def display_time(site, time)
+      return time unless time.is_a?(Time)
+
+      TZInfo::Timezone.get(display_timezone(site)).to_local(time.getutc)
+    rescue
+      time
+    end
+
     def published?(data)
       return true unless data.is_a?(Hash)
       return true unless data.key?("published")
@@ -243,7 +263,7 @@ module Jekyll
         {
           "hash" => full_hash.to_s.strip,
           "short_hash" => short_hash.to_s.strip,
-          "date" => Time.parse(iso_date.to_s.strip),
+          "date" => display_time(site, Time.parse(iso_date.to_s.strip)),
           "author" => author.to_s.strip,
           "subject" => subject.to_s.strip,
           "body" => body.to_s.strip
@@ -257,15 +277,15 @@ module Jekyll
     def resolve_date(site, front_matter_data, source_path)
       raw_date = front_matter_data["date"]
 
-      return raw_date if raw_date.is_a?(Time)
-      return Time.parse(raw_date.to_s) if raw_date && !raw_date.to_s.strip.empty?
+      return display_time(site, raw_date) if raw_date.is_a?(Time)
+      return display_time(site, Time.parse(raw_date.to_s)) if raw_date && !raw_date.to_s.strip.empty?
 
       git_last_commit = git_history_for_file(site, source_path).first
       return git_last_commit["date"] if git_last_commit && git_last_commit["date"].is_a?(Time)
 
-      File.mtime(source_path)
+      display_time(site, File.mtime(source_path))
     rescue
-      File.mtime(source_path)
+      display_time(site, File.mtime(source_path))
     end
 
     def compact_git_commit(site, source_path)
@@ -622,7 +642,7 @@ module Jekyll
           # {{ page.legal_parent_title }}
 
           Version: {{ page.legal_current_version }}
-          Last modified: {{ page.legal_last_modified_at | date: '%d-%B-%Y %R' }}
+          Last modified: {{ page.legal_last_modified_at | date: '%d-%B-%Y %R %Z' }}
           Canonical HTML: {{ page.legal_parent_url | absolute_url }}
 
           This is a machine-readable text version of the Terms and Conditions.
@@ -632,7 +652,7 @@ module Jekyll
           {% for entry in page.legal_changelog %}
           ### Version {{ entry.version }}
 
-          Date: {{ entry.date | date: '%d-%B-%Y %R' }}
+          Date: {{ entry.date | date: '%d-%B-%Y %R %Z' }}
           {% if entry.summary != '' %}
           Summary: {{ entry.summary }}
           {% endif %}
