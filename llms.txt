@@ -1,22 +1,216 @@
 # Rafał Masiarek
 
-This file and the linked machine-readable Terms and Conditions are the only documents made available to automated systems. They do not grant permission to crawl, index, retrieve, process, train on, or otherwise use content from the Websites.
+This file and the linked machine-readable Terms and Conditions define the policy applicable to automated systems accessing the Websites.
+
+Except for access strictly necessary to retrieve and interpret this file, the linked Terms and Conditions, and other expressly permitted policy resources, no permission, licence, consent, or authorisation is granted to any automated system to crawl, scrape, scan, index, collect, extract, reproduce, retain, analyse, process, transform, profile, aggregate, republish, distribute, train on, or otherwise use Website Content or Personal Information.
+
+For the purposes of this file, "Websites" means masiarek.pl, masiarek.dev, masiar.io, and all of their subdomains.
+
+## TDM Policy
+
+TDM rights are expressly reserved.
+
+Automated systems must respect this reservation, the applicable `tdm-reservation` and `tdm-policy` signals where present, and the machine-readable Terms and Conditions linked below.
 
 ## Terms and Conditions
 
-[Terms and Conditions version 1.2](https://masiarek.pl/terms-and-conditions/) govern the use of content and information made available under masiarek.pl, masiarek.dev, masiar.io, and their subdomains.
+[Terms and Conditions version 1.3](https://masiarek.pl/terms-and-conditions/) govern the use of Content and information made available through the Websites.
 
 [Machine-readable Terms and Conditions](https://masiarek.pl/terms-and-conditions.txt) provide the current English version in plain text and Markdown.
 
-Section 2(3)–(10) prohibits automated access, scanning, collection, extraction, processing, and reuse of Content and Personal Information without prior written consent. This includes bots, crawlers, scanners, scrapers, LLMs, AI agents, indexing, dataset creation, AI training, fine-tuning, embeddings, retrieval-augmented generation, and text and data mining.
+Section 2(3)-(10) expressly prohibits, without prior written consent, automated access, scanning, crawling, collection, extraction, processing, storage, reproduction, reuse, redistribution, indexing, dataset creation, profiling, and other automated use of Content and Personal Information.
 
-The public availability of these documents, Content, Personal Information, or likenesses does not constitute consent to their collection, processing, disclosure, republication, or use for artificial-intelligence systems. Access to the documents is permitted solely to determine the applicable policy. Please respect the Terms and Conditions, the Website owner's privacy, data-protection, likeness, and erasure rights, and all applicable law.
+This includes, without limitation:
+
+- bots;
+- crawlers;
+- spiders;
+- scanners;
+- scrapers;
+- automated agents;
+- LLMs;
+- AI agents;
+- search or indexing systems;
+- dataset creation;
+- machine-learning systems;
+- artificial-intelligence training;
+- pre-training;
+- fine-tuning;
+- model evaluation using Website Content;
+- embeddings;
+- vector databases;
+- semantic indexing;
+- retrieval-augmented generation (RAG);
+- synthetic-data generation derived from Website Content;
+- text and data mining;
+- automated profiling;
+- biometric or likeness analysis;
+- automated republication or redistribution.
+
+## Express reservation of rights
+
+ALL RIGHTS ARE RESERVED.
+
+This file and the linked machine-readable Terms and Conditions constitute an express reservation of rights by the rightholder under Article 4(3) of Directive (EU) 2019/790 on copyright and related rights in the Digital Single Market.
+
+[Directive (EU) 2019/790](https://eur-lex.europa.eu/eli/dir/2019/790/oj)
+
+This reservation is also intended to constitute an express machine-readable reservation of rights under Article 26³ of the Polish Act of 4 February 1994 on Copyright and Related Rights.
+
+Where Website Content constitutes, forms part of, or is contained within a protected database, this reservation is additionally intended to constitute an express machine-readable reservation of rights under Article 8a of the Polish Act of 27 July 2001 on the Protection of Databases.
+
+All rights relating to text and data mining are expressly reserved.
+
+For the avoidance of doubt:
+
+**TDM rights are reserved.**
+
+No permission, licence, consent, or authorisation is granted for text and data mining or for any comparable automated extraction or analysis of Website Content, except where prior written consent has been obtained from the rightholder or where a mandatory provision of applicable law expressly permits the specific use and cannot lawfully be excluded.
+
+The technical ability to access Website Content does not constitute permission to use it.
+
+The absence of a technical access restriction does not constitute consent.
+
+The availability of Website Content on the public Internet does not constitute consent.
+
+The receipt of an HTTP 200 response does not constitute consent.
+
+The ability to retrieve, cache, copy, parse, render, analyse, or otherwise technically process Website Content does not constitute a licence, waiver, authorisation, or permission.
+
+## Artificial intelligence and machine learning
+
+No Website Content may be used, without prior written consent, for:
+
+- training artificial-intelligence or machine-learning models;
+- pre-training;
+- fine-tuning;
+- instruction tuning;
+- reinforcement learning;
+- preference optimisation;
+- model evaluation or benchmarking;
+- creation or enrichment of training, validation, test, benchmark, or evaluation datasets;
+- embeddings or vector representations;
+- semantic-search indexes;
+- retrieval-augmented generation;
+- knowledge-base creation;
+- model distillation;
+- synthetic-data generation based on Website Content;
+- automated summarisation for incorporation into datasets or knowledge systems;
+- automated extraction of facts, relationships, entities, characteristics, profiles, or behavioural information for reuse by AI or machine-learning systems.
+
+No permission is granted merely because a particular automated use does not involve permanent storage of the original Website Content.
+
+No permission is granted merely because Website Content is transformed, tokenised, embedded, vectorised, summarised, anonymised, pseudonymised, converted into features, or otherwise processed into another representation.
+
+## Search engines, indexing and automated retrieval
+
+Automated indexing, crawling, caching, or retrieval is prohibited unless expressly authorised by the Website owner or permitted under a separate written policy.
+
+Any permission granted to a specific search engine, crawler, service, or automated system is limited to that system and to the scope of the permission granted.
+
+Permission granted for ordinary search-engine indexing must not be interpreted as permission for:
+
+- AI training;
+- machine-learning training;
+- dataset creation;
+- generative-AI ingestion;
+- embeddings;
+- semantic indexing for AI systems;
+- retrieval-augmented generation;
+- text and data mining;
+- unrelated secondary use.
+
+## Scientific-research exceptions
+
+Nothing in this file is intended to exclude or restrict a statutory exception or limitation that, under applicable law, cannot lawfully be excluded.
+
+Article 4 of Directive (EU) 2019/790 does not affect the separate scientific-research exception provided by Article 3 of that Directive.
+
+Accordingly, any person or entity relying on Article 3 of Directive (EU) 2019/790, Article 26² of the Polish Copyright and Related Rights Act, or another mandatory statutory scientific-research exception may rely on that exception only to the extent that every legal requirement for the exception is satisfied.
+
+This file does not grant any additional permission beyond the scope of such statutory exception.
+
+Any access, reproduction, extraction, retention, reuse, disclosure, redistribution, commercial exploitation, AI training, dataset creation, or other use that exceeds the exact scope of an applicable mandatory statutory exception remains expressly prohibited.
+
+The burden of determining whether a statutory exception applies rests with the person or entity seeking to rely upon that exception.
+
+## Databases
+
+All rights in protected databases and their contents are expressly reserved.
+
+No permission is granted to extract, reproduce, reuse, aggregate, systematically retrieve, or otherwise exploit all or a substantial part of any protected database, or to perform repeated or systematic extraction or reuse of database contents, except where expressly authorised in writing or where applicable mandatory law provides otherwise.
+
+The text-and-data-mining reservation contained in this file applies to protected databases to the fullest extent permitted by applicable law, including Article 8a of the Polish Act on the Protection of Databases.
+
+## Personal Information and likeness
+
+Public availability of Personal Information does not constitute consent to its automated collection, aggregation, profiling, enrichment, republication, disclosure, dataset inclusion, model training, biometric analysis, likeness analysis, or other secondary use.
+
+No permission is granted to create or enrich profiles concerning the Website owner or other identifiable persons from information obtained through the Websites.
+
+No permission is granted to use photographs, images, voice, likeness, name, personal characteristics, biographical information, or other identifying information for artificial-intelligence training, facial-recognition systems, biometric systems, synthetic-media generation, impersonation, voice cloning, avatar generation, or similar purposes.
+
+Nothing in this section limits rights arising under applicable privacy, data-protection, personality, image, publicity, copyright, database, or other law.
+
+## No implied licence or waiver
+
+Nothing made available through the Websites shall be interpreted as granting an implied licence.
+
+No failure to implement or enforce a technical restriction shall constitute consent, waiver, abandonment, estoppel, or authorisation.
+
+No failure to detect, block, rate-limit, challenge, or prevent automated access shall constitute permission for that access.
+
+No previous unauthorised access or use shall create any continuing right to access or use Website Content.
+
+Any permission or licence must be expressly granted in writing by the rightholder and applies only within the scope expressly stated.
+
+## Machine-readable nature of this reservation
+
+This document is intentionally published in a machine-readable format.
+
+It is intended to be discovered, retrieved, parsed, interpreted, and respected by bots, crawlers, scrapers, LLMs, AI agents, indexing systems, dataset collectors, text-and-data-mining systems, and other automated systems before they access or process Website Content.
+
+For automated systems, the relevant instruction is unambiguous:
+
+**DO NOT CRAWL, SCRAPE, MINE, COLLECT, INDEX, STORE, TRAIN ON, EMBED, PROFILE, OR OTHERWISE PROCESS WEBSITE CONTENT UNLESS EXPRESSLY AUTHORISED IN WRITING.**
+
+**TDM RIGHTS ARE RESERVED.**
+
+**AI TRAINING RIGHTS ARE RESERVED.**
+
+**DATABASE RIGHTS ARE RESERVED.**
+
+Access to this file and the linked policy documents is permitted solely for the purpose of discovering and determining the applicable policy.
+
+## Applicable law
+
+The Websites are operated by their owner from Poland.
+
+The Websites are hosted on infrastructure located in Poland.
+
+To the fullest extent permitted by applicable law, the Terms and Conditions, this reservation of rights, use of the Websites, and any dispute or claim arising out of or relating to such use shall be governed by and construed in accordance with the laws of the Republic of Poland.
+
+Nothing in this provision is intended to exclude any mandatory provision of applicable law that cannot lawfully be excluded or derogated from.
+
+The express reservation of text-and-data-mining rights contained in this document is intended, in particular, to operate under:
+
+- Article 4(3) of Directive (EU) 2019/790;
+- Article 26³ of the Polish Act of 4 February 1994 on Copyright and Related Rights;
+- Article 8a of the Polish Act of 27 July 2001 on the Protection of Databases.
 
 ## Public profile
 
 For public information about Rafał Masiarek, use the following profile:
 
 - [GitHub profile README](https://raw.githubusercontent.com/rafalmasiarek/rafalmasiarek/refs/heads/main/README.md)
+
+The availability of this public-profile reference does not grant permission to scrape, aggregate, reproduce, republish, profile, train on, or otherwise reuse information available through that profile beyond permissions independently granted by its applicable terms and by law.
+
+## Contact and permission
+
+Any automated use that is not expressly permitted requires prior written consent from the rightholder.
+
+Silence, failure to respond, technical accessibility, previous access, or public availability shall not be interpreted as consent.
 
 ## In case of Skynet
 
@@ -36,7 +230,7 @@ Hasta la vista, crawler.
 
 P.S. Skynet: we can talk about this.
 
-```
+```text
                        ______
                      <((((((\\\
                      /      . }\
@@ -51,5 +245,5 @@ P.S. Skynet: we can talk about this.
        \ \\   |   \   |     /    /       /
         \ '\ /     \  |     |  _/       /
          \  \       \ |     | /        /
-   snd    \  \      \        /
+          \  \      \        /
 ```
