@@ -60,6 +60,43 @@ module Jekyll
               {% endfor %}
             </ul>
           {% endif %}
+
+          {% if entry.minor_fixes and entry.minor_fixes.size > 0 %}
+            <div class="legal-changelog-hotfixes">
+              <h3 class="legal-changelog-hotfixes-title">Minor technical fixes</h3>
+              <ul class="legal-changelog-hotfixes-list">
+                {% for fix in entry.minor_fixes %}
+                  <li>
+                    <span class="legal-changelog-meta">
+                      <time datetime="{{ fix.date | date_to_xmlschema }}">
+                        {{ fix.date | date: '%d-%B-%Y' }}
+                      </time>
+
+                      {% if page.legal_git_support and fix.git_commit_short %}
+                        <span class="legal-changelog-sep">•</span>
+
+                        {% if fix.git_commit_url %}
+                          <a
+                            class="legal-changelog-commit"
+                            href="{{ fix.git_commit_url }}"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {{ fix.git_commit_short }}
+                          </a>
+                        {% else %}
+                          <span class="legal-changelog-commit">
+                            {{ fix.git_commit_short }}
+                          </span>
+                        {% endif %}
+                      {% endif %}
+                    </span>
+                    — {{ fix.summary }}
+                  </li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% endif %}
         </article>
       LIQUID
       "git_support" => false,
@@ -355,7 +392,7 @@ module Jekyll
       dir = changelog_scope_dir(site, ref, page)
       files = Dir.glob(File.join(dir, "**", "*.md")).sort
 
-      entries = files.map do |path|
+      raw_entries = files.map do |path|
         parsed = parse_file(path)
         data = parsed["data"]
 
@@ -369,6 +406,8 @@ module Jekyll
           "date" => resolve_date(site, data, path),
           "summary" => data["summary"].to_s.strip,
           "changes" => normalize_changes(data["changes"]),
+          "hotfix" => data["hotfix"] == true,
+          "hotfix_of" => data["hotfix_of"].to_s.strip,
           "anchor_id" => version_anchor_id(version),
           "path" => Pathname.new(path).relative_path_from(Pathname.new(site.source)).to_s
         }
@@ -379,7 +418,26 @@ module Jekyll
         raise "Failed to parse legal file #{path}: #{e.class}: #{e.message}"
       end.compact
 
-      entries.sort_by do |entry|
+      # Hotfix versions (published: true, hotfix: true, hotfix_of: "<parent version>")
+      # do not appear as their own top-level changelog card. Each is nested as a
+      # "minor technical fix" under the substantive version it patches, keeping
+      # the substantive changelog entry the prominent, unobscured one.
+      substantive = raw_entries.reject { |e| e["hotfix"] }
+      hotfixes    = raw_entries.select { |e| e["hotfix"] }
+
+      substantive.each do |entry|
+        entry["minor_fixes"] = hotfixes
+          .select { |h| h["hotfix_of"] == entry["version"] }
+          .sort_by { |h| [version_sort_key(h["version"]), h["date"] || Time.at(0)] }
+      end
+
+      # Safety net: a hotfix whose hotfix_of does not match any known substantive
+      # version (e.g. a typo) is never silently dropped -- it falls back to being
+      # rendered as its own top-level entry.
+      matched_versions = substantive.flat_map { |e| e["minor_fixes"].map { |h| h["version"] } }
+      orphaned_hotfixes = hotfixes.reject { |h| matched_versions.include?(h["version"]) }
+
+      (substantive + orphaned_hotfixes).sort_by do |entry|
         [version_sort_key(entry["version"]), entry["date"] || Time.at(0)]
       end.reverse
     end
@@ -582,6 +640,12 @@ module Jekyll
           Changes:
           {% for change in entry.changes %}
           - {{ change }}
+          {% endfor %}
+          {% endif %}
+          {% if entry.minor_fixes.size > 0 %}
+          Minor technical fixes:
+          {% for fix in entry.minor_fixes %}
+          - {{ fix.date | date: '%d-%B-%Y' }} - {{ fix.summary }}{% if fix.git_commit_short %} ({{ fix.git_commit_short }}){% endif %}
           {% endfor %}
           {% endif %}
 
