@@ -550,6 +550,27 @@ module Jekyll
       entries.map { |entry| render_entry_template(site, page, entry, tpl) }.join("\n")
     end
 
+    # For a hotfix file, returns the front-matter data and version of the
+    # substantive version it patches (hotfix_of), instead of the hotfix's
+    # own. Used so anchors/summaries shown for the "current" document point
+    # at the changelog card that actually exists on the /changes/ page --
+    # hotfixes are nested under their parent and never get their own
+    # top-level anchor. Falls back to the file's own data/version if it is
+    # not a hotfix, or its declared parent cannot be found.
+    def substantive_data_for(site, resolved_ref, data, version)
+      return [data, version] unless data["hotfix"] == true
+
+      hotfix_of = data["hotfix_of"].to_s.strip
+      return [data, version] if hotfix_of.empty?
+
+      lang_dir = File.dirname(resolved_ref.to_s)
+      substantive_path = legal_source_path(site, File.join(lang_dir, hotfix_of))
+      return [data, version] unless File.exist?(substantive_path)
+
+      substantive_data = parse_file(substantive_path)["data"]
+      [substantive_data, hotfix_of]
+    end
+
     def legal_data_for_page(site, page)
       resolved_ref = resolved_ref_for_page(site, page)
       source_path = legal_source_path(site, resolved_ref)
@@ -560,6 +581,8 @@ module Jekyll
       version = data["version"].to_s.strip
       version = version_from_ref(resolved_ref) if version.empty?
 
+      substantive_data, anchor_version = substantive_data_for(site, resolved_ref, data, version)
+
       changelog_entries = build_changelog_entries(site, resolved_ref, page)
       changelog_entry_tpl = config(site)["changelog_entry_tpl"].to_s
 
@@ -568,10 +591,10 @@ module Jekyll
         "legal_source_path" => Pathname.new(source_path).relative_path_from(Pathname.new(site.source)).to_s,
         "legal_current_version" => version,
         "legal_last_modified_at" => resolve_date(site, data, source_path),
-        "legal_current_summary" => data["summary"].to_s.strip,
-        "legal_current_changes" => normalize_changes(data["changes"]),
+        "legal_current_summary" => substantive_data["summary"].to_s.strip,
+        "legal_current_changes" => normalize_changes(substantive_data["changes"]),
         "legal_changelog_url" => build_changelog_url(page.url),
-        "legal_current_anchor_id" => version_anchor_id(version),
+        "legal_current_anchor_id" => version_anchor_id(anchor_version),
         "legal_changelog_page_include" => config(site)["changelog_page_include"].to_s.strip,
         "legal_changelog_entry_tpl" => changelog_entry_tpl,
         "legal_rendered_content" => parsed["content"].to_s,
