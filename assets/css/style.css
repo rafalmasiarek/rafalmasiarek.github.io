@@ -1406,13 +1406,15 @@ footer .navigation a {
 }
 
 .legal-changelog-hotfixes {
-  margin: 0.6rem 0 0;
-  padding-top: 0.5rem;
-  border-top: 1px dashed rgba(128, 128, 128, 0.3);
+  margin: 0.8rem 0 0;
+  padding: 0.7rem 1rem;
+  border: 1px solid rgba(128, 128, 128, 0.25);
+  border-radius: 6px;
+  background: rgba(128, 128, 128, 0.04);
 }
 
 .legal-changelog-hotfixes-title {
-  margin: 0 0 0.25rem;
+  margin: 0 0 0.4rem;
   font-size: 0.78em;
   font-weight: 700;
   text-transform: uppercase;
@@ -1420,25 +1422,27 @@ footer .navigation a {
   opacity: 0.65;
 }
 
-.legal-changelog-hotfixes-list {
-  margin: 0;
-  padding-left: 1.2rem;
-  list-style-type: "- ";
-  list-style-position: outside;
+.legal-changelog-hotfix-entry {
+  margin: 0.5rem 0 0;
+  padding-top: 0.5rem;
+  border-top: 1px dashed rgba(128, 128, 128, 0.2);
+}
+
+.legal-changelog-hotfix-entry:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.legal-changelog-hotfixes .legal-changelog-version {
+  font-size: 0.85em;
+}
+
+.legal-changelog-hotfixes .legal-changelog-summary {
   font-size: 0.92em;
   font-weight: 200;
-  line-height: 1.6;
   opacity: 0.85;
-}
-
-.legal-changelog-hotfixes-list li {
-  margin: 0.18rem 0;
-  line-height: 1.45;
-}
-
-.legal-changelog-hotfixes-list .legal-changelog-meta {
-  display: inline-flex;
-  margin-right: 0.3rem;
+  margin-top: 0.2rem !important;
 }
 
 /* =============================================================================
