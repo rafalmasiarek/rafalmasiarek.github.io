@@ -7,7 +7,13 @@ require "pathname"
 require "rubygems/version"
 require "English"
 require "liquid"
-require "tzinfo"
+
+begin
+  require "tzinfo"
+rescue LoadError
+  # tzinfo unavailable in this environment -- display_time falls back
+  # to returning the input time unmodified instead of failing the build.
+end
 
 module Jekyll
   module LegalVersions
@@ -206,6 +212,7 @@ module Jekyll
 
     def display_time(site, time)
       return time unless time.is_a?(Time)
+      return time unless defined?(TZInfo)
 
       TZInfo::Timezone.get(display_timezone(site)).to_local(time.getutc)
     rescue
