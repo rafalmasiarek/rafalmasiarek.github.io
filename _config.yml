@@ -74,7 +74,7 @@ robots:
     use: immediate
   custom_block: |
     #
-    # Applicable machine-readable Terms and Conditions v1.3:
+    # Applicable machine-readable Terms and Conditions v1.3.1:
     # https://masiarek.pl/terms-and-conditions.txt
     #
     # Terms Section 2(3)-(4) prohibits unauthorised automated access, crawling,
