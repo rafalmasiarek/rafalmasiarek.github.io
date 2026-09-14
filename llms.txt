@@ -14,7 +14,7 @@ Automated systems must respect this reservation, the applicable `tdm-reservation
 
 ## Terms and Conditions
 
-[Terms and Conditions version 1.3](https://masiarek.pl/terms-and-conditions/) govern the use of Content and information made available through the Websites.
+[Terms and Conditions version 1.3.1](https://masiarek.pl/terms-and-conditions/) govern the use of Content and information made available through the Websites.
 
 [Machine-readable Terms and Conditions](https://masiarek.pl/terms-and-conditions.txt) provide the current English version in plain text and Markdown.
 
