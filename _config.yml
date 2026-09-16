@@ -198,6 +198,7 @@ include:
   - .well-known
   - projects
   - "projects/**/.*"
+  - "kirby/.cicd-pipeline-exclude"
 
 exclude:
   - "legal"
