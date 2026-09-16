@@ -139,9 +139,9 @@ jobs:
           ssh -p ${{ secrets.RSYNC_SSH_PORT }} \
             ${{ secrets.RSYNC_USER }}@${{ secrets.RSYNC_HOST }} \
             "cd '${{ secrets.RSYNC_DEST_PATH }}' && \
-             find . -type f -name '.cicd-pipeline-exclude' -print0 \
+             find -L . -type f -name '.cicd-pipeline-exclude' -print0 \
              | xargs -0 -n1 dirname \
-             | sed 's|^\./|/|; s|$|/|' \
+             | sed 's|^\./|/|' \
              | sort -u" > rsync-exclude.txt
 
           printf '%s\n' "$RSYNC_EXCLUDES" >> rsync-exclude.txt
