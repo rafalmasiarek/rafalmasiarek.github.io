@@ -38,6 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const alert = document.getElementById('contact-form-alert');
   const btn = document.getElementById('contact-form-btn');
   const tokenInput = document.getElementById('csrf_token');
+  const tokenProofInput = document.getElementById('csrf_proof');
 
   // PGP UI elements (optional, only used if present in HTML)
   const encryptedCb = document.getElementById('contact-form-encrypted');
@@ -383,6 +384,7 @@ document.addEventListener('DOMContentLoaded', () => {
     .then(json => {
       if (json.status === 'success' && json.data?.csrf_token) {
         tokenInput.value = json.data.csrf_token;
+        if (tokenProofInput) tokenProofInput.value = json.data.proof || '';
       }
     })
     .catch(err => console.error('CSRF token fetch error:', err));
@@ -394,6 +396,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const json = await res.json();
       if (json.status === 'success' && json.data?.csrf_token) {
         tokenInput.value = json.data.csrf_token;
+        if (tokenProofInput) tokenProofInput.value = json.data.proof || '';
         console.log('CSRF token regenerated and updated.');
       }
     } catch (err) {
