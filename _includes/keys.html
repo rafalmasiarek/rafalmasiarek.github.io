@@ -38,13 +38,13 @@
 </div>
 
 {% if jekyll.environment == "production" %}
-<script src="{{ "openpgpjs/v6/openpgp.min.js" | asset_url: "cdn" }}"
-    integrity="sha384-QJK16RICXnZBjNWfQQIhUPx4+I0Zg1EJGawTNLimDz0AkwWqpJDFTPSMkbmTV+Cn" crossorigin="anonymous"
+<script src="{{ "openpgpjs/v6.3.1/openpgp.min.js" | asset_url: "cdn" }}"
+    integrity="sha384-sPmo7pGITv1/X4Bq5p4najbJZGUD3noWlHwrihDBwJ87a7DTu7sSr6uj+B5t/KA+" crossorigin="anonymous"
     defer></script>
 <script src="{{ "js/keys.min.js" | asset_url }}"></script>
 {% else %}
-<script src="{{ "openpgpjs/v6/openpgp.js" | asset_url: "cdn" }}"
-    integrity="sha384-PHyi81GYKgQMOc0auAlfWNCtsoWaCqJXBXSrsfs6zO9EO45elOl7G2Pi8KsmG/ev" crossorigin="anonymous"
+<script src="{{ "openpgpjs/v6.3.1/openpgp.js" | asset_url: "cdn" }}"
+    integrity="sha384-rE3LtP8P00dy3MJ373eKcDm7KiwH8aSWOBPloROfXA5COPXQQyz7+bCvqBiBMsoy" crossorigin="anonymous"
     defer></script>
 <script src="{{ "js/keys.js" | asset_url }}"></script>
 {% endif %}
