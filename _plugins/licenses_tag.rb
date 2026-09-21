@@ -59,8 +59,8 @@ module Jekyll
         {
           "name" => pkg["name"],
           "version" => pkg["version"],
-          "license" => (pkg["license"] || []).join(", "),
-          "homepage" => pkg["homepage"],
+          "license" => pkg["license"].to_s,
+          "homepage" => pkg["url"],
           "source" => "API"
         }
       end
