@@ -2,8 +2,8 @@
 /*!
  * Access Helper Script
  * Simple client-side script to generate SSH access commands and listen for installation events.
- * 
- * Copyright (c) 2025 RafaĹ Masiarek. All rights reserved.
+ *
+ * Copyright (c) 2025 Rafał Masiarek. All rights reserved.
  *
  * This file is proprietary and confidential. Unauthorized copying,
  * distribution, modification, or use of this file, in whole or in part,
@@ -14,15 +14,7 @@
  */
 (function () {
     const BASE_URL = 'https://access.masiarek.pl';
-
-    // New API base (OpenAPI: /api as server, but here we use absolute URL).
-    const API_BASE = 'https://masiarek.pl/api/v1';
-
-    // Scope + channel naming:
-    // - scope: stream:ssh-access
-    // - SSE endpoint expects channel query param, e.g. channel=ssh-access
-    const STREAM_SCOPES = ['stream:ssh-access'];
-    const STREAM_CHANNEL = 'ssh-access';
+    const STATUS_BASE = BASE_URL + '/status';
 
     const modeInputs = document.querySelectorAll('input[name="ssh-gen-mode"]');
     const usernameInput = document.getElementById('ssh-gen-username');
@@ -42,68 +34,28 @@
     if (!output) return;
 
     let userActivated = false;
-
-    // SSE via fetch streaming (AbortController)
-    let streamAbort = null;
-
-    // Bearer token for events endpoints
-    let currentToken = null;
+    let eventSource = null;
 
     const MODE_ADD = 'add';
     const MODE_REMOVE = 'remove';
     const MODE_UPDATE = 'update'; // "Update key only / manually"
 
-    // ---------------------------------------------
-    // CSRF
-    // ---------------------------------------------
-    const CSRF_ENDPOINT = API_BASE + '/csrf/generate';
-    const CSRF_CONTAINER = 'ssh-install-stream-event';
-
-    let csrfToken = null;
-    let csrfTokenTime = null; // naive TTL cache
-
-    async function ensureCsrfToken() {
-        const now = Date.now();
-
-        // Reuse token if not too old (server TTL 900s; keep a safe margin).
-        if (csrfToken && csrfTokenTime && (now - csrfTokenTime) < 850 * 1000) {
-            return csrfToken;
-        }
-
-        try {
-            const params = new URLSearchParams({ container: CSRF_CONTAINER });
-            const resp = await fetch(CSRF_ENDPOINT + '?' + params.toString(), {
-                method: 'GET',
-                credentials: 'include',
-            });
-
-            if (!resp.ok) {
-                console.warn('CSRF fetch failed with status', resp.status);
-                return null;
-            }
-
-            const data = await resp.json();
-            if (data && data.status === 'success' && data.data && data.data.csrf_token) {
-                csrfToken = data.data.csrf_token;
-                csrfTokenTime = now;
-                return csrfToken;
-            }
-
-            console.warn('Unexpected CSRF response structure', data);
-            return null;
-        } catch (e) {
-            console.warn('Error fetching CSRF token', e);
-            return null;
-        }
-    }
-
     // -------------------------------------------------
     // Session ID
+    //
+    // This is the only credential in the whole flow: access.masiarek.pl's
+    // /status/{id} endpoint treats knowing this value as proof you're allowed
+    // to read and write that one slot. Math.random() is not a CSPRNG and is
+    // partially predictable (seeded off Date.now()) — crypto.getRandomValues()
+    // gives 256 bits of real entropy, which is what makes that trust model
+    // sound.
     // -------------------------------------------------
     function generateSessionId() {
-        return 'sess-' +
-            Date.now().toString(36) + '-' +
-            Math.random().toString(36).slice(2, 10);
+        const bytes = new Uint8Array(32);
+        (window.crypto || window.msCrypto).getRandomValues(bytes);
+        let binary = '';
+        bytes.forEach(function (b) { binary += String.fromCharCode(b); });
+        return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
     }
 
     let sessionId = generateSessionId();
@@ -141,7 +93,6 @@
         alertClose.addEventListener('click', function () {
             hideAlert();
             closeStream();
-            revokeToken();
         });
     }
 
@@ -253,7 +204,7 @@
             }
 
             if (mode !== MODE_UPDATE) {
-                registerForStream();
+                openStatusStream();
             }
         });
     }
@@ -268,240 +219,62 @@
     }
 
     // -------------------------------------------------
-    // Events API (new endpoints) + CSRF headers
+    // Status stream (SSE via native EventSource)
+    //
+    // access.masiarek.pl/status/{id} holds the connection open for ~25s and
+    // closes; EventSource reconnects automatically on its own by design, so
+    // this only needs to be opened once per Copy click and closed explicitly
+    // once a terminal event arrives (or the user dismisses the alert/banner).
     // -------------------------------------------------
-    async function registerForStream() {
-        if (!window.fetch) return;
-        if (streamAbort) return; // already streaming
-
-        try {
-            const csrf = await ensureCsrfToken();
-            if (!csrf) {
-                console.warn('No CSRF token – aborting registerForStream');
-                if (userActivated) showAlert('error', 'Could not initialize real-time updates (CSRF).');
-                return;
-            }
-
-            // Group tokens by (ip,email); use sessionId as a stable per-page identifier.
-            const email = sessionId + '@access.masiarek.pl';
-
-            const payload = {
-                email: email,
-                scopes: STREAM_SCOPES,
-                ttl_sec: 3600,
-            };
-
-            const headers = {
-                'Content-Type': 'application/json',
-                'X-CSRF-Token': csrf,
-                'X-CSRF-Container': CSRF_CONTAINER,
-            };
-
-            const resp = await fetch(API_BASE + '/events/token', {
-                method: 'POST',
-                headers,
-                body: JSON.stringify(payload),
-                credentials: 'include',
-            });
-
-            if (!resp.ok) {
-                if (userActivated) showAlert('error', 'Could not initialize real-time updates.');
-                return;
-            }
-
-            const data = await resp.json();
-            const token = data?.data?.token;
-            if (!token) {
-                console.warn('Unexpected token response', data);
-                if (userActivated) showAlert('error', 'Could not initialize real-time updates (token).');
-                return;
-            }
-
-            currentToken = token;
-            openStream(token);
-        } catch (err) {
-            console.warn('registerForStream error', err);
-            if (userActivated) showAlert('error', 'Events service error.');
-        }
-    }
-
-    async function revokeToken() {
-        if (!currentToken) return;
-
-        try {
-            const csrf = await ensureCsrfToken();
-
-            const headers = {
-                'Authorization': 'Bearer ' + currentToken,
-                'Content-Type': 'application/json',
-            };
-
-            if (csrf) {
-                headers['X-CSRF-Token'] = csrf;
-                headers['X-CSRF-Container'] = CSRF_CONTAINER;
-            }
-
-            await fetch(API_BASE + '/events/revoke', {
-                method: 'POST',
-                headers,
-                body: '{}',
-                credentials: 'include',
-            });
-        } catch (err) {
-            console.warn('Failed to revoke token:', err);
-        } finally {
-            currentToken = null;
-        }
-    }
-
     function closeStream() {
-        if (streamAbort) {
-            try { streamAbort.abort(); } catch (_) { }
-            streamAbort = null;
+        if (eventSource) {
+            eventSource.close();
+            eventSource = null;
         }
     }
 
-    // -------------------------------------------------
-    // SSE stream via fetch (so we can send Authorization + CSRF headers)
-    // -------------------------------------------------
-    async function openStream(token) {
-        closeStream();
-
-        const csrf = await ensureCsrfToken();
-        if (!csrf) {
-            console.warn('No CSRF token – aborting openStream');
-            if (userActivated) showAlert('error', 'Could not initialize real-time updates (CSRF).');
-            return;
-        }
-
-        streamAbort = new AbortController();
-
-        const params = new URLSearchParams({
-            channel: STREAM_CHANNEL,
-        });
-
-        const headers = {
-            'Accept': 'text/event-stream',
-            'Authorization': 'Bearer ' + token,
-            'X-CSRF-Token': csrf,
-            'X-CSRF-Container': CSRF_CONTAINER,
-        };
-
-        try {
-            const resp = await fetch(API_BASE + '/events/stream?' + params.toString(), {
-                method: 'GET',
-                headers,
-                credentials: 'include',
-                signal: streamAbort.signal,
-            });
-
-            if (!resp.ok || !resp.body) {
-                console.warn('Stream HTTP error', resp.status);
+    function handleTerminalEvent(kind) {
+        return function (evt) {
+            let data;
+            try {
+                data = JSON.parse(evt.data);
+            } catch (_) {
                 return;
             }
 
-            await readSseStream(resp.body, (evtName, evtData) => {
-                if (!userActivated) return;
-
-                // evtData is string (raw "data:" payload) – expected JSON
-                handleEventData(evtData, evtName);
-            }, streamAbort.signal);
-        } catch (e) {
-            if (streamAbort?.signal?.aborted) return; // closed intentionally
-            console.warn('Stream error', e);
-        }
-    }
-
-    async function readSseStream(readableStream, onEvent, signal) {
-        const reader = readableStream.getReader();
-        const decoder = new TextDecoder('utf-8');
-
-        let buffer = '';
-
-        while (true) {
-            if (signal?.aborted) break;
-
-            const { value, done } = await reader.read();
-            if (done) break;
-
-            buffer += decoder.decode(value, { stream: true });
-
-            // SSE frames are separated by a blank line
-            let idx;
-            while ((idx = buffer.indexOf('\n\n')) !== -1) {
-                const rawFrame = buffer.slice(0, idx);
-                buffer = buffer.slice(idx + 2);
-
-                const parsed = parseSseFrame(rawFrame);
-                if (!parsed) continue;
-
-                const { event, data } = parsed;
-                if (data !== null) onEvent(event, data);
-            }
-        }
-
-        try { reader.releaseLock(); } catch (_) { }
-    }
-
-    function parseSseFrame(frame) {
-        // Minimal SSE parser: supports `event:` and one or many `data:` lines.
-        // Ignores comments and other fields.
-        const lines = frame.split('\n');
-
-        let eventName = null;
-        const dataLines = [];
-
-        for (const line of lines) {
-            if (!line) continue;
-            if (line.startsWith(':')) continue;
-
-            if (line.startsWith('event:')) {
-                eventName = line.slice('event:'.length).trim() || null;
-            } else if (line.startsWith('data:')) {
-                dataLines.push(line.slice('data:'.length).trimEnd());
-            }
-        }
-
-        const data = dataLines.length ? dataLines.join('\n') : null;
-        return { event: eventName, data };
-    }
-
-    function handleEventData(raw, forcedType) {
-        let data;
-        try {
-            data = JSON.parse(raw);
-        } catch (_) {
-            return;
-        }
-
-        const type = forcedType || data.type || 'log';
-
-        if (type === 'access-installed') {
             const host = data.host || 'unknown host';
             const ip = data.ip_public || data.ip_internal || 'unknown IP';
 
-            showAlert(
-                'success',
-                'SSH access has been installed on "' + host + '" (IP: ' + ip + ').'
-            );
+            if (kind === 'installed') {
+                showAlert('success', 'SSH access has been installed on "' + host + '" (IP: ' + ip + ').');
+            } else if (kind === 'removed') {
+                showAlert('info', 'SSH access has been removed from "' + host + '".');
+            } else if (kind === 'error') {
+                showAlert('error', 'Something went wrong while setting up access on "' + host + '". Check the target server’s output.');
+            }
 
-            revokeToken();
             closeStream();
-            return;
-        }
+        };
+    }
 
-        if (type === 'access-removed') {
-            const host = data.host || 'unknown host';
+    function openStatusStream() {
+        if (!window.EventSource) return;
 
-            showAlert(
-                'info',
-                'SSH access has been removed from "' + host + '".'
-            );
+        closeStream();
+        eventSource = new EventSource(STATUS_BASE + '/' + encodeURIComponent(sessionId));
 
-            revokeToken();
-            closeStream();
-            return;
-        }
+        eventSource.addEventListener('installed', handleTerminalEvent('installed'));
+        eventSource.addEventListener('removed', handleTerminalEvent('removed'));
+        // The server sends "status-error" rather than "error" — EventSource
+        // reserves the bare "error" event name for connection failures, and
+        // a real status of "error" would otherwise be indistinguishable from
+        // the connection just hiccuping.
+        eventSource.addEventListener('status-error', handleTerminalEvent('error'));
+
+        eventSource.onerror = function () {
+            // Transport-level hiccup or the server's periodic 25s close —
+            // EventSource retries on its own, nothing to do here.
+        };
     }
 
     // -------------------------------------------------
@@ -513,7 +286,6 @@
                 banner.style.display = 'none';
             }
             closeStream();
-            revokeToken();
         });
     }
 
