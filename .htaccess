@@ -49,20 +49,26 @@
 
 
   # ---------------------------------------------------------
-  # EXISTING FILES / DIRECTORIES
+  # HTML - serve Brotli-precompressed directory index
   # ---------------------------------------------------------
-  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{HTTP:Accept-Encoding} (^|,|\s)br(\s|,|$) [NC]
   RewriteCond %{REQUEST_FILENAME} -d
-  RewriteRule ^ - [L]
+  RewriteCond %{REQUEST_FILENAME}/index.html.br -s
+  RewriteRule ^(.*/)?$ $1index.html.br [QSA,L]
 
 
-  # RewriteRule ^(projects|articles)(/.*)?$ /kirby/index.php [QSA,L]
+  # ---------------------------------------------------------
+  # HTML - serve Brotli-precompressed version when available
+  # ---------------------------------------------------------
+  RewriteCond %{HTTP:Accept-Encoding} (^|,|\s)br(\s|,|$) [NC]
+  RewriteCond %{REQUEST_FILENAME}.br -s
+  RewriteRule ^(.+)\.html$ $1.html.br [QSA,L]
 
 
   # ---------------------------------------------------------
   # CSS - serve Brotli-precompressed version when available
   # ---------------------------------------------------------
-  RewriteCond %{HTTP:Accept-Encoding} br
+  RewriteCond %{HTTP:Accept-Encoding} (^|,|\s)br(\s|,|$) [NC]
   RewriteCond %{REQUEST_FILENAME}.br -s
   RewriteRule ^(.+)\.css$ $1.css.br [QSA,L]
 
@@ -72,9 +78,20 @@
   # Skip sw-vinyls.js because it is permanently gone
   # ---------------------------------------------------------
   RewriteCond %{REQUEST_URI} !^/sw-vinyls\.js$
-  RewriteCond %{HTTP:Accept-Encoding} br
+  RewriteCond %{HTTP:Accept-Encoding} (^|,|\s)br(\s|,|$) [NC]
   RewriteCond %{REQUEST_FILENAME}.br -s
   RewriteRule ^(.+)\.js$ $1.js.br [QSA,L]
+
+
+  # ---------------------------------------------------------
+  # EXISTING FILES / DIRECTORIES
+  # ---------------------------------------------------------
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+
+  # RewriteRule ^(projects|articles)(/.*)?$ /kirby/index.php [QSA,L]
 
 </IfModule>
 
@@ -82,11 +99,31 @@
 <IfModule mod_headers.c>
 
   # ---------------------------------------------------------
+  # NO-CACHE for AI / policy / discovery files
+  # ---------------------------------------------------------
+  <FilesMatch "^(robots\.txt|llms\.txt|terms-and-conditions\.txt|403-ai\.txt|sitemap\.xml)$">
+    Header always set Cache-Control "no-cache, no-store, must-revalidate, max-age=0"
+    Header always set Pragma "no-cache"
+    Header always set Expires "0"
+  </FilesMatch>
+
+
+  # ---------------------------------------------------------
+  # NO-CACHE for /.well-known/*
+  # ---------------------------------------------------------
+  <If "%{REQUEST_URI} =~ m#^/\.well-known(?:/|$)#">
+    Header always set Cache-Control "no-cache, no-store, must-revalidate, max-age=0"
+    Header always set Pragma "no-cache"
+    Header always set Expires "0"
+  </If>
+
+
+  # ---------------------------------------------------------
   # BROTLI HEADERS
   # ---------------------------------------------------------
-  <FilesMatch "\.(css|js)\.br$">
+  <FilesMatch "\.(html|css|js)\.br$">
     Header set Content-Encoding br
-    Header append Vary Accept-Encoding
+    Header merge Vary Accept-Encoding
   </FilesMatch>
 
 
@@ -107,6 +144,7 @@
 # MIME TYPES / CHARSET
 # ---------------------------------------------------------
 <IfModule mod_mime.c>
+  AddType text/html .html.br
   AddType text/css .css.br
   AddType application/javascript .js.br
 
