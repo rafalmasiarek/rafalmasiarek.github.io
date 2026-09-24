@@ -3,8 +3,43 @@
   Require all denied
 </FilesMatch>
 
+# ---------------------------------------------------------
+# CUSTOM 403 FOR AI / AUTOMATED AGENTS
+# ---------------------------------------------------------
+#
+# Normal 403 responses keep the default Apache behaviour.
+# Known AI crawlers receive /403-ai.txt instead.
+#
+# /403-ai.txt itself must remain accessible to avoid
+# recursively triggering another 403.
+#
+<If "req('User-Agent') =~ m#(?i)(GPTBot|ChatGPT-User|OAI-SearchBot|Google-Extended|ClaudeBot|Claude-Web|anthropic-ai|PerplexityBot|Perplexity-User|Bytespider|CCBot|cohere-ai|Meta-ExternalAgent|Meta-ExternalFetcher|Amazonbot|Applebot-Extended|Diffbot|FacebookBot|ImagesiftBot|YouBot)#">
+  ErrorDocument 403 /403-ai.txt
+</If>
+
+
 <IfModule mod_rewrite.c>
   RewriteEngine On
+
+  # ---------------------------------------------------------
+  # BLOCK: known AI crawlers / agents
+  # ---------------------------------------------------------
+  #
+  # These resources remain accessible so automated systems
+  # can determine the applicable access and usage policy:
+  #
+  #   /robots.txt
+  #   /llms.txt
+  #   /terms-and-conditions.txt
+  #   /403-ai.txt
+  #
+  # All other requests from known AI agents receive
+  # HTTP 403 Forbidden.
+  #
+  RewriteCond %{REQUEST_URI} !^/(?:robots\.txt|llms\.txt|terms-and-conditions\.txt|403-ai\.txt)$ [NC]
+  RewriteCond %{HTTP_USER_AGENT} "(GPTBot|ChatGPT-User|OAI-SearchBot|Google-Extended|ClaudeBot|Claude-Web|anthropic-ai|PerplexityBot|Perplexity-User|Bytespider|CCBot|cohere-ai|Meta-ExternalAgent|Meta-ExternalFetcher|Amazonbot|Applebot-Extended|Diffbot|FacebookBot|ImagesiftBot|YouBot)" [NC]
+  RewriteRule ^ - [F,L]
+
 
   # ---------------------------------------------------------
   # KILL: service worker file -> 410 Gone (no longer available)
@@ -12,46 +47,75 @@
   RewriteRule ^sw-vinyls\.js$ - [G,L]
   RewriteRule ^sw-vinyls\.js\.br$ - [G,L]
 
+
+  # ---------------------------------------------------------
+  # EXISTING FILES / DIRECTORIES
+  # ---------------------------------------------------------
   RewriteCond %{REQUEST_FILENAME} -f [OR]
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
 
+
   # RewriteRule ^(projects|articles)(/.*)?$ /kirby/index.php [QSA,L]
 
-  # CSS
+
+  # ---------------------------------------------------------
+  # CSS - serve Brotli-precompressed version when available
+  # ---------------------------------------------------------
   RewriteCond %{HTTP:Accept-Encoding} br
   RewriteCond %{REQUEST_FILENAME}.br -s
   RewriteRule ^(.+)\.css$ $1.css.br [QSA,L]
 
-  # JS (skip sw-vinyls.js, because it's gone)
+
+  # ---------------------------------------------------------
+  # JS - serve Brotli-precompressed version when available
+  # Skip sw-vinyls.js because it is permanently gone
+  # ---------------------------------------------------------
   RewriteCond %{REQUEST_URI} !^/sw-vinyls\.js$
   RewriteCond %{HTTP:Accept-Encoding} br
   RewriteCond %{REQUEST_FILENAME}.br -s
   RewriteRule ^(.+)\.js$ $1.js.br [QSA,L]
+
 </IfModule>
 
+
 <IfModule mod_headers.c>
+
+  # ---------------------------------------------------------
+  # BROTLI HEADERS
+  # ---------------------------------------------------------
   <FilesMatch "\.(css|js)\.br$">
     Header set Content-Encoding br
     Header append Vary Accept-Encoding
   </FilesMatch>
 
+
   # ---------------------------------------------------------
-  # NO-CACHE for the old service worker file (even if someone caches 410)
+  # NO-CACHE for the old service worker file
+  # even if someone caches the 410 response
   # ---------------------------------------------------------
   <FilesMatch "^sw-vinyls\.js(\.br)?$">
     Header always set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
     Header always set Pragma "no-cache"
     Header always set Expires "0"
   </FilesMatch>
+
 </IfModule>
 
-# Ensure correct MIME types for the rewritten files
+
+# ---------------------------------------------------------
+# MIME TYPES / CHARSET
+# ---------------------------------------------------------
 <IfModule mod_mime.c>
   AddType text/css .css.br
   AddType application/javascript .js.br
+
   AddDefaultCharset UTF-8
   AddCharset UTF-8 .html .htm .txt .md .xml .json .css .js .map .webmanifest .svg
 </IfModule>
 
+
+# ---------------------------------------------------------
+# ERROR DOCUMENTS
+# ---------------------------------------------------------
 ErrorDocument 404 /404.html
