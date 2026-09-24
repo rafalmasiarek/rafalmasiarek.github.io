@@ -59,6 +59,7 @@ robots:
   disallow:
     - /
   allow:
+    - /robots.txt
     - /llms.txt
     - /terms-and-conditions.txt
   index: false

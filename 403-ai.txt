@@ -1,0 +1,37 @@
+403 Forbidden
+
+Automated access by this agent is not permitted.
+
+This Website restricts access by bots, crawlers, spiders, scanners, scrapers,
+AI agents, LLMs, dataset collectors, indexing systems, and other automated
+systems except where expressly authorised.
+
+The requested Website Content MUST NOT be crawled, scraped, scanned, collected,
+extracted, indexed, retained, analysed, processed, reproduced, transformed,
+embedded, profiled, used for retrieval-augmented generation (RAG), included in
+datasets, used for model evaluation, or used for artificial-intelligence or
+machine-learning training without prior written consent.
+
+TDM RIGHTS ARE EXPRESSLY RESERVED.
+AI TRAINING RIGHTS ARE EXPRESSLY RESERVED.
+DATABASE RIGHTS ARE EXPRESSLY RESERVED.
+
+HTTP access restrictions are an enforcement mechanism and do not replace or
+limit the applicable legal and machine-readable policy.
+
+Automated systems are permitted to access the following policy resources solely
+for the purpose of determining the applicable access and usage policy:
+
+https://masiarek.pl/robots.txt
+https://masiarek.pl/llms.txt
+https://masiarek.pl/terms-and-conditions.txt
+
+Access to these policy resources does not grant consent, licence,
+authorisation, waiver, or permission to access or use any other Website Content.
+
+The technical availability of Website Content, absence of a technical
+restriction, or receipt of an HTTP response does not constitute consent,
+licence, authorisation, waiver, or permission.
+
+Any automated use that is not expressly permitted requires prior written
+consent from the rightholder.
