@@ -13,6 +13,20 @@
  * Licensed for internal use only. No license is granted to copy,
  * sublicense, or redistribute this code.
  */
+// Register projects-specific error codes with AppErrors, if loaded.
+if (window.AppErrors && typeof window.AppErrors.registerCode === 'function') {
+  AppErrors.registerCode('PROJECTS_FETCH_FAILED', { severity: 'error', publicMessage: 'Projects could not be loaded.' });
+}
+
+// Safe fallback: works whether or not app-errors.js is loaded.
+function reportError(error, context = {}) {
+  if (window.AppErrors && typeof window.AppErrors.report === 'function') {
+    window.AppErrors.report(error, context);
+    return;
+  }
+  console.error(error, context);
+}
+
 const users = ["rafalmasiarek", "infrastrukturait"];
 const filterTopic = ""; // leave empty string to disable filtering
 
@@ -129,7 +143,7 @@ async function loadProjects() {
         updateFilterButtons();
         renderFilteredProjects();
     } catch (err) {
-        console.error('Error fetching repos:', err);
+        reportError(err, { component: 'projects', operation: 'load', code: 'PROJECTS_FETCH_FAILED' });
         container.innerHTML = '<div class="col-12 text-center text-danger">Error loading projects. Please try again later.</div>';
     }
 }

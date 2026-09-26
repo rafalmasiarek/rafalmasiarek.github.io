@@ -36,6 +36,7 @@ assets/vinyl_covers/*
 
 # Minified build artifacts (generated in CI)
 assets/js/*.min.js
+assets/js/*.min.js.map
 assets/css/*.min.css
 
 # Precompressed variants (if you ever generate them locally)

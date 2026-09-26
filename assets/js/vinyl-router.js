@@ -24,12 +24,34 @@
 (function () {
   'use strict';
 
+  // Register vinyls-specific error codes with AppErrors, if loaded.
+  if (window.AppErrors && typeof window.AppErrors.registerCode === 'function') {
+    AppErrors.registerCode('VINYLS_CONFIG_MISSING', { severity: 'error', publicMessage: 'Vinyl collection is temporarily unavailable.' });
+  }
+
+  // Safe fallback: works whether or not app-errors.js is loaded.
+  function reportError(error, context = {}) {
+    if (window.AppErrors && typeof window.AppErrors.report === 'function') {
+      window.AppErrors.report(error, context);
+      return;
+    }
+    console.error(error, context);
+  }
+
+  // Shared session trace id, or a local fallback if app-errors.js is absent.
+  function newRequestId() {
+    if (window.AppErrors && typeof window.AppErrors.getRequestId === 'function') {
+      return window.AppErrors.getRequestId();
+    }
+    return Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
+  }
+
   // ---- Guards ----
   if (!window.__VINYLS_API__ || !window.__VINYLS_API__.trim()) {
-    console.error('VINYLS: Missing window.__VINYLS_API__');
+    reportError(new Error('Missing window.__VINYLS_API__'), { component: 'vinyl-router', operation: 'init', code: 'VINYLS_CONFIG_MISSING' });
   }
   if (!window.__SITE_BASE__ || !window.__SITE_BASE__.trim()) {
-    console.error('VINYLS: Missing window.__SITE_BASE__');
+    reportError(new Error('Missing window.__SITE_BASE__'), { component: 'vinyl-router', operation: 'init', code: 'VINYLS_CONFIG_MISSING' });
   }
 
   const API_LIST = String(window.__VINYLS_API__ || '').trim().replace(/\/+$/, '');
@@ -303,7 +325,7 @@
 
   async function fetchBySlug(slug) {
     try {
-      const r = await fetch(`${API_LIST}/${encodeURIComponent(slug)}`, { credentials: 'omit' });
+      const r = await fetch(`${API_LIST}/${encodeURIComponent(slug)}`, { credentials: 'omit', headers: { 'X-Request-Id': newRequestId() } });
       if (r.ok) {
         const p = await r.json();
         if (p && p.data) return p.data;
@@ -314,7 +336,7 @@
       return window.allVinyls.find(x => x.slug === slug);
     }
 
-    const r2 = await fetch(API_LIST, { credentials: 'omit' });
+    const r2 = await fetch(API_LIST, { credentials: 'omit', headers: { 'X-Request-Id': newRequestId() } });
     const p2 = await r2.json();
     const list = (p2 && p2.data) || [];
     return list.find(x => x.slug === slug);
