@@ -6,8 +6,6 @@ timezone: Europe/Warsaw
 description: "I am devops. Automation and configuration management tools are the foundation of my work"
 github_repo: "https://github.com/rafalmasiarek/rafalmasiarek.github.io"
 
-recaptcha_site_key: "6LfvSI4rAAAAABdOXvYNnDMZEzd_K57A94LlEghS"
-
 plugins:
   - jekyll-last-modified-at
   - jekyll-sitemap

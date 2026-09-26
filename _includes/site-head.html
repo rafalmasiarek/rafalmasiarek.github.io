@@ -2,6 +2,44 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, shrink-to-fit=no">
 
+{% if jekyll.environment == "production" %}
+<script src="{{ "js/app-errors.min.js" | asset_url }}"></script>
+{% else %}
+<script src="{{ "js/app-errors.js" | asset_url }}"></script>
+{% endif %}
+<script>
+  window.AppErrors && window.AppErrors.configure({ environment: '{{ jekyll.environment }}' });
+</script>
+
+{% if jekyll.environment == "production" %}
+<link rel="preconnect" href="https://d2wy8f7a9ursnm.cloudfront.net" crossorigin>
+<link rel="preconnect" href="https://notify.bugsnag.com" crossorigin>
+<link rel="preconnect" href="https://otlp.bugsnag.com" crossorigin>
+<script src="{{ "js/app-errors-bugsnag.min.js" | asset_url }}"></script>
+<script src="https://d2wy8f7a9ursnm.cloudfront.net/v8.10.0/bugsnag.min.js"
+  integrity="sha384-Zse1bOiPR7ucqkqhiKa1Vs1QdGL9lKHiQuBMVWbpDXkGistsEt2G5fYNteXi0Pwp" crossorigin="anonymous"></script>
+<script type="module">
+  // ESM-only build, no UMD — requires type="module" + import.
+  import BugsnagPerformance from 'https://d2wy8f7a9ursnm.cloudfront.net/v3.4.1/bugsnag-performance.min.js';
+
+  var bugsnagConfig = {
+    apiKey: '{{ site.bugsnag_api_key }}',
+    appVersion: '{{ site.asset_build.version | default: "dev" }}',
+    releaseStage: '{{ jekyll.environment }}',
+    enabledReleaseStages: ['production']
+  };
+
+  // Bugsnag.start() already installs its own global error/rejection
+  // listeners — do not also call AppErrors.captureGlobalErrors().
+  window.Bugsnag && window.Bugsnag.start(bugsnagConfig);
+  BugsnagPerformance.start({ apiKey: bugsnagConfig.apiKey });
+
+  if (window.AppErrors && window.AppErrors.middleware && window.AppErrors.middleware.bugsnag) {
+    window.AppErrors.use(window.AppErrors.middleware.bugsnag());
+  }
+</script>
+{% endif %}
+
 {% robots_meta %}
 <meta name="llms" content="{{ __site_abs }}/llms.txt">
 <link rel="help" type="text/plain" href="{{ __site_abs }}/llms.txt">
