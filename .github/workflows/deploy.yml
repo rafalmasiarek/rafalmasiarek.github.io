@@ -72,10 +72,51 @@ jobs:
                 ;;
               *)
                 out="${f%.js}.min.js"
-                echo "Minifying $f -> $out"
-                terser "$f" -c -m --comments false -o "$out"
+                outname="$(basename "$out")"
+                mapname="${outname}.map"
+                echo "Minifying $f -> $out (+ $mapname)"
+                terser "$f" -c -m --comments false \
+                  --source-map "filename='$outname',url='$mapname'" \
+                  -o "$out"
                 ;;
             esac
+          done
+
+      - name: Upload source maps to Bugsnag
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+
+          BUGSNAG_API_KEY="${{ secrets.BUGSNAG_API_KEY }}"
+
+          if [ -z "$BUGSNAG_API_KEY" ]; then
+            echo "BUGSNAG_API_KEY secret not set — skipping source map upload."
+            exit 0
+          fi
+
+          SITE_URL="$(ruby -ryaml -e "puts (YAML.load_file('_config.yml')['url'] || '')")"
+          APP_VERSION="${GITHUB_SHA}"
+
+          npm i -g @bugsnag/source-maps
+
+          maps=(assets/js/*.min.js.map)
+          if [ ${#maps[@]} -eq 0 ]; then
+            echo "No source maps found — nothing to upload."
+            exit 0
+          fi
+
+          for map in "${maps[@]}"; do
+            minified="${map%.map}"
+            name="$(basename "$minified")"
+            bundle_url="${SITE_URL}/assets/js/${name}?v=${APP_VERSION}"
+            echo "Uploading source map for ${name} -> ${bundle_url}"
+            bugsnag-source-maps upload-browser \
+              --api-key "$BUGSNAG_API_KEY" \
+              --app-version "$APP_VERSION" \
+              --bundle-url "$bundle_url" \
+              --source-map "$map" \
+              --overwrite
           done
 
       - name: Minify CSS (assets/css/*.css -> *.min.css)
@@ -103,7 +144,15 @@ jobs:
           set -euo pipefail
           VER="${GITHUB_SHA}"
           TS="$(date +%s%6N)"
-          printf 'asset_build:\n  version: "%s"\n  timestamp: "%s"\napp_env: "production"\n' "$VER" "$TS" > _config.deploy.yml
+
+          cat > _config.deploy.yml <<EOF
+          asset_build:
+            version: "${VER}"
+            timestamp: "${TS}"
+          app_env: "production"
+          bugsnag_api_key: "${{ secrets.BUGSNAG_API_KEY }}"
+          recaptcha_site_key: "${{ secrets.RECAPTCHA_SITE_KEY }}"
+          EOF
 
       - name: Build Jekyll site
         run: bundle exec jekyll build --config _config.yml,_config.deploy.yml

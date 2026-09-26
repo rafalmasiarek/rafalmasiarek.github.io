@@ -23,12 +23,35 @@
 (function () {
   'use strict';
 
+  // Register vinyls-specific error codes with AppErrors, if loaded.
+  if (window.AppErrors && typeof window.AppErrors.registerCode === 'function') {
+    AppErrors.registerCode('VINYLS_CONFIG_MISSING', { severity: 'error', publicMessage: 'Vinyl collection is temporarily unavailable.' });
+    AppErrors.registerCode('VINYLS_FETCH_FAILED', { severity: 'error', publicMessage: 'Failed to load vinyls.' });
+  }
+
+  // Safe fallback: works whether or not app-errors.js is loaded.
+  function reportError(error, context = {}) {
+    if (window.AppErrors && typeof window.AppErrors.report === 'function') {
+      window.AppErrors.report(error, context);
+      return;
+    }
+    console.error(error, context);
+  }
+
+  // Shared session trace id, or a local fallback if app-errors.js is absent.
+  function newRequestId() {
+    if (window.AppErrors && typeof window.AppErrors.getRequestId === 'function') {
+      return window.AppErrors.getRequestId();
+    }
+    return Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
+  }
+
   // ---- Guards ----
   if (!window.__VINYLS_API__ || !window.__VINYLS_API__.trim()) {
-    console.error('VINYLS: Missing window.__VINYLS_API__ (set site.vinyls_api_url in _config.yml)');
+    reportError(new Error('Missing window.__VINYLS_API__ (set site.vinyls_api_url in _config.yml)'), { component: 'vinyl-loader', operation: 'init', code: 'VINYLS_CONFIG_MISSING' });
   }
   if (!window.__SITE_BASE__ || !window.__SITE_BASE__.trim()) {
-    console.error('VINYLS: Missing window.__SITE_BASE__ (site.url+baseurl)');
+    reportError(new Error('Missing window.__SITE_BASE__ (site.url+baseurl)'), { component: 'vinyl-loader', operation: 'init', code: 'VINYLS_CONFIG_MISSING' });
   }
 
   const API_LIST = String(window.__VINYLS_API__ || '').trim().replace(/\/+$/, '');
@@ -273,7 +296,7 @@
       u.searchParams.set('per_page', '1');
       u.searchParams.set('facets', '1');
 
-      const r = await fetch(u.toString(), { credentials: 'omit' });
+      const r = await fetch(u.toString(), { credentials: 'omit', headers: { 'X-Request-Id': newRequestId() } });
       const p = await r.json();
 
       const facets = p?.facets;
@@ -440,8 +463,9 @@
     if (loadingEl) loadingEl.style.display = 'block';
 
     const url = buildPageUrl(currentPage, activeArtist);
+    const reqId = newRequestId();
 
-    fetch(url, { credentials: 'omit' })
+    fetch(url, { credentials: 'omit', headers: { 'X-Request-Id': reqId } })
       .then(r => r.json())
       .then(payload => {
         const list = payload?.data || [];
@@ -500,7 +524,7 @@
         });
       })
       .catch(err => {
-        console.error('Failed to load page:', err);
+        reportError(err, { component: 'vinyl-loader', operation: 'load-page', code: 'VINYLS_FETCH_FAILED', metadata: { requestId: reqId } });
         const grid = document.getElementById('vinyl-grid');
         if (grid && currentPage === 1) {
           grid.innerHTML = '';

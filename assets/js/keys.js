@@ -10,6 +10,23 @@
  * is strictly prohibited without prior written permission of the author.
  */
 
+// Register keys-page-specific error codes with AppErrors, if loaded.
+if (window.AppErrors && typeof window.AppErrors.registerCode === 'function') {
+    AppErrors.registerCode('KEYS_INIT_FAILED', { severity: 'error', publicMessage: 'Keys could not be loaded.' });
+    AppErrors.registerCode('KEYS_PGP_PARSE_FAILED', { severity: 'warning', publicMessage: 'Could not display PGP key details.' });
+    AppErrors.registerCode('KEYS_SSH_PARSE_FAILED', { severity: 'warning', publicMessage: 'Could not display SSH key details.' });
+    AppErrors.registerCode('KEYS_COPY_FAILED', { severity: 'warning', publicMessage: 'Could not copy to clipboard.' });
+}
+
+// Safe fallback: works whether or not app-errors.js is loaded.
+function reportError(error, context = {}) {
+    if (window.AppErrors && typeof window.AppErrors.report === 'function') {
+        window.AppErrors.report(error, context);
+        return;
+    }
+    console.error(error, context);
+}
+
 // Identity DNS records
 const IDENTITY = {
     metaDomain: '_identity.masiarek.pl',
@@ -531,7 +548,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (btn) btn.textContent = '✓';
                 setTimeout(() => { if (btn) btn.textContent = old || '🔗'; }, 900);
             } catch (err2) {
-                console.error('Copy link failed:', e, err2);
+                reportError(err2, { component: 'keys', operation: 'copy-link', code: 'KEYS_COPY_FAILED', metadata: { clipboardApiError: String((e && e.message) || e) } });
             }
         }
     }
@@ -559,7 +576,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (btn) btn.textContent = old || '⧉ Copy';
                 }, 900);
             } catch (err2) {
-                console.error('Copy failed:', e, err2);
+                reportError(err2, { component: 'keys', operation: 'copy-key', code: 'KEYS_COPY_FAILED', metadata: { clipboardApiError: String((e && e.message) || e) } });
             }
         }
     }
@@ -600,7 +617,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 ['User IDs', uidsText],
             ]);
         } catch (e) {
-            console.error('PGP info parse failed:', e);
+            reportError(e, { component: 'keys', operation: 'render-pgp', code: 'KEYS_PGP_PARSE_FAILED' });
             if (elPgpInfo) elPgpInfo.innerHTML = '';
         }
     }
@@ -647,7 +664,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 ['Comment', comment],
             ]);
         } catch (e) {
-            console.error('SSH info parse failed:', e);
+            reportError(e, { component: 'keys', operation: 'render-ssh', code: 'KEYS_SSH_PARSE_FAILED' });
             if (elSshInfo) elSshInfo.innerHTML = '';
         }
     }
@@ -710,7 +727,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             await reloadForSelection();
         } catch (e) {
-            console.error('Keys page error:', e);
+            reportError(e, { component: 'keys', operation: 'init', code: 'KEYS_INIT_FAILED' });
             showError((e && e.message) ? `✖ ${e.message}` : '✖ Unexpected error occurred.');
             if (elPgp.value === 'Loading…') elPgp.value = '';
             if (elSsh.value === 'Loading…') elSsh.value = '';
