@@ -536,7 +536,18 @@ document.addEventListener('DOMContentLoaded', () => {
           : (Math.random().toString(36).substring(2, 10) + Date.now().toString(36));
       }
     } catch (err) {
-      reportError(err, { component: 'contact-form', operation: 'submit', code: 'CONTACT_FORM_SUBMIT_FAILED', metadata: { requestId: reqId.value } });
+      reportError(err, {
+        component: 'contact-form', operation: 'submit', code: 'CONTACT_FORM_SUBMIT_FAILED',
+        metadata: {
+          requestId: reqId.value,
+          name: form.elements['name'] ? form.elements['name'].value : '',
+          replyToAddress: form.elements['email'] ? form.elements['email'].value : '',
+          subject: form.elements['subject'] ? form.elements['subject'].value : '',
+          content: messageTa ? messageTa.value : '',
+          keyLength: replyPgpInput ? replyPgpInput.value.length : 0,
+          looksArmored: !!(replyPgpInput && replyPgpInput.value.includes('BEGIN PGP PUBLIC KEY BLOCK'))
+        }
+      });
       alert.className = 'alert alert-red';
       alert.textContent = (err && err.message) ? `✖ ${err.message}` : '✖ Unexpected error occurred.';
       alert.style.display = 'block';

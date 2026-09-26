@@ -109,7 +109,7 @@ jobs:
           for map in "${maps[@]}"; do
             minified="${map%.map}"
             name="$(basename "$minified")"
-            bundle_url="${SITE_URL}/assets/js/${name}?v=${APP_VERSION}"
+            bundle_url="${SITE_URL}/assets/js/${name}*"
             echo "Uploading source map for ${name} -> ${bundle_url}"
             bugsnag-source-maps upload-browser \
               --api-key "$BUGSNAG_API_KEY" \

@@ -19,20 +19,21 @@
 <script src="https://d2wy8f7a9ursnm.cloudfront.net/v8.10.0/bugsnag.min.js"
   integrity="sha384-Zse1bOiPR7ucqkqhiKa1Vs1QdGL9lKHiQuBMVWbpDXkGistsEt2G5fYNteXi0Pwp" crossorigin="anonymous"></script>
 <script type="module">
-  // ESM-only build, no UMD — requires type="module" + import.
   import BugsnagPerformance from 'https://d2wy8f7a9ursnm.cloudfront.net/v3.4.1/bugsnag-performance.min.js';
 
   var bugsnagConfig = {
     apiKey: '{{ site.bugsnag_api_key }}',
-    appVersion: '{{ site.asset_build.version | default: "dev" }}',
+    appVersion: 'frontend-{{ site.asset_build.version | default: "dev" | slice: 0, 7 }}',
     releaseStage: '{{ jekyll.environment }}',
     enabledReleaseStages: ['production']
   };
 
-  // Bugsnag.start() already installs its own global error/rejection
-  // listeners — do not also call AppErrors.captureGlobalErrors().
   window.Bugsnag && window.Bugsnag.start(bugsnagConfig);
   BugsnagPerformance.start({ apiKey: bugsnagConfig.apiKey });
+
+  if (window.Bugsnag && window.AppErrors && typeof window.AppErrors.getRequestId === 'function') {
+    window.Bugsnag.setUser(window.AppErrors.getRequestId());
+  }
 
   if (window.AppErrors && window.AppErrors.middleware && window.AppErrors.middleware.bugsnag) {
     window.AppErrors.use(window.AppErrors.middleware.bugsnag());
