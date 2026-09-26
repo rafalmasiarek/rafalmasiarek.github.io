@@ -1,0 +1,11 @@
+# Known false positives: historical public reCAPTCHA site_key values.
+# The site key (as opposed to the secret key) is meant to be public and
+# embedded in client-side HTML — not a credential. Both are now sourced
+# from a GitHub Actions secret instead of being committed (see
+# .github/workflows/deploy.yml, "Generate deploy config"), but these old
+# commits from before that change remain in history and can't be un-committed
+# without rewriting published history, which isn't warranted for a
+# non-sensitive value.
+e9f4c79308bd464f4c226bdf0974e649ec361d10:_config.yml:generic-api-key:5
+ed85675a7d63424250f52db8d25b9afbdd89c406:_includes/contactform.html:generic-api-key:2
+9fa32975044da8c9d0a445d521e2978c385664ca:_config.yml:generic-api-key:5

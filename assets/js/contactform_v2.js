@@ -14,6 +14,25 @@
  * sublicense, or redistribute this code.
  */
 
+// Register contact-form-specific error codes with AppErrors, if loaded.
+// Keeps these codes out of the reusable app-errors.js core.
+if (window.AppErrors && typeof window.AppErrors.registerCode === 'function') {
+  AppErrors.registerCode('CONTACT_FORM_HTTP_ERROR', { severity: 'error', publicMessage: 'The message could not be sent. Please try again later.' });
+  AppErrors.registerCode('CONTACT_FORM_SUBMIT_FAILED', { severity: 'error', publicMessage: 'The message could not be sent. Please try again later.' });
+  AppErrors.registerCode('CSRF_GENERATE_FAILED', { severity: 'warning', publicMessage: 'The form could not be initialized. Please reload the page.' });
+  AppErrors.registerCode('CSRF_REGENERATE_FAILED', { severity: 'warning', publicMessage: 'The form could not be initialized. Please reload the page.' });
+  AppErrors.registerCode('CSRF_EXPIRY_CHECK_FAILED', { severity: 'warning', publicMessage: 'The form could not be initialized. Please reload the page.' });
+}
+
+// Safe fallback: works whether or not app-errors.js is loaded.
+function reportError(error, context = {}) {
+  if (window.AppErrors && typeof window.AppErrors.report === 'function') {
+    window.AppErrors.report(error, context);
+    return;
+  }
+  console.error(error, context);
+}
+
 // Endpoints configuration
 const ENDPOINTS = {
   csrfGenerate: '/api/v1/csrf/generate',
@@ -321,7 +340,10 @@ document.addEventListener('DOMContentLoaded', () => {
     reqId.id = 'cf_request_id';
     form.appendChild(reqId);
   }
-  reqId.value = Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
+  // Shared session trace id, or a local fallback if app-errors.js is absent.
+  reqId.value = (window.AppErrors && typeof window.AppErrors.getRequestId === 'function')
+    ? window.AppErrors.getRequestId()
+    : (Math.random().toString(36).substring(2, 10) + Date.now().toString(36));
 
   // Optional: textarea character counter
   (function setupTextareaCounter() {
@@ -373,7 +395,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function csrfGet(url) {
     return fetch(url, {
       method: 'GET',
-      headers: { 'X-CSRF-Container': CSRF_CONTAINER },
+      headers: { 'X-CSRF-Container': CSRF_CONTAINER, 'X-Request-Id': reqId.value },
       credentials: 'same-origin',
     });
   }
@@ -387,7 +409,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (tokenProofInput) tokenProofInput.value = json.data.proof || '';
       }
     })
-    .catch(err => console.error('CSRF token fetch error:', err));
+    .catch(err => reportError(err, { component: 'contact-form', operation: 'csrf-generate', code: 'CSRF_GENERATE_FAILED', metadata: { requestId: reqId.value } }));
 
   // Regenerate token
   async function regenerateToken() {
@@ -400,7 +422,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('CSRF token regenerated and updated.');
       }
     } catch (err) {
-      console.error('CSRF token regeneration error:', err);
+      reportError(err, { component: 'contact-form', operation: 'csrf-regenerate', code: 'CSRF_REGENERATE_FAILED', metadata: { requestId: reqId.value } });
     }
   }
 
@@ -413,7 +435,7 @@ document.addEventListener('DOMContentLoaded', () => {
         await regenerateToken();
       }
     } catch (err) {
-      console.error('CSRF token expiry check error:', err);
+      reportError(err, { component: 'contact-form', operation: 'csrf-expiry-check', code: 'CSRF_EXPIRY_CHECK_FAILED', metadata: { requestId: reqId.value } });
     }
   }, 10000);
 
@@ -488,6 +510,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Send the form
       const res = await fetch(ENDPOINTS.formSubmit, {
         method: 'POST',
+        headers: { 'X-Request-Id': reqId.value },
         body,
       });
 
@@ -507,15 +530,15 @@ document.addEventListener('DOMContentLoaded', () => {
         setPgpStatus('');
         if (pgpWrap) pgpWrap.style.display = 'none';
 
-        // refresh request id
-        if (reqId) {
-          reqId.value = Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
-        }
+        // form.reset() clears reqId's value — restore it.
+        reqId.value = (window.AppErrors && typeof window.AppErrors.getRequestId === 'function')
+          ? window.AppErrors.getRequestId()
+          : (Math.random().toString(36).substring(2, 10) + Date.now().toString(36));
       }
     } catch (err) {
-      console.error('Contact form error:', err);
+      reportError(err, { component: 'contact-form', operation: 'submit', code: 'CONTACT_FORM_SUBMIT_FAILED', metadata: { requestId: reqId.value } });
       alert.className = 'alert alert-red';
-      alert.textContent = (err && err.message) ? `â ${err.message}` : '❌ Unexpected error occurred.';
+      alert.textContent = (err && err.message) ? `✖ ${err.message}` : '✖ Unexpected error occurred.';
       alert.style.display = 'block';
       setPgpStatus('');
     } finally {
