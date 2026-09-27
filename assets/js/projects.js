@@ -127,22 +127,37 @@ function renderFilteredProjects() {
 
 async function loadProjects() {
     const container = document.getElementById('projects-container');
+    container.innerHTML = '<div class="col-12 text-center text-muted py-5"><i class="fas fa-spinner fa-spin fa-2x"></i><div class="mt-2">Loading projects...</div></div>';
 
     try {
         for (const user of users) {
-            const repos = await fetchRepos(user);
-            const filtered = repos.filter(r => {
-                if (!filterTopic) return true;
-                return r.topics && r.topics.includes(filterTopic);
-            });
-            filtered.forEach(repo => {
-                const card = createCard(repo);
-                allProjects.push(card);
-            });
+            try {
+                const repos = await fetchRepos(user);
+                const filtered = repos.filter(r => {
+                    if (!filterTopic) return true;
+                    return r.topics && r.topics.includes(filterTopic);
+                });
+                filtered.forEach(repo => {
+                    const card = createCard(repo);
+                    allProjects.push(card);
+                });
+            } catch (err) {
+                // One user's GitHub API failure (rate limit, 404, network)
+                // shouldn't wipe out projects already loaded from others.
+                reportError(err, { component: 'projects', operation: 'load', code: 'PROJECTS_FETCH_FAILED', metadata: { user } });
+            }
         }
+
+        if (allProjects.length === 0) {
+            container.innerHTML = '<div class="col-12 text-center text-danger">Error loading projects. Please try again later.</div>';
+            return;
+        }
+
         updateFilterButtons();
         renderFilteredProjects();
     } catch (err) {
+        // Unexpected failure outside the per-user fetch loop (e.g. rendering)
+        // — genuinely unforeseen, not a GitHub API blip.
         reportError(err, { component: 'projects', operation: 'load', code: 'PROJECTS_FETCH_FAILED' });
         container.innerHTML = '<div class="col-12 text-center text-danger">Error loading projects. Please try again later.</div>';
     }

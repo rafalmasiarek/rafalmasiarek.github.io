@@ -36,6 +36,17 @@ function reportError(error, context = {}) {
   console.error(error, context);
 }
 
+// Same resilience as reportError(): works whether or not app-errors.js is
+// loaded, but still carries a `code` for the catch block below to read.
+function makeError(message, options = {}) {
+  if (window.AppErrors && typeof window.AppErrors.Error === 'function') {
+    return new AppErrors.Error(message, options);
+  }
+  const err = new Error(message);
+  if (options.code) err.code = options.code;
+  return err;
+}
+
 // Endpoints configuration
 const ENDPOINTS = {
   csrfGenerate: '/api/v1/csrf/generate',
@@ -43,6 +54,10 @@ const ENDPOINTS = {
   csrfExpiry: '/api/v1/csrf/token-expiry',
   formSubmit: '/api/v2/contactform/send'
 };
+
+// Above this, a hung SMTP relay or reCAPTCHA verification looks
+// indistinguishable from a dropped connection — needs an explicit cutoff.
+const SUBMIT_TIMEOUT_MS = 30000;
 
 // Target CSRF container (editable)
 const CSRF_CONTAINER = 'contactform_main';
@@ -446,6 +461,11 @@ document.addEventListener('DOMContentLoaded', () => {
   form.addEventListener('submit', async (ev) => {
     ev.preventDefault();
 
+    // Populated once a response body is parsed (success or error) so the
+    // catch block below can still report it even when the failure happens
+    // after parsing (e.g. a >=500 status).
+    let attemptId = '';
+
     try {
       // Disable button + spinner
       btn.classList.remove('btn-enable-on-input');
@@ -511,14 +531,44 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       // Send the form
-      const res = await fetch(ENDPOINTS.formSubmit, {
-        method: 'POST',
-        headers: { 'X-Request-Id': reqId.value },
-        body,
-      });
+      const submitController = new AbortController();
+      const submitTimeout = setTimeout(() => submitController.abort(), SUBMIT_TIMEOUT_MS);
+      let res;
+      try {
+        res = await fetch(ENDPOINTS.formSubmit, {
+          method: 'POST',
+          headers: { 'X-Request-Id': reqId.value },
+          body,
+          signal: submitController.signal,
+        });
+      } finally {
+        clearTimeout(submitTimeout);
+      }
 
-      const json = await res.json();
-      const refSuffix = json?.data?.ref ? ` (Ref: ${json.data.ref})` : '';
+      let json;
+      try {
+        json = await res.json();
+      } catch (parseErr) {
+        throw makeError(`Contact form response was not valid JSON (HTTP ${res.status})`, {
+          code: 'CONTACT_FORM_HTTP_ERROR',
+          metadata: { httpStatus: res.status },
+          cause: parseErr,
+        });
+      }
+
+      attemptId = json?.data?.attemptId || json?.errors?.[0]?.detail || '';
+
+      // >=500 is a genuine backend/infra failure, not a user input problem —
+      // 4xx (validation, CSRF, recaptcha, rate limiting) falls through to the
+      // existing alert-only handling below, same as before.
+      if (!res.ok && res.status >= 500) {
+        throw makeError(json.message || `Contact form HTTP ${res.status}`, {
+          code: 'CONTACT_FORM_HTTP_ERROR',
+          metadata: { httpStatus: res.status },
+        });
+      }
+
+      const refSuffix = attemptId ? ` (Ref: ${attemptId})` : '';
 
       alert.className = 'alert ' + (
         json.status === 'success'
@@ -539,15 +589,24 @@ document.addEventListener('DOMContentLoaded', () => {
           : (Math.random().toString(36).substring(2, 10) + Date.now().toString(36));
       }
     } catch (err) {
+      const isTimeout = !!(err && err.name === 'AbortError');
+      const isNetworkFailure = err instanceof TypeError;
+
       // Validation rejections are the user's input, not a bug — same as the
       // backend never reporting a 422 to Bugsnag. Only genuinely unexpected
-      // failures (network, parsing, missing DOM/script, DNS/identity pin
-      // mismatches) go through reportError().
+      // failures (network, timeout, parsing, HTTP >=500, missing DOM/script,
+      // DNS/identity pin mismatches) go through reportError().
       if (!(err instanceof ContactFormValidationError)) {
+        let fallbackCode = 'CONTACT_FORM_SUBMIT_FAILED';
+        if (isTimeout) fallbackCode = 'NETWORK_TIMEOUT';
+        else if (isNetworkFailure) fallbackCode = 'NETWORK_REQUEST_FAILED';
+        else if (err && err.code) fallbackCode = err.code; // makeError()-created errors already carry one
+
         reportError(err, {
-          component: 'contact-form', operation: 'submit', code: 'CONTACT_FORM_SUBMIT_FAILED',
+          component: 'contact-form', operation: 'submit', code: fallbackCode,
           metadata: {
             requestId: reqId.value,
+            attemptId,
             name: form.elements['name'] ? form.elements['name'].value : '',
             replyToAddress: form.elements['email'] ? form.elements['email'].value : '',
             subject: form.elements['subject'] ? form.elements['subject'].value : '',
@@ -557,8 +616,16 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         });
       }
+
+      let userMessage;
+      if (isTimeout) userMessage = 'The request timed out. Please try again.';
+      else if (isNetworkFailure) userMessage = 'Network error. Please check your connection and try again.';
+      else userMessage = (err && err.message) ? err.message : 'Unexpected error occurred.';
+
+      const refSuffix = attemptId ? ` (Ref: ${attemptId})` : '';
+
       alert.className = 'alert alert-red';
-      alert.textContent = (err && err.message) ? `✖ ${err.message}` : '✖ Unexpected error occurred.';
+      alert.textContent = `✖ ${userMessage}${refSuffix}`;
       alert.style.display = 'block';
       setPgpStatus('');
     } finally {
