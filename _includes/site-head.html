@@ -25,7 +25,20 @@
     apiKey: '{{ site.bugsnag_api_key }}',
     appVersion: 'frontend-{{ site.asset_build.version | default: "dev" | slice: 0, 7 }}',
     releaseStage: '{{ jekyll.environment }}',
-    enabledReleaseStages: ['production']
+    enabledReleaseStages: ['production'],
+    onBreadcrumb: function (breadcrumb) {
+      if (breadcrumb.type === 'user' && breadcrumb.metadata && !breadcrumb.metadata.targetText) {
+        try {
+          var el = breadcrumb.metadata.targetSelector && document.querySelector(breadcrumb.metadata.targetSelector);
+          if (el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) {
+            breadcrumb.metadata.targetText = '[field: ' + (el.name || el.id || el.type || el.tagName.toLowerCase()) + ']';
+          }
+        } catch (e) {
+          // invalid/ambiguous selector — leave breadcrumb as-is
+        }
+      }
+      return true;
+    }
   };
 
   window.Bugsnag && window.Bugsnag.start(bugsnagConfig);
