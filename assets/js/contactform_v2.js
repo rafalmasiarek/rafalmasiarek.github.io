@@ -24,6 +24,9 @@ if (window.AppErrors && typeof window.AppErrors.registerCode === 'function') {
   AppErrors.registerCode('CSRF_EXPIRY_CHECK_FAILED', { severity: 'warning', publicMessage: 'The form could not be initialized. Please reload the page.' });
 }
 
+// Marks a rejection as the user's input, not a bug — never sent to reportError().
+class ContactFormValidationError extends Error {}
+
 // Safe fallback: works whether or not app-errors.js is loaded.
 function reportError(error, context = {}) {
   if (window.AppErrors && typeof window.AppErrors.report === 'function') {
@@ -307,14 +310,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const v = (replyPgpInput.value || '').trim();
-    if (!v) throw new Error('Encrypted message requires your PGP public key.');
+    if (!v) throw new ContactFormValidationError('Encrypted message requires your PGP public key.');
     if (!v.includes('BEGIN PGP PUBLIC KEY BLOCK')) {
-      throw new Error('Please paste a valid armored PGP public key block.');
+      throw new ContactFormValidationError('Please paste a valid armored PGP public key block.');
     }
 
     const bytes = new TextEncoder().encode(v).length;
     if (bytes > IDENTITY.maxUserPubKeyBytes) {
-      throw new Error('Your PGP public key is too large.');
+      throw new ContactFormValidationError('Your PGP public key is too large.');
     }
   }
 
@@ -459,7 +462,7 @@ document.addEventListener('DOMContentLoaded', () => {
         requireUserPubKeyIfEncrypted(true);
 
         const plain = (messageTa.value || '');
-        if (!plain.trim()) throw new Error('Message is empty.');
+        if (!plain.trim()) throw new ContactFormValidationError('Message is empty.');
 
         // Resolve recipient key dynamically from identity (DNS + schemas + pins)
         const recipient = await resolveRecipientFromIdentity();
@@ -536,18 +539,24 @@ document.addEventListener('DOMContentLoaded', () => {
           : (Math.random().toString(36).substring(2, 10) + Date.now().toString(36));
       }
     } catch (err) {
-      reportError(err, {
-        component: 'contact-form', operation: 'submit', code: 'CONTACT_FORM_SUBMIT_FAILED',
-        metadata: {
-          requestId: reqId.value,
-          name: form.elements['name'] ? form.elements['name'].value : '',
-          replyToAddress: form.elements['email'] ? form.elements['email'].value : '',
-          subject: form.elements['subject'] ? form.elements['subject'].value : '',
-          content: messageTa ? messageTa.value : '',
-          keyLength: replyPgpInput ? replyPgpInput.value.length : 0,
-          looksArmored: !!(replyPgpInput && replyPgpInput.value.includes('BEGIN PGP PUBLIC KEY BLOCK'))
-        }
-      });
+      // Validation rejections are the user's input, not a bug — same as the
+      // backend never reporting a 422 to Bugsnag. Only genuinely unexpected
+      // failures (network, parsing, missing DOM/script, DNS/identity pin
+      // mismatches) go through reportError().
+      if (!(err instanceof ContactFormValidationError)) {
+        reportError(err, {
+          component: 'contact-form', operation: 'submit', code: 'CONTACT_FORM_SUBMIT_FAILED',
+          metadata: {
+            requestId: reqId.value,
+            name: form.elements['name'] ? form.elements['name'].value : '',
+            replyToAddress: form.elements['email'] ? form.elements['email'].value : '',
+            subject: form.elements['subject'] ? form.elements['subject'].value : '',
+            content: messageTa ? messageTa.value : '',
+            keyLength: replyPgpInput ? replyPgpInput.value.length : 0,
+            looksArmored: !!(replyPgpInput && replyPgpInput.value.includes('BEGIN PGP PUBLIC KEY BLOCK'))
+          }
+        });
+      }
       alert.className = 'alert alert-red';
       alert.textContent = (err && err.message) ? `✖ ${err.message}` : '✖ Unexpected error occurred.';
       alert.style.display = 'block';
