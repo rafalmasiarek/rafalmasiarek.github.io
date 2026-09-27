@@ -27,6 +27,20 @@ function reportError(error, context = {}) {
     console.error(error, context);
 }
 
+// A fetch() that never got a response (offline, WiFi switch, DoH provider
+// unreachable) throws a plain TypeError. init() runs the DNS-over-HTTPS
+// lookup and pinned key/schema/manifest fetches, so a transient connectivity
+// blip here is a real possibility, not just noise — but it still isn't a
+// parse/config bug worth alerting on the same way. Only report when
+// something else went wrong handling an actual response.
+function reportKeysError(error, operation, code) {
+    if (error instanceof TypeError) {
+        console.warn(`[keys] ${operation} network error (likely transient):`, error);
+        return;
+    }
+    reportError(error, { component: 'keys', operation, code });
+}
+
 // Identity DNS records
 const IDENTITY = {
     metaDomain: '_identity.masiarek.pl',
@@ -727,7 +741,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             await reloadForSelection();
         } catch (e) {
-            reportError(e, { component: 'keys', operation: 'init', code: 'KEYS_INIT_FAILED' });
+            reportKeysError(e, 'init', 'KEYS_INIT_FAILED');
             showError((e && e.message) ? `✖ ${e.message}` : '✖ Unexpected error occurred.');
             if (elPgp.value === 'Loading…') elPgp.value = '';
             if (elSsh.value === 'Loading…') elSsh.value = '';
