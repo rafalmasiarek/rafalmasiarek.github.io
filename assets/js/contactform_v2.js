@@ -418,6 +418,22 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // A fetch() that never got a response (offline, WiFi switch, laptop woke
+  // from sleep mid-request) throws a plain TypeError, before any response
+  // exists to read .json() from. These background checks retry on their own
+  // next cycle regardless, and at any real user count this is constant,
+  // non-actionable noise — same call as access-helper.js's clipboard
+  // fallback or vinyl-loader's facet fallback (see CLAUDE.md). Only report
+  // when a response was actually received but something about it was wrong
+  // (bad JSON, a thrown error while handling it, etc.) — a genuine backend bug.
+  function reportCsrfError(err, operation, code) {
+    if (err instanceof TypeError) {
+      console.warn(`[contact-form] ${operation} network error (likely transient):`, err);
+      return;
+    }
+    reportError(err, { component: 'contact-form', operation, code, metadata: { requestId: reqId.value } });
+  }
+
   // Initial CSRF token fetch
   csrfGet(ENDPOINTS.csrfGenerate)
     .then(res => res.json())
@@ -427,7 +443,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (tokenProofInput) tokenProofInput.value = json.data.proof || '';
       }
     })
-    .catch(err => reportError(err, { component: 'contact-form', operation: 'csrf-generate', code: 'CSRF_GENERATE_FAILED', metadata: { requestId: reqId.value } }));
+    .catch(err => reportCsrfError(err, 'csrf-generate', 'CSRF_GENERATE_FAILED'));
 
   // Regenerate token
   async function regenerateToken() {
@@ -440,7 +456,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('CSRF token regenerated and updated.');
       }
     } catch (err) {
-      reportError(err, { component: 'contact-form', operation: 'csrf-regenerate', code: 'CSRF_REGENERATE_FAILED', metadata: { requestId: reqId.value } });
+      reportCsrfError(err, 'csrf-regenerate', 'CSRF_REGENERATE_FAILED');
     }
   }
 
@@ -453,7 +469,7 @@ document.addEventListener('DOMContentLoaded', () => {
         await regenerateToken();
       }
     } catch (err) {
-      reportError(err, { component: 'contact-form', operation: 'csrf-expiry-check', code: 'CSRF_EXPIRY_CHECK_FAILED', metadata: { requestId: reqId.value } });
+      reportCsrfError(err, 'csrf-expiry-check', 'CSRF_EXPIRY_CHECK_FAILED');
     }
   }, 10000);
 
