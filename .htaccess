@@ -1,3 +1,4 @@
+
 # Block access to Jekyll config files and any backups/variants
 <FilesMatch "^_config(\.[A-Za-z0-9_-]+)?\.ya?ml(\..*)?$">
   Require all denied
@@ -121,9 +122,22 @@
   # ---------------------------------------------------------
   # BROTLI HEADERS
   # ---------------------------------------------------------
+  <FilesMatch "\.(html|css|js)(\.br)?$">
+    Header merge Vary Accept-Encoding
+  </FilesMatch>
+
   <FilesMatch "\.(html|css|js)\.br$">
     Header set Content-Encoding br
-    Header merge Vary Accept-Encoding
+  </FilesMatch>
+
+
+  # ---------------------------------------------------------
+  # STATIC ASSETS - LONG-TERM BROWSER CACHE
+  # ---------------------------------------------------------
+  # Use versioned filenames when immutable is enabled.
+  #
+  <FilesMatch "\.(webp|avif|png|jpe?g|gif|ico|svg)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
   </FilesMatch>
 
 
@@ -148,6 +162,9 @@
   AddType text/css .css.br
   AddType application/javascript .js.br
 
+  AddType image/webp .webp
+  AddType image/avif .avif
+
   AddDefaultCharset UTF-8
   AddCharset UTF-8 .html .htm .txt .md .xml .json .css .js .map .webmanifest .svg
 </IfModule>
@@ -157,3 +174,4 @@
 # ERROR DOCUMENTS
 # ---------------------------------------------------------
 ErrorDocument 404 /404.html
+
