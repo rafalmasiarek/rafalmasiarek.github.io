@@ -34,6 +34,10 @@ assets/vinyl_covers/*
 !assets/vinyl_covers/.gitkeep
 !assets/vinyl_covers/*.overwrite.jpg
 
+# Images (managed on the production server, not tracked here)
+assets/img/*
+!assets/img/.gitkeep
+
 # Minified build artifacts (generated in CI)
 assets/js/*.min.js
 assets/js/*.min.js.map
