@@ -6,7 +6,8 @@ layout: base
     {% if page.avatar != '' %}
     <div class="avatar-wrapper">
       <figure class="filter-willow">
-        <img src="{{ page.avatar }}">
+        <img src="{{ page.avatar }}" width="700" height="700" decoding="async" fetchpriority="low"
+          onerror="this.style.display='none'">
       </figure>
     </div>
     {% endif %}

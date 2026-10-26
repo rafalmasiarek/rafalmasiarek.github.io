@@ -78,6 +78,15 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+{% if page.avatar %}
+{%- assign avatar_no_proto = page.avatar | remove_first: "https://" | remove_first: "http://" -%}
+{%- assign avatar_host = avatar_no_proto | split: "/" | first -%}
+{%- assign site_no_proto = site.url | remove_first: "https://" | remove_first: "http://" -%}
+{%- assign site_host = site_no_proto | split: "/" | first -%}
+{% if avatar_host != site_host %}
+<link rel="preconnect" href="https://{{ avatar_host }}" crossorigin>
+{% endif %}
+{% endif %}
 {% include asset-preconnects.html %}
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@100..700&display=swap" rel="stylesheet">
 
@@ -88,7 +97,6 @@
 {% else %}
 <link href="{{ "css/style.css" | asset_url }}" rel="stylesheet">
 {% endif %}
-<link rel="stylesheet" href="{{ "instagram.css/@latest/instagram.min.css" | asset_url: "cdn" }}">
 
 <script src="https://kit.fontawesome.com/cc759ba0dc.js" crossorigin="anonymous"></script>
 
