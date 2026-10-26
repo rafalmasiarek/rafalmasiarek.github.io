@@ -66,9 +66,16 @@ code {
   padding: 2px 3px
 }
 
+pre code {
+  display: block;
+  background-color: transparent;
+  color: #fff;
+  padding: 0;
+}
+
 pre {
   padding: 1ch;
-  background-color: #f4f4f4;
+  background-color: #222;
   overflow-x: auto
 }
 
@@ -122,11 +129,6 @@ a {
   padding: 0
 }
 
-footer a {
-  color: #d3d3d3;
-  background-image: linear-gradient(to bottom, #d3d3d3 75%, #d3d3d3 75%)
-}
-
 .lang-nav a:hover,
 .lang-nav a:visited,
 .lang-nav a:link,
@@ -157,6 +159,24 @@ li>ul {
    05) Header / Identity
 ============================================================================= */
 
+.header-row {
+  position: relative;
+  z-index: 960;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1ch;
+  margin: 1.5em 0;
+}
+
+.username {
+  margin: 0;
+  flex-shrink: 0;
+  white-space: nowrap;
+  position: relative;
+  z-index: 1000;
+}
+
 .username a {
   text-shadow: none;
   background-image: none;
@@ -166,33 +186,162 @@ li>ul {
   border: 0
 }
 
+body.nav-open .username a {
+  background-color: #fff;
+  color: #000;
+}
+
 .avatar-wrapper {
   width: 300px;
   height: 300px;
   margin: 25px auto;
   overflow: hidden;
   border-radius: 50%;
-  position: relative
+  position: relative;
+  background-color: #fff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128' fill='none' shape-rendering='auto'%3E%3Cdefs%3E%3Cg id='eyes-variant01-ec2d8fd1'%3E%3Cpath d='M19.8 37.8c2.2-3.1 9-8.4 19-4m36.8-.3c2.8-2.7 10.5-6.3 19.4 0' stroke='%23000000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M28.3 33.3c-1 .5-2.7 2.1-1.5 4.5 1.5 3 6.5.5 6-1.5-.4-1.6-2.2-2-3-2m55-3.4c-1 .2-3 1.4-2.4 4 .8 3.3 6.3 2 6.2-.2 0-1.6-1.7-2.4-2.5-2.5m-70.6-7.8c5.4-1.7 18-3.6 25.7 2.2m31.5.6c3.4-5.4 14.3-11.2 22-7.6' stroke='%23000000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/g%3E%3Cg id='nose-variant02-ec2d8fd1'%3E%3Cpath d='M21.2 9.5c5 4 12 23 6 29s-8.7-4.7-13.8-4.7-9 6-8.5-1c.4-5.6 4-5.5 4.7-5.8' stroke='%23000000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/g%3E%3Cg id='mouth-variant03-ec2d8fd1'%3E%3Cpath d='M17 9.5c-1.3 2.1.4 7.7 15.3 6.8s19-9 14.5-8.8c-6.2.2-10.7 4.2-20.1 2-3.4-.7-8.5-2-9.7 0' stroke='%23000000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/g%3E%3CclipPath id='clip-ec2d8fd1'%3E%3Crect width='128' height='128' rx='0' ry='0'/%3E%3C/clipPath%3E%3C/defs%3E%3Cg clip-path='url(%23clip-ec2d8fd1)'%3E%3Crect width='128' height='128' fill='%23ffffff'/%3E%3Cuse transform='translate(9.5 5.5)' href='%23eyes-variant01-ec2d8fd1'/%3E%3Cuse transform='translate(47.5 46.5)' href='%23nose-variant02-ec2d8fd1'/%3E%3Cuse transform='translate(32.5 93.5)' href='%23mouth-variant03-ec2d8fd1'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: cover;
+}
+
+.filter-willow {
+  filter: brightness(1.2) contrast(.85) saturate(.05) sepia(.2);
+}
+
+.avatar-wrapper figure {
+  display: block;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+.avatar-wrapper img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.scroll-top-btn {
+  display: none;
+  position: fixed;
+  right: 1.5em;
+  bottom: 1.5em;
+  width: 2.5em;
+  height: 2.5em;
+  background-color: #333;
+  color: #eee;
+  font: 20px/1 'Roboto Mono';
+  cursor: pointer;
+  z-index: 900;
+}
+
+.scroll-top-btn.is-visible {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* =============================================================================
    06) Navigation (global)
 ============================================================================= */
 
+.navigation {
+  visibility: hidden;
+}
+
 .navigation ul {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 10px 16px;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .navigation li {
-  flex: 3;
-  justify-content: center
+  display: flex;
+  justify-content: center;
 }
 
-.navigation .user {
-  flex: 1
+.navigation a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  white-space: nowrap;
+  color: #d3d3d3;
+  background-image: linear-gradient(to bottom, #d3d3d3 75%, #d3d3d3 75%);
+  transition: background-color .2s ease, color .2s ease;
+}
+
+.navigation a:hover {
+  background-color: rgba(255, 255, 255, 0.8);
+  color: #000;
+}
+
+.navigation-ruler {
+  position: absolute;
+  top: -9999px;
+  left: -9999px;
+  visibility: hidden;
+  pointer-events: none;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 10px 16px;
+}
+
+.navigation-ruler li {
+  display: flex;
+}
+
+.navigation-ruler a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  white-space: nowrap;
+}
+
+.menu-toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 28px;
+  height: 22px;
+  cursor: pointer;
+  position: relative;
+  z-index: 1000;
+}
+
+.menu-toggle span {
+  display: block;
+  height: 3px;
+  background-color: #000;
+  border-radius: 2px;
+  transition: transform .25s, opacity .25s, background-color .25s;
+}
+
+body.nav-open .menu-toggle span {
+  background-color: #fff;
+}
+
+.menu-toggle.is-open span:nth-child(1) {
+  transform: translateY(8px) rotate(45deg);
+}
+
+.menu-toggle.is-open span:nth-child(2) {
+  opacity: 0;
+}
+
+.menu-toggle.is-open span:nth-child(3) {
+  transform: translateY(-8px) rotate(-45deg);
 }
 
 /* =============================================================================
@@ -497,7 +646,8 @@ textarea.input {
   font-family: "Roboto Mono", monospace;
   font-optical-sizing: auto;
   font-weight: 200;
-  font-style: normal
+  font-style: normal;
+  padding-left: 2ch
 }
 
 /* =============================================================================
@@ -1262,42 +1412,75 @@ img.loaded {
 }
 
 /* =============================================================================
-   17) Footer spacing + "navbar" feel (append-only overrides)
+   18) Lab
 ============================================================================= */
 
-/* Give the page some breathing room so the footer doesn't sit on the viewport edge */
-body {
-  padding-bottom: clamp(18px, 3vw, 40px);
+.lab-list {
+  list-style: none;
+  margin: 2em 0 0;
+  padding: 0.5em 1.5em;
 }
 
-/* Footer box spacing */
-footer {
-  padding-bottom: clamp(14px, 3vw, 28px);
+.lab-item + .lab-item {
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-/* Footer navigation layout */
-footer .navigation ul {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px 16px;
-  align-items: center;
-  justify-content: center;
+.lab-item__bar {
+  position: relative;
+  padding: 1em 0;
+  text-align: center;
 }
 
-/* Make li actually center its content */
-footer .navigation li {
-  flex: 0 1 auto;
-  display: flex;
-  justify-content: center;
+.lab-item__title {
+  font-weight: 700;
 }
 
-/* Increase touch target and give a subtle "nav item" shape */
-footer .navigation a {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  border-radius: 10px;
+.lab-item__hit {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.lab-item--expand .lab-item__bar::after {
+  content: "+";
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  font-weight: 700;
+  transition: transform 0.2s ease;
+}
+
+.lab-item--expand.is-open .lab-item__bar::after {
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.lab-item__panel {
+  margin: 0 -1.5em;
+  padding: 1em 1.5em 1.2em;
+  background-color: #fff;
+}
+
+.lab-item:last-child .lab-item__panel {
+  margin-bottom: -0.5em;
+  padding-bottom: calc(1.2em + 0.5em);
+}
+
+.lab-item__panel p {
+  margin: 0 0 0.6em;
+  font-weight: 200;
+}
+
+.lab-item__cta {
+  font-size: 0.85em;
+  color: #d3d3d3;
+  background-image: linear-gradient(to bottom, #d3d3d3 75%, #d3d3d3 75%);
 }
 
 /* =============================================================================
@@ -1455,32 +1638,55 @@ footer .navigation a {
   }
 }
 
-@media all and (max-width:1000px) {
-  .navigation ul {
-    flex-wrap: wrap
-  }
-
-  .navigation li {
-    flex: 1 1 50%
-  }
-
-  .navigation .user {
-    flex: 1 1 33.33%
-  }
+.header-row.nav-compact .menu-toggle {
+  display: flex;
 }
 
-@media all and (max-width:480px) {
-  .navigation li {
-    flex-basis: 100%
-  }
+.header-row.nav-compact .navigation {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 950;
+  background-color: #000;
+}
 
-  .navigation .user {
-    flex-basis: 50%
-  }
+.header-row.nav-compact .navigation.is-open {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+  padding: 2em 0;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
 
-  footer .navigation ul {
-    justify-content: flex-start;
-  }
+.header-row.nav-compact .navigation.is-open::-webkit-scrollbar {
+  display: none;
+}
+
+.header-row.nav-compact .navigation ul {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  justify-content: center;
+  gap: 1.5em;
+}
+
+.header-row.nav-compact .navigation a {
+  color: #fff;
+  font-size: 1.4em;
+  width: 80vw;
+  justify-content: center;
+  border-radius: 0;
+  background-image: none;
+}
+
+.header-row.nav-compact .navigation a:hover {
+  background-color: rgba(255, 255, 255, 0.8);
+  color: #000;
+}
+
+body.nav-open {
+  overflow: hidden;
 }
 
 @media (min-width: 1024px) {

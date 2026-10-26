@@ -1,7 +1,11 @@
 {% if jekyll.environment == "production" %}
+<script src="{{ "js/nav-menu.min.js" | asset_url }}" defer></script>
+<script src="{{ "js/scroll-top.min.js" | asset_url }}" defer></script>
 <script src="{{ "js/analytics-events.min.js" | asset_url }}" defer></script>
 <script src="{{ "twemoji-windows/@latest/twemoji-windows.min.js" | asset_url: "cdn" }}" defer></script>
 {% else %}
+<script src="{{ "js/nav-menu.js" | asset_url }}" defer></script>
+<script src="{{ "js/scroll-top.js" | asset_url }}" defer></script>
 <script src="{{ "js/analytics-events.js" | asset_url }}" defer></script>
 <script src="{{ "twemoji-windows/@latest/twemoji-windows.js" | asset_url: "cdn" }}" defer></script>
 {% endif %}

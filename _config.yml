@@ -51,6 +51,8 @@ nav:
   - title: I ❤️ OPENSOURCE
     url: /i-love-opensource
 
+lab: []
+
 robots:
   enabled: true
   user_agent: "*"
@@ -136,17 +138,18 @@ compress_html:
   startings: [html, head, body]
 
 licenses:
+  - name: Croodles Neutral (DiceBear)
+    license: CC BY 4.0
+    author: "vijay verma (https://vjy.me/)"
+    homepage: https://www.dicebear.com/styles/croodles-neutral/
+    source_url: https://www.figma.com/community/file/966199982810283152
+    source: CSS
   - name: Bootstrap
     version: 5.3.8
     license: MIT
     author: The Bootstrap Authors
     homepage: https://getbootstrap.com/
     source_url: https://github.com/twbs/bootstrap
-    source: JS
-  - name: instagram.css
-    license: MIT
-    author: "Yan Zhu (https://github.com/picturepan2)"
-    source_url: https://github.com/picturepan2/instagram.css
     source: JS
   - name: js-fair-consent
     version: v1.0.0
@@ -200,6 +203,7 @@ include:
   - "kirby/.cicd-pipeline-exclude"
 
 exclude:
+  - "drafts"
   - "legal"
   - "**/*.md.overwrite"
   - "projects/content"
