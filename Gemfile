@@ -16,6 +16,11 @@ end
 gem "tzinfo", "~> 2.0"
 gem "tzinfo-data"
 
+# No longer default gems as of Ruby 4.0; jekyll-assets (and its
+# mini_magick dependency) still require them unconditionally.
+gem "benchmark"
+gem "ostruct"
+
 # Performance-booster for watching directories on Windows
 gem "wdm", "~> 0.2.0", :install_if => Gem.win_platform?
 
