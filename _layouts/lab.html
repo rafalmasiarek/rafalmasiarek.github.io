@@ -1,0 +1,54 @@
+---
+layout: base
+---
+{%- comment -%}
+  Saturation curve (never hard-caps, never fully reaches lab_max):
+  alpha = lab_base + (lab_max - lab_base) * count / (count + lab_k)
+  lab_k is the half-saturation point - at count = lab_k, alpha is exactly
+  halfway between lab_base and lab_max.
+{%- endcomment -%}
+{%- assign lab_count = site.lab.size | default: 0 -%}
+{%- assign lab_base = 0.25 -%}
+{%- assign lab_max = 0.6 -%}
+{%- assign lab_k = 6 -%}
+{%- assign lab_denom = lab_count | plus: lab_k | times: 1.0 -%}
+{%- assign lab_ratio = lab_count | divided_by: lab_denom -%}
+{%- assign lab_range = lab_max | minus: lab_base -%}
+{%- assign lab_alpha = lab_ratio | times: lab_range | plus: lab_base -%}
+<main>
+  <article class="md">
+    <header class="heading">
+      <h1 class="title">{{ page.title }}</h1>
+    </header>
+
+    <ul class="lab-list"
+      style="background: linear-gradient(135deg, rgba(150,120,255,{{ lab_alpha }}) 0%, rgba(120,170,255,{{ lab_alpha }}) 45%, rgba(255,170,140,{{ lab_alpha }}) 100%);">
+      {%- for item in site.lab -%}
+      <li class="lab-item{% if item.description %} lab-item--expand{% endif %}">
+        <div class="lab-item__bar">
+          <span class="lab-item__title">{{ item.title }}</span>
+          {%- if item.description -%}
+          <button type="button" class="lab-item__hit" aria-expanded="false" aria-label="{{ item.title }}"></button>
+          {%- else -%}
+          <a class="lab-item__hit" href="{{ item.url }}" target="_blank" rel="noopener"
+            aria-label="{{ item.title }}"></a>
+          {%- endif -%}
+        </div>
+        {%- if item.description -%}
+        <div class="lab-item__panel" hidden>
+          <p>{{ item.description }}</p>
+          <a class="lab-item__cta" href="{{ item.url }}" target="_blank" rel="noopener">Open {{ item.domain }}
+            &rarr;</a>
+        </div>
+        {%- endif -%}
+      </li>
+      {%- endfor -%}
+    </ul>
+  </article>
+</main>
+
+{% if jekyll.environment == "production" %}
+<script src='{{ "js/lab.min.js" | asset_url }}'></script>
+{% else %}
+<script src='{{ "js/lab.js" | asset_url }}'></script>
+{% endif %}
