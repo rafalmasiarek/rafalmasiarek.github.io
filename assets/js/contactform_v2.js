@@ -66,6 +66,7 @@ const CSRF_CONTAINER = 'contactform_main';
 const IDENTITY = {
   metaDomain: '_identity.masiarek.pl',
   pgpDomain: 'pgp._identity.masiarek.pl',
+  schemaName: 'masiarek-identity-schemas',
   // Safety limit for pasted user PGP public key
   maxUserPubKeyBytes: 50 * 1024 // 50 KB
 };
@@ -283,7 +284,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Minimal schemas.json validation
-    if (schemasJson.schema !== 'identity-schemas' || schemasJson.version !== 1) {
+    if (schemasJson.schema !== IDENTITY.schemaName || schemasJson.version !== 1) {
       throw new Error('Unsupported schemas JSON.');
     }
 
