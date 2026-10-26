@@ -1,6 +1,120 @@
 <header>
-  <p class="username">
-    <a href="{{ site.baseurl }}/" target="_self">{{ site.title }}</a>
-    {% if page.icon %} <i class="{{ page.icon }}"></i>{% endif %}
-  </p>
+  <div class="header-row">
+    <p class="username">
+      <a href="{{ site.baseurl }}/" target="_self">{{ site.title }}</a>
+      {% if page.icon %} <i class="{{ page.icon }}"></i>{% endif %}
+    </p>
+
+    <button type="button" class="menu-toggle" id="nav-toggle" aria-expanded="false" aria-controls="site-nav"
+      aria-label="Toggle navigation">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+
+    <noscript>
+      <style>
+        .navigation {
+          visibility: visible;
+        }
+      </style>
+    </noscript>
+
+    <nav class="navigation" id="site-nav">
+      <ul>
+        {%- assign current_raw = page.url | replace: "index.html", "" | replace: "//", "/" -%}
+        {%- assign current_parts = current_raw | split: "/" -%}
+        {%- capture current_norm -%}
+        {%- for p in current_parts -%}
+        {%- if p != "" -%}/{{ p }}{%- endif -%}
+        {%- endfor -%}
+        {%- endcapture -%}
+        {%- assign current_norm = current_norm | strip -%}
+        {%- if current_norm == "" -%}{%- assign current_norm = "/" -%}{%- endif -%}
+        {%- assign current_abs = current_norm | prepend: site.baseurl | replace: "//", "/" -%}
+
+        {%- comment -%} Identify the current page across languages by its own translation_key (falls back to its own path when a page has no translations). {%- endcomment -%}
+        {%- assign current_tkey = page.translation_key | default: current_abs -%}
+
+        {%- assign nav_items = site.nav | default: empty -%}
+        {%- for item in nav_items -%}
+        {%- assign is_hidden = item.hidden | default: item.nav_hidden -%}
+
+        {%- assign item_raw = item.url | default: "" | replace: "index.html", "" | replace: "//", "/" -%}
+        {%- assign item_parts = item_raw | split: "/" -%}
+        {%- capture item_norm -%}
+        {%- for p in item_parts -%}
+        {%- if p != "" -%}/{{ p }}{%- endif -%}
+        {%- endfor -%}
+        {%- endcapture -%}
+        {%- assign item_norm = item_norm | strip -%}
+        {%- if item_norm == "" -%}{%- assign item_norm = "/" -%}{%- endif -%}
+        {%- assign item_abs = item_norm | prepend: site.baseurl | replace: "//", "/" -%}
+
+        {%- comment -%} Resolve the actual page this nav entry points to, so we can compare by translation_key rather than by path. {%- endcomment -%}
+        {%- assign item_abs_slash = item_abs | append: "/" -%}
+        {%- assign item_page = nil -%}
+        {%- for p in site.pages -%}
+        {%- if p.url == item_abs or p.url == item_abs_slash -%}
+        {%- assign item_page = p -%}
+        {%- break -%}
+        {%- endif -%}
+        {%- endfor -%}
+        {%- assign item_tkey = item_page.translation_key | default: item_abs -%}
+
+        {%- if is_hidden != true and item.title and item_tkey != current_tkey -%}
+        <li>
+          <a href="{{ item_abs }}" style="border:0" data-track="nav" data-nav-title="{{ item.title | escape }}"
+            data-nav-path="{{ item_norm | escape }}">
+            {%- if item.icon and item.icon != "" -%}<i class="{{ item.icon }}"></i>{%- endif -%}
+            {{ item.title }}
+          </a>
+        </li>
+        {%- endif -%}
+        {%- endfor -%}
+
+        {%- assign socials = site.socials | default: empty -%}
+        {%- for s in socials -%}
+        {%- assign is_hidden = s.hidden | default: s.nav_hidden -%}
+        {%- if is_hidden != true and s.url and s.title -%}
+        <li>
+          <a href="{{ s.url }}" style="border:0;text-decoration:none" target="_blank" rel="noopener"
+            data-track="social" data-social="{{ s.title | downcase | escape }}">
+            {%- if s.icon and s.icon != "" -%}<i class="{{ s.icon }}"></i>{%- endif -%}
+            {{ s.title }}
+          </a>
+        </li>
+        {%- endif -%}
+        {%- endfor -%}
+      </ul>
+    </nav>
+
+    <ul class="navigation-ruler" id="nav-ruler" aria-hidden="true">
+      {%- assign ruler_items = site.nav | default: empty -%}
+      {%- for item in ruler_items -%}
+      {%- assign is_hidden = item.hidden | default: item.nav_hidden -%}
+      {%- if is_hidden != true and item.title -%}
+      <li>
+        <a>
+          {%- if item.icon and item.icon != "" -%}<i class="{{ item.icon }}"></i>{%- endif -%}
+          {{ item.title }}
+        </a>
+      </li>
+      {%- endif -%}
+      {%- endfor -%}
+
+      {%- assign ruler_socials = site.socials | default: empty -%}
+      {%- for s in ruler_socials -%}
+      {%- assign is_hidden = s.hidden | default: s.nav_hidden -%}
+      {%- if is_hidden != true and s.url and s.title -%}
+      <li>
+        <a>
+          {%- if s.icon and s.icon != "" -%}<i class="{{ s.icon }}"></i>{%- endif -%}
+          {{ s.title }}
+        </a>
+      </li>
+      {%- endif -%}
+      {%- endfor -%}
+    </ul>
+  </div>
 </header>
