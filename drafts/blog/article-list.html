@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, shrink-to-fit=no">
+
+  <title>Blog - Rafal Masiarek</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@100..700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdn.masiarek.pl/bootstrap/v5.3.8/bootstrap.min.css"
+    integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+
+  <link href="/assets/css/style.css" rel="stylesheet">
+
+  <script src="https://kit.fontawesome.com/cc759ba0dc.js" crossorigin="anonymous"></script>
+
+  <!-- Blog-only additions. Adapt/merge into style.css later - kept inline here so this file stays self-contained. -->
+  <style>
+    .article-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2em;
+      margin-top: 1em;
+    }
+
+    .article-card h2 {
+      font-size: 1.3em;
+      margin: 0 0 .3em;
+    }
+
+    .article-card h2 a {
+      color: #000;
+      background-image: linear-gradient(to bottom, #000 75%, #000 75%);
+    }
+
+    .article-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .6em;
+      font-size: .82em;
+      opacity: .65;
+      margin-bottom: .6em;
+    }
+
+    .article-meta .tag {
+      padding: .1em .6em;
+      background-color: #333;
+      color: #eee;
+    }
+
+    .article-excerpt {
+      margin: 0 0 .6em;
+      font-weight: 200;
+    }
+
+    .article-readmore {
+      font-size: .85em;
+      color: #d3d3d3;
+      background-image: linear-gradient(to bottom, #d3d3d3 75%, #d3d3d3 75%);
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="header-row">
+      <p class="username">
+        <a href="/" target="_self">Rafal Masiarek</a>
+      </p>
+
+      <button type="button" class="menu-toggle" id="nav-toggle" aria-expanded="false" aria-controls="site-nav"
+        aria-label="Toggle navigation">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <noscript>
+        <style>
+          .navigation {
+            visibility: visible;
+          }
+        </style>
+      </noscript>
+
+      <nav class="navigation" id="site-nav">
+        <ul>
+          <li>
+            <a href="/" style="border:0" data-track="nav" data-nav-title="Home" data-nav-path="/">Home</a>
+          </li>
+          <li>
+            <a href="/contact" style="border:0" data-track="nav" data-nav-title="Contact" data-nav-path="/contact">Contact</a>
+          </li>
+          <li>
+            <a href="/terms-and-conditions" style="border:0" data-track="nav" data-nav-title="Legal"
+              data-nav-path="/terms-and-conditions">Legal</a>
+          </li>
+          <li>
+            <a href="/vinyls" style="border:0" data-track="nav" data-nav-title="Vinyls" data-nav-path="/vinyls">Vinyls</a>
+          </li>
+          <li>
+            <a href="/i-love-opensource" style="border:0" data-track="nav" data-nav-title="I ❤️ OPENSOURCE"
+              data-nav-path="/i-love-opensource">I ❤️ OPENSOURCE</a>
+          </li>
+          <li>
+            <a href="https://github.com/rafalmasiarek" style="border:0;text-decoration:none" target="_blank"
+              rel="noopener" data-track="social" data-social="github"><i class="fab fa-github"></i>Github</a>
+          </li>
+        </ul>
+      </nav>
+
+      <ul class="navigation-ruler" id="nav-ruler" aria-hidden="true">
+        <li><a>Home</a></li>
+        <li><a>Contact</a></li>
+        <li><a>Legal</a></li>
+        <li><a>Vinyls</a></li>
+        <li><a>I ❤️ OPENSOURCE</a></li>
+        <li><a><i class="fab fa-github"></i>Github</a></li>
+      </ul>
+    </div>
+  </header>
+
+  <div class="content" id="container">
+    <main>
+      <article class="md">
+        <header class="heading">
+          <h1 class="title">Blog</h1>
+        </header>
+
+        <div class="article-list">
+
+          <div class="article-card">
+            <h2><a href="/blog/zero-downtime-ansible-rollouts">Zero-downtime rollouts with Ansible and canary hosts</a></h2>
+            <div class="article-meta">
+              <span>2026-10-18</span>
+              <span class="tag">ansible</span>
+              <span class="tag">devops</span>
+            </div>
+            <p class="article-excerpt">
+              A walk-through of the canary + health-check gate pattern I use to roll out config changes across a
+              fleet without ever taking the whole thing down at once.
+            </p>
+            <a class="article-readmore" href="/blog/zero-downtime-ansible-rollouts">Read more &rarr;</a>
+          </div>
+
+          <div class="article-card">
+            <h2><a href="/blog/github-actions-secret-rotation">Rotating secrets in GitHub Actions without breaking deploys</a></h2>
+            <div class="article-meta">
+              <span>2026-09-02</span>
+              <span class="tag">ci-cd</span>
+              <span class="tag">security</span>
+            </div>
+            <p class="article-excerpt">
+              Why a dual-key overlap window beats a hard cutover every time, and how I wired it into this exact
+              site's deploy pipeline.
+            </p>
+            <a class="article-readmore" href="/blog/github-actions-secret-rotation">Read more &rarr;</a>
+          </div>
+
+          <div class="article-card">
+            <h2><a href="/blog/dnssec-identity-pinning">Pinning a public key to DNSSEC instead of trusting your own server</a></h2>
+            <div class="article-meta">
+              <span>2026-07-21</span>
+              <span class="tag">dns</span>
+              <span class="tag">pgp</span>
+            </div>
+            <p class="article-excerpt">
+              The identity-resolution design behind this site's encrypted contact form - and why the verification
+              has to come from somewhere other than the server itself.
+            </p>
+            <a class="article-readmore" href="/blog/dnssec-identity-pinning">Read more &rarr;</a>
+          </div>
+
+        </div>
+      </article>
+    </main>
+  </div>
+
+  <script src='https://cdn.masiarek.pl/bootstrap/v5.3.8/bootstrap.bundle.min.js'
+    integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"
+    defer></script>
+
+  <script src="/assets/js/nav-menu.js" defer></script>
+  <script src="/assets/js/scroll-top.js" defer></script>
+</body>
+
+</html>

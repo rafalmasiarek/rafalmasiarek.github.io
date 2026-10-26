@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, shrink-to-fit=no">
+
+  <title>Zero-downtime rollouts with Ansible and canary hosts - Rafal Masiarek</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@100..700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdn.masiarek.pl/bootstrap/v5.3.8/bootstrap.min.css"
+    integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+
+  <link href="/assets/css/style.css" rel="stylesheet">
+
+  <script src="https://kit.fontawesome.com/cc759ba0dc.js" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+
+  <!-- Blog-only additions. Adapt/merge into style.css later - kept inline here so this file stays self-contained. -->
+  <style>
+    .article-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .6em;
+      font-size: .82em;
+      opacity: .65;
+      margin-bottom: 1.2em;
+    }
+
+    .article-meta .tag {
+      padding: .1em .6em;
+      background-color: #333;
+      color: #eee;
+    }
+
+    .article-back {
+      display: inline-block;
+      margin-top: 1.5em;
+      font-size: .85em;
+      color: #d3d3d3;
+      background-image: linear-gradient(to bottom, #d3d3d3 75%, #d3d3d3 75%);
+    }
+
+    .article-body {
+      font-weight: 200;
+    }
+
+    .article-body p {
+      margin: 0 0 1.2em;
+    }
+
+    .article-body h2 {
+      font-size: 1.15em;
+      font-weight: 700;
+      margin: 1.6em 0 .6em;
+    }
+
+    .article-body pre,
+    .article-body code {
+      font-weight: 400;
+    }
+
+    .article-body pre {
+      margin: 0 0 1.2em;
+    }
+
+    .article-body blockquote {
+      margin: 0 0 1.2em 2ch;
+    }
+
+    /* Code block toolbar (copy / download) - same pill-button language as
+       .keys__copy-btn / .ssh-gen__copy-btn in style.css */
+    .code-block {
+      position: relative;
+      margin: 0 0 1.2em;
+    }
+
+    .code-block pre {
+      margin: 0;
+    }
+
+    .code-block__toolbar {
+      position: absolute;
+      top: 0.5em;
+      right: 0.5em;
+      display: flex;
+      gap: 0.4em;
+    }
+
+    .code-block__btn {
+      padding: 0.15em 0.55em;
+      font-size: 0.72em;
+      border-radius: 3px;
+      border: 1px solid #ddd;
+      background: #fafafa;
+      color: #000;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .code-block__btn:hover {
+      background: #000;
+      color: #fff;
+      border-color: #000;
+    }
+
+    /* Let our own #222 pre/code background win over the theme's */
+    .hljs {
+      background: transparent !important;
+    }
+
+    /* Author box - reuses the real .avatar-wrapper/.filter-willow from
+       style.css (same Gravatar + Croodles placeholder behavior), just at a
+       smaller size for an inline bio card instead of the full hero avatar. */
+    .author-box {
+      margin-top: 2.5em;
+      padding: 1.5em;
+      background-color: #f4f4f4;
+    }
+
+    .author-box__heading {
+      font-size: 1.05em;
+      margin: 0 0 1em;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      opacity: .7;
+    }
+
+    .author-box__body {
+      display: flex;
+      align-items: center;
+      gap: 1.5em;
+    }
+
+    .author-box__text {
+      flex: 1;
+      font-weight: 200;
+    }
+
+    .author-box__text p {
+      margin: 0 0 .8em;
+    }
+
+    .author-box__text p:last-child {
+      margin-bottom: 0;
+    }
+
+    .author-box .avatar-wrapper {
+      flex-shrink: 0;
+      width: 180px;
+      height: 180px;
+      margin: 0;
+    }
+
+    @media (max-width: 480px) {
+      .author-box__body {
+        flex-direction: column;
+      }
+
+      .author-box .avatar-wrapper {
+        order: -1;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="header-row">
+      <p class="username">
+        <a href="/" target="_self">Rafal Masiarek</a>
+      </p>
+
+      <button type="button" class="menu-toggle" id="nav-toggle" aria-expanded="false" aria-controls="site-nav"
+        aria-label="Toggle navigation">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <noscript>
+        <style>
+          .navigation {
+            visibility: visible;
+          }
+        </style>
+      </noscript>
+
+      <nav class="navigation" id="site-nav">
+        <ul>
+          <li>
+            <a href="/" style="border:0" data-track="nav" data-nav-title="Home" data-nav-path="/">Home</a>
+          </li>
+          <li>
+            <a href="/contact" style="border:0" data-track="nav" data-nav-title="Contact" data-nav-path="/contact">Contact</a>
+          </li>
+          <li>
+            <a href="/terms-and-conditions" style="border:0" data-track="nav" data-nav-title="Legal"
+              data-nav-path="/terms-and-conditions">Legal</a>
+          </li>
+          <li>
+            <a href="/vinyls" style="border:0" data-track="nav" data-nav-title="Vinyls" data-nav-path="/vinyls">Vinyls</a>
+          </li>
+          <li>
+            <a href="/i-love-opensource" style="border:0" data-track="nav" data-nav-title="I ❤️ OPENSOURCE"
+              data-nav-path="/i-love-opensource">I ❤️ OPENSOURCE</a>
+          </li>
+          <li>
+            <a href="https://github.com/rafalmasiarek" style="border:0;text-decoration:none" target="_blank"
+              rel="noopener" data-track="social" data-social="github"><i class="fab fa-github"></i>Github</a>
+          </li>
+        </ul>
+      </nav>
+
+      <ul class="navigation-ruler" id="nav-ruler" aria-hidden="true">
+        <li><a>Home</a></li>
+        <li><a>Contact</a></li>
+        <li><a>Legal</a></li>
+        <li><a>Vinyls</a></li>
+        <li><a>I ❤️ OPENSOURCE</a></li>
+        <li><a><i class="fab fa-github"></i>Github</a></li>
+      </ul>
+    </div>
+  </header>
+
+  <div class="content" id="container">
+    <main>
+      <article class="md">
+        <header class="heading">
+          <h1 class="title">Zero-downtime rollouts with Ansible and canary hosts</h1>
+        </header>
+
+        <div class="article-meta">
+          <span>2026-10-18</span>
+          <span class="tag">ansible</span>
+          <span class="tag">devops</span>
+        </div>
+
+        <div class="article-body">
+          <p>
+            Most config-management rollouts fail the same way: someone runs the playbook against the whole
+            inventory at once, a bad assumption surfaces on host 40 of 60, and now a third of the fleet is in a
+            half-applied state while the other two thirds are fine. The fix isn't a smarter playbook - it's never
+            letting the blast radius be "everything" in the first place.
+          </p>
+
+          <h2>The canary group</h2>
+          <p>
+            Every inventory gets a <code>canary</code> group - one or two hosts per role, picked to be
+            representative rather than special-cased. The playbook always targets <code>canary</code> first, with
+            a hard stop on failure before anything else is touched.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__toolbar">
+              <button type="button" class="code-block__btn code-block__copy">Copy</button>
+              <button type="button" class="code-block__btn code-block__download">Download</button>
+            </div>
+            <pre><code class="language-yaml" data-filename="canary-rollout.yml">- hosts: canary
+  serial: 1
+  tasks:
+    - include_tasks: deploy.yml
+
+- hosts: all:!canary
+  serial: "25%"
+  tasks:
+    - include_tasks: deploy.yml</code></pre>
+          </div>
+
+          <h2>The health-check gate</h2>
+          <p>
+            Between the canary play and the full rollout there's a gate task that polls the service's own health
+            endpoint, not just "did the playbook exit 0". A host can apply a config change successfully and still
+            be serving errors a minute later - the gate is what actually catches that.
+          </p>
+
+          <blockquote>
+            If the canary host doesn't report healthy inside the timeout, the play fails before a single other
+            host is touched. No judgment call, no "it's probably fine" - the gate decides.
+          </blockquote>
+
+          <p>
+            The <code>serial: "25%"</code> on the remaining hosts keeps the same discipline going for the rest of
+            the fleet: each batch has to clear the health gate before the next one starts.
+          </p>
+        </div>
+
+        <!-- Same bio text as the homepage (fetched there via Jekyll's remote_markdown
+             from https://raw.githubusercontent.com/rafalmasiarek/rafalmasiarek/main/README.md,
+             trimmed to the intro - without the auto-generated project list). -->
+        <div class="author-box">
+          <div class="author-box__body">
+            <div class="author-box__text">
+              <h2 class="author-box__heading">About the Author</h2>
+              <p>
+                Rafal Masiarek is devops, linux system administration and developer strongly focused on
+                automation, security, and reliability - passionate about clean server environments built on
+                widely applied practices instead of temporary, hackish solutions.
+              </p>
+            </div>
+
+            <div class="avatar-wrapper">
+              <figure class="filter-willow">
+                <img src="https://www.gravatar.com/avatar/a3d53255f25e34edea9ee99f34f6f1ea?s=700" width="700"
+                  height="700" decoding="async" fetchpriority="low">
+              </figure>
+            </div>
+          </div>
+        </div>
+
+        <a class="article-back" href="/blog">&larr; Back to Blog</a>
+      </article>
+    </main>
+  </div>
+
+  <script src='https://cdn.masiarek.pl/bootstrap/v5.3.8/bootstrap.bundle.min.js'
+    integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"
+    defer></script>
+
+  <script src="/assets/js/nav-menu.js" defer></script>
+  <script src="/assets/js/scroll-top.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/yaml.min.js" defer></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.hljs) hljs.highlightAll();
+
+      document.querySelectorAll('.code-block').forEach((block) => {
+        const code = block.querySelector('code');
+        const copyBtn = block.querySelector('.code-block__copy');
+        const downloadBtn = block.querySelector('.code-block__download');
+        if (!code) return;
+
+        function flash(btn, label) {
+          const original = btn.textContent;
+          btn.textContent = label;
+          setTimeout(() => btn.textContent = original, 900);
+        }
+
+        if (copyBtn) {
+          copyBtn.addEventListener('click', () => {
+            const text = code.textContent;
+
+            function done() { flash(copyBtn, 'Copied'); }
+
+            if (navigator.clipboard?.writeText) {
+              navigator.clipboard.writeText(text).then(done).catch(() => {
+                fallbackCopy(text, done);
+              });
+            } else {
+              fallbackCopy(text, done);
+            }
+          });
+        }
+
+        if (downloadBtn) {
+          downloadBtn.addEventListener('click', () => {
+            const filename = code.dataset.filename || 'snippet.txt';
+            const blob = new Blob([code.textContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+          });
+        }
+      });
+
+      function fallbackCopy(text, callback) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try {
+          document.execCommand('copy');
+        } catch (_) { }
+        ta.remove();
+        if (callback) callback();
+      }
+    });
+  </script>
+</body>
+
+</html>
