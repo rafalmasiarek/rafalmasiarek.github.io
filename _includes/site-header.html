@@ -66,7 +66,7 @@
         <li>
           <a href="{{ item_abs }}" style="border:0" data-track="nav" data-nav-title="{{ item.title | escape }}"
             data-nav-path="{{ item_norm | escape }}">
-            {%- if item.icon and item.icon != "" -%}<i class="{{ item.icon }}"></i>{%- endif -%}
+            {%- if item.icon and item.icon != "" -%}{% icon item.icon %}{%- endif -%}
             {{ item.title }}
           </a>
         </li>
@@ -80,7 +80,7 @@
         <li>
           <a href="{{ s.url }}" style="border:0;text-decoration:none" target="_blank" rel="noopener"
             data-track="social" data-social="{{ s.title | downcase | escape }}">
-            {%- if s.icon and s.icon != "" -%}<i class="{{ s.icon }}"></i>{%- endif -%}
+            {%- if s.icon and s.icon != "" -%}{% icon s.icon %}{%- endif -%}
             {{ s.title }}
           </a>
         </li>
@@ -96,7 +96,7 @@
       {%- if is_hidden != true and item.title -%}
       <li>
         <a>
-          {%- if item.icon and item.icon != "" -%}<i class="{{ item.icon }}"></i>{%- endif -%}
+          {%- if item.icon and item.icon != "" -%}{% icon item.icon %}{%- endif -%}
           {{ item.title }}
         </a>
       </li>
@@ -109,7 +109,7 @@
       {%- if is_hidden != true and s.url and s.title -%}
       <li>
         <a>
-          {%- if s.icon and s.icon != "" -%}<i class="{{ s.icon }}"></i>{%- endif -%}
+          {%- if s.icon and s.icon != "" -%}{% icon s.icon %}{%- endif -%}
           {{ s.title }}
         </a>
       </li>

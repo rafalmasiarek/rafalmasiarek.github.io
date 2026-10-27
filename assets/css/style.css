@@ -888,12 +888,52 @@ textarea.input {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  color: #6c757d;
-  font-size: 1.5em;
 }
 
 .card-img-top.loaded+.cover-spinner {
   display: none;
+}
+
+/* =============================================================================
+   12a) Icons (inline SVG, replaces FontAwesome)
+============================================================================= */
+
+.icon {
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.125em;
+  fill: currentColor;
+}
+
+.spinner {
+  display: inline-block;
+  width: 1.5em;
+  height: 1.5em;
+  border: 0.2em solid #6c757d;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
+
+.cover-spinner.spinner {
+  animation: spin-centered 0.75s linear infinite;
+}
+
+.spinner-lg {
+  width: 2em;
+  height: 2em;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spin-centered {
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
 }
 
 /* =============================================================================

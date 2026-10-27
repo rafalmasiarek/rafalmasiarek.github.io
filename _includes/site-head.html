@@ -1,6 +1,7 @@
 {%- assign __site_abs = site.url | append: site.baseurl -%}
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, shrink-to-fit=no">
+<link rel="icon" href="data:,">
 
 {% if jekyll.environment == "production" %}
 <script src="{{ "js/app-errors.min.js" | asset_url }}"></script>
@@ -95,8 +96,6 @@
 {% else %}
 <link href="{{ "css/style.css" | asset_url }}" rel="stylesheet">
 {% endif %}
-
-<script src="https://kit.fontawesome.com/cc759ba0dc.js" crossorigin="anonymous"></script>
 
 {%- if page.canonical -%}
 <link id="canonical-link" rel="canonical" href="{{ page.canonical }}">
