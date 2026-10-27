@@ -100,19 +100,21 @@ module Jekyll
       end.join("\n")
     
       <<~HTML
-        <table class="licenses-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Version</th>
-              <th>License</th>
-              <th>Source</th>
-            </tr>
-          </thead>
-          <tbody>
-            #{rows}
-          </tbody>
-        </table>
+        <div class="licenses-table-wrap">
+          <table class="licenses-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Version</th>
+                <th>License</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              #{rows}
+            </tbody>
+          </table>
+        </div>
       HTML
     end
   end
