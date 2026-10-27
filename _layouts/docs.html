@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  {% include docs/site-head.html %}
+  {{ page.extra_head }}
+</head>
+
+<body class="{{ page.color_theme }}">
+  {% if page.header %}
+  {% include docs/site-header.html %}
+  {% else %}
+  <div class="site-header-wrap">
+    {% include site-header.html %}
+  </div>
+  {% endif %}
+
+  <div class="section">
+    <div class="container">
+      <div class="row docs-layout-row">
+        <div class="col-md-7">
+          <div class="content">
+            {% if page.title %}<h1 class="page-title">{{ page.title }}</h1>{% endif %}
+            {% if page.description %}<p class="lead">{{ page.description }}</p>{% endif %}
+            {{ content }}
+          </div><!-- /.content -->
+        </div><!-- /.col -->
+        <div class="col-md-4 col-md-offset-1">
+          <div class="sections-list-wrapper">
+            {%- assign docs_list = site[page.docs_collection] | sort: "nav_order" -%}
+            {%- if page.docs_home or docs_list.size > 0 -%}
+            <div class="sections-list hidden-xs hidden-sm">
+              <ul class="nav">
+                {%- if page.docs_home -%}
+                <li{% if page.docs_home.url == page.url %} class="active"{% endif %}>
+                  <a href="{{ site.baseurl }}{{ page.docs_home.url }}">{{ page.docs_home.title | default: "Home" }}</a>
+                </li>
+                {%- endif -%}
+                {%- for doc in docs_list -%}
+                <li{% if doc.url == page.url %} class="active"{% endif %}>
+                  <a href="{{ site.baseurl }}{{ doc.url }}">{{ doc.title }}</a>
+                </li>
+                {%- endfor -%}
+              </ul>
+            </div><!-- /.sections-list -->
+            {%- endif -%}
+          </div>
+        </div><!-- /.col -->
+      </div><!-- /.row -->
+    </div><!-- /.container -->
+  </div><!-- /.section -->
+
+  <div class="js-footer-area">
+    {% include docs/site-footer.html %}
+  </div><!-- /.js-footer-area -->
+
+  {% if page.scroll_top %}
+  <button type="button" class="scroll-top-btn" id="scroll-top-btn" aria-label="Scroll to top">^</button>
+  {% endif %}
+
+  {% if jekyll.environment == "production" %}
+  <script src="{{ "js/docs.min.js" | asset_url }}" defer></script>
+  {% unless page.header %}<script src="{{ "js/nav-menu.min.js" | asset_url }}" defer></script>{% endunless %}
+  {% if page.scroll_top %}<script src="{{ "js/scroll-top.min.js" | asset_url }}" defer></script>{% endif %}
+  {% else %}
+  <script src="{{ "js/docs.js" | asset_url }}" defer></script>
+  {% unless page.header %}<script src="{{ "js/nav-menu.js" | asset_url }}" defer></script>{% endunless %}
+  {% if page.scroll_top %}<script src="{{ "js/scroll-top.js" | asset_url }}" defer></script>{% endif %}
+  {% endif %}
+  {{ page.extra_body }}
+</body>
+
+</html>

@@ -1,0 +1,265 @@
+---
+# Jekyll's Sass converter only processes files with front matter.
+---
+
+/**
+ * Docs engine stylesheet - adapted from the Doks Jekyll theme.
+ * Isolated by design: never loaded alongside assets/css/style.css.
+ */
+
+/* ----- Charset ----- */
+@charset 'utf-8';
+
+/* ----- Variables ----- */
+@import 'docs/variables';
+
+/* ----- Tools ----- */
+@import 'docs/tools/prefixer';
+@import 'docs/tools/clearfix';
+@import 'docs/tools/grid-framework';
+@import 'docs/tools/grid';
+@import 'docs/tools/hyperlinks';
+@import 'docs/tools/lists';
+@import 'docs/tools/responsive-visibility';
+
+/* ----- Base ----- */
+@import 'docs/generic/normalize';
+@import 'docs/generic/base';
+@import 'docs/generic/code';
+
+/* ----- Utilities ----- */
+@import 'docs/utilities/alignment';
+@import 'docs/utilities/visibility';
+
+/* ----- Objects ----- */
+@import 'docs/objects/buttons';
+@import 'docs/objects/content';
+@import 'docs/objects/error-404';
+@import 'docs/objects/grid';
+@import 'docs/objects/icons';
+@import 'docs/objects/section';
+
+/* ----- Components ----- */
+@import 'docs/components/callout';
+@import 'docs/components/example';
+@import 'docs/components/hero-subheader';
+@import 'docs/components/micro-nav';
+@import 'docs/components/nav-grid';
+@import 'docs/components/page-nav';
+@import 'docs/components/sections-list';
+@import 'docs/components/site-footer';
+@import 'docs/components/site-header';
+@import 'docs/components/social-list';
+@import 'docs/components/title-anchor-link';
+
+/* ----- Themes ----- */
+@import 'docs/themes/green';
+@import 'docs/themes/red';
+@import 'docs/themes/yellow';
+@import 'docs/themes/purple';
+
+/* ----- Sticky sidebar (replaces Bootstrap's affix JS plugin) -----
+   position:sticky only has room to "stick" while scrolling if its
+   containing column is taller than itself. Doks' grid floats columns
+   independently (no automatic equal height), so the one row that pairs
+   .content with the TOC sidebar is switched to flex (stretches both
+   columns to the tallest one's height) - scoped narrowly via
+   .docs-layout-row so the rest of the float-based grid is untouched. */
+.docs-layout-row {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.sections-list-wrapper {
+  position: sticky;
+  top: 1.25rem;
+}
+
+/* ----- Equal-height nav-grid cards (replaces matchHeight.js) ----- */
+.nav-grid .row {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.nav-grid .row > [class*='col-'] {
+  display: flex;
+}
+
+.nav-grid__item {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* ----- Live demo preview (not part of the original Doks theme) ----- */
+.docs-example-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  padding: 1.25rem 1.875rem;
+  margin: 0 0 1.25rem 0;
+  background-color: #f5f5f5;
+  font-size: 1.5rem;
+}
+
+.docs-example-preview > div {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+}
+
+/* ----- Main site header (reused by default - docs.html falls back to
+   {% include site-header.html %} unless a page sets its own `header:`).
+   assets/css/site-header.css is loaded verbatim alongside this file (see
+   _includes/docs/site-head.html) - it's the exact same bytes style.css
+   itself loads, so .header-row/.navigation/.menu-toggle etc. render
+   identically to the main site. Only two things need handling here:
+   site-header.css's `html`/`body` rules are written for the WHOLE main site
+   (where body IS the page), but here they'd also squeeze this page's
+   own, wider Doks grid below the header - so `body` itself is reset
+   back to Doks' sizing, and the site-header.css sizing is applied only to
+   `.site-header-wrap` (the div actually wrapping the reused header). */
+
+html {
+  font-size: 16px;
+}
+
+body {
+  margin: 0;
+  max-width: none;
+  padding: 0;
+  font-family: $font-family-primary;
+}
+
+.site-header-wrap {
+  box-sizing: content-box;
+  margin: 0 auto;
+  max-width: 45em;
+  padding-left: 1.5em;
+  padding-right: 1.5em;
+  font-family: 'Roboto Mono', monospace;
+}
+
+@media (min-width: 1024px) {
+  .site-header-wrap {
+    max-width: 70em;
+  }
+}
+
+/* This site's own `.icon` (style.css, added when FontAwesome was
+   removed) sizes an inlined SVG via width/height/fill - Doks' `.icon`
+   (objects/_icons.scss) is an unrelated icon-FONT class with no size
+   constraint at all. Reused header markup (e.g. the Github social SVG)
+   gets Doks' `.icon` instead on docs pages, rendering at an
+   unconstrained/huge intrinsic size. Scoped to `svg.icon` specifically
+   so it never touches Doks' own `<i class="icon">` font-icon usage. */
+svg.icon {
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.125em;
+  fill: currentColor;
+}
+
+/* Doks' own `ul li { padding-left: 1.875rem; &:before { content: '\2014' } }`
+   (generic/_base.scss) adds a left-padded em-dash bullet to every list
+   item on the page - the main site never has to counteract this (it has
+   no equivalent rule at all), but it leaks into the reused header's
+   <li> nav items here, so it's neutralized specifically for them. */
+.navigation li,
+.navigation-ruler li {
+  padding-left: 0;
+  margin-bottom: 0;
+}
+
+.navigation li::before,
+.navigation-ruler li::before {
+  content: none;
+}
+
+/* ----- Icon gallery/search (icons.md home page) ----- */
+.icon-search {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  margin: 1em 0 2em;
+  padding: 0.5em 0.8em;
+  font-size: 1em;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.icon-copy-feedback {
+  position: fixed;
+  bottom: 1.5em;
+  right: 1.5em;
+  padding: 0.5em 1em;
+  background: #000;
+  color: #fff;
+  border-radius: 4px;
+  font-size: 0.85em;
+  opacity: 0;
+  transform: translateY(0.5em);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.icon-copy-feedback.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.icon-category {
+  margin-bottom: 2.5em;
+}
+
+.icon-category__title {
+  font-size: 1.1em;
+  margin-bottom: 0.8em;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid #eee;
+}
+
+.icon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 0.6em;
+}
+
+.icon-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.8em 0.4em;
+  background: #fafafa;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.icon-tile:hover {
+  background: #000;
+  border-color: #000;
+  color: #fff;
+}
+
+.icon-tile .rm-icon {
+  font-size: 1.5em;
+}
+
+.icon-tile__name {
+  font-size: 0.7em;
+  text-align: center;
+  word-break: break-word;
+  opacity: 0.7;
+}
+
+@media (max-width: 480px) {
+  .icon-grid {
+    grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+  }
+}
