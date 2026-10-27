@@ -11,6 +11,89 @@
   background-repeat: no-repeat
 }
 
+/* Form controls don't inherit font by default in most browsers; Bootstrap's
+   reboot used to cover this. */
+input,
+button,
+select,
+optgroup,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit
+}
+
+button,
+select {
+  text-transform: none
+}
+
+img,
+svg {
+  vertical-align: middle
+}
+
+label {
+  display: inline-block
+}
+
+/* Ported from normalize.css v8.0.1 (MIT) - only the rules still relevant to
+   a modern-browser-only site and the elements this site actually uses.
+   Dropped as dead weight: fieldset/legend/progress/details/summary/
+   template/[type=search]/[type=number] spin buttons/file-upload-button
+   (unused here), and legacy IE10/old-Firefox-only fixes already moot on
+   current browsers or already covered by the reset above. */
+html {
+  -webkit-text-size-adjust: 100%
+}
+
+a {
+  background-color: transparent
+}
+
+abbr[title] {
+  text-decoration: underline dotted;
+  cursor: help
+}
+
+b,
+strong {
+  font-weight: bolder
+}
+
+small {
+  font-size: 80%
+}
+
+sub,
+sup {
+  font-size: 75%;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline
+}
+
+sub {
+  bottom: -0.25em
+}
+
+sup {
+  top: -0.5em
+}
+
+button,
+[type="button"],
+[type="reset"],
+[type="submit"] {
+  -webkit-appearance: button
+}
+
+[type="checkbox"],
+[type="radio"] {
+  box-sizing: border-box;
+  padding: 0
+}
+
 /* =============================================================================
    02) Typography / Page layout
 ============================================================================= */
@@ -736,11 +819,13 @@ textarea.input {
   margin-right: 0.25em;
 }
 
-.project-card {
+.project-card,
+.vinyl-card {
   transition: transform 0.2s;
 }
 
-.project-card:hover {
+.project-card:hover,
+.vinyl-card:hover {
   transform: scale(1.03);
 }
 
@@ -755,10 +840,6 @@ textarea.input {
 
 .filter-bar {
   margin-bottom: 1rem;
-}
-
-.filter-bar .btn {
-  margin: 0.25rem;
 }
 
 /* =============================================================================
@@ -808,13 +889,336 @@ img.loaded {
 }
 
 /* =============================================================================
+   12b) Bootstrap replacement (grid / cards / buttons / badges / utilities)
+
+   Backs the exact class names used by projects.js and vinyl-loader.js/
+   vinyls-lazyloader.html with custom CSS, so the Bootstrap stylesheet and
+   JS bundle can be dropped without touching the markup/JS that builds
+   these cards. Only the classes actually used are defined here - not a
+   general-purpose grid/utility system.
+============================================================================= */
+
+.container,
+.row,
+.col-12,
+.col-md-4,
+.col-md-6,
+.col-md-8,
+.col-lg-4,
+.card,
+.card-body,
+.card-footer,
+.btn,
+.badge {
+  box-sizing: border-box;
+}
+
+.container {
+  width: 100%;
+  margin: 0 auto;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0 -0.75rem;
+}
+
+.row.g-4 {
+  margin: -0.75rem;
+}
+
+.row.g-4>* {
+  padding: 0.75rem !important;
+}
+
+.col-12,
+.col-md-4,
+.col-md-6,
+.col-md-8,
+.col-lg-4 {
+  flex: 0 0 100%;
+  max-width: 100%;
+  padding: 0 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .col-md-4 {
+    flex: 0 0 33.3333%;
+    max-width: 33.3333%;
+  }
+
+  .col-md-6 {
+    flex: 0 0 50%;
+    max-width: 50%;
+  }
+
+  .col-md-8 {
+    flex: 0 0 66.6667%;
+    max-width: 66.6667%;
+  }
+}
+
+@media (min-width: 992px) {
+  .col-lg-4 {
+    flex: 0 0 33.3333%;
+    max-width: 33.3333%;
+  }
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  background-color: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.125);
+  border-radius: 0.375rem;
+}
+
+.card-body {
+  padding: 1rem;
+}
+
+.card-title {
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.card-text {
+  margin-bottom: 0;
+}
+
+.card-footer {
+  padding: 1rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.card-img-top {
+  width: 100%;
+  border-radius: 0.375rem 0.375rem 0 0;
+}
+
+.shadow-sm {
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.h-100 {
+  height: 100%;
+}
+
+.bg-white {
+  background-color: #fff;
+}
+
+.border-top-0 {
+  border-top: 0;
+}
+
+.btn {
+  display: inline-block;
+  padding: 0.375rem 0.75rem;
+  border: 1px solid transparent;
+  border-radius: 0.375rem;
+  background: none;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+}
+
+.btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875em;
+}
+
+.btn-outline-primary {
+  border-color: #0d6efd;
+  color: #0d6efd;
+}
+
+.btn-outline-primary:hover {
+  background-color: #0d6efd;
+  color: #fff;
+}
+
+.btn-outline-secondary {
+  border-color: #6c757d;
+  color: #6c757d;
+}
+
+.btn-outline-secondary:hover {
+  background-color: #6c757d;
+  color: #fff;
+}
+
+.btn-outline-dark {
+  border-color: #212529;
+  color: #212529;
+}
+
+.btn-outline-dark:hover {
+  background-color: #212529;
+  color: #fff;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.35em 0.65em;
+  font-size: 0.75em;
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.rounded-pill {
+  border-radius: 50rem;
+}
+
+.bg-secondary {
+  background-color: #6c757d;
+  color: #fff;
+}
+
+.rounded {
+  border-radius: 0.375rem;
+}
+
+.img-fluid {
+  height: auto;
+}
+
+.d-flex {
+  display: flex;
+}
+
+.d-inline-flex {
+  display: inline-flex;
+}
+
+.d-none {
+  display: none;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
+.align-items-start {
+  align-items: flex-start;
+}
+
+.align-items-center {
+  align-items: center;
+}
+
+.justify-content-between {
+  justify-content: space-between;
+}
+
+.gap-2 {
+  gap: 0.5rem;
+}
+
+.me-auto {
+  margin-right: auto;
+}
+
+.me-2 {
+  margin-right: 0.5rem;
+}
+
+.ms-2 {
+  margin-left: 0.5rem;
+}
+
+.mb-2 {
+  margin-bottom: 0.5rem;
+}
+
+.mb-3 {
+  margin-bottom: 1rem;
+}
+
+.mb-4 {
+  margin-bottom: 1.5rem;
+}
+
+.mt-2 {
+  margin-top: 0.5rem;
+}
+
+.mt-3 {
+  margin-top: 1rem;
+}
+
+.mt-4 {
+  margin-top: 1.5rem;
+}
+
+.my-5 {
+  margin-top: 3rem;
+  margin-bottom: 3rem;
+}
+
+.py-4 {
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+}
+
+.py-5 {
+  padding-top: 3rem;
+  padding-bottom: 3rem;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-muted {
+  color: #6c757d;
+}
+
+.text-dark {
+  color: #212529;
+}
+
+.text-danger {
+  color: #dc3545;
+}
+
+.text-decoration-none {
+  text-decoration: none;
+}
+
+.collapse {
+  display: none;
+}
+
+.collapse.show {
+  display: flex;
+}
+
+@media (min-width: 768px) {
+  .d-md-none {
+    display: none !important;
+  }
+
+  .d-md-flex {
+    display: flex !important;
+  }
+}
+
+/* =============================================================================
    13) Licenses table
 ============================================================================= */
 
+.licenses-table-wrap {
+  margin: 2em 0;
+  overflow-x: auto;
+}
+
 .licenses-table {
   width: 100%;
+  min-width: 460px;
   border-collapse: collapse;
-  margin: 2em 0;
   font-size: 0.95em;
   background: #fff;
   font-weight: 200;
@@ -838,6 +1242,27 @@ img.loaded {
 }
 
 .licenses-table tr:hover {
+  background: #f0f8ff;
+}
+
+/* Freeze the Name column (like Excel's frozen panes) so only License/
+   Version/Source scroll horizontally on narrow screens. */
+.licenses-table th:first-child,
+.licenses-table td:first-child {
+  position: sticky;
+  left: 0;
+  background: #fff;
+}
+
+.licenses-table th:first-child {
+  background: #f5f5f5;
+}
+
+.licenses-table tr:nth-child(even) td:first-child {
+  background: #fafafa;
+}
+
+.licenses-table tr:hover td:first-child {
   background: #f0f8ff;
 }
 

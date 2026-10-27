@@ -90,8 +90,6 @@
 {% include asset-preconnects.html %}
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@100..700&display=swap" rel="stylesheet">
 
-<link rel="stylesheet" href="{{ "bootstrap/v5.3.8/bootstrap.min.css" | asset_url: "cdn" }}"
-  integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
 {% if jekyll.environment == "production" %}
 <link href="{{ "css/style.min.css" | asset_url }}" rel="stylesheet">
 {% else %}
