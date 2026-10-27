@@ -38,6 +38,9 @@ collections:
   vinyls:
     output: true
     permalink: /vinyls/:name/
+  icons_docs:
+    output: true
+    permalink: /icons/:name/
 
 nav:
   - title: Home

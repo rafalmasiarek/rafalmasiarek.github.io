@@ -92,8 +92,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@100..700&display=swap" rel="stylesheet">
 
 {% if jekyll.environment == "production" %}
+<link href="{{ "css/site-header.min.css" | asset_url }}" rel="stylesheet">
 <link href="{{ "css/style.min.css" | asset_url }}" rel="stylesheet">
 {% else %}
+<link href="{{ "css/site-header.css" | asset_url }}" rel="stylesheet">
 <link href="{{ "css/style.css" | asset_url }}" rel="stylesheet">
 {% endif %}
 

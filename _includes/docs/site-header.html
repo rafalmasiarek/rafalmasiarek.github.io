@@ -1,0 +1,39 @@
+{% if page.header.nav %}
+<div class="offcanvas visible-xs">
+  <ul class="offcanvas__nav">
+    {% for item in page.header.nav %}
+    <li><a href="{{ site.baseurl }}{{ item.item_url }}">{{ item.item_name }}</a></li>
+    {% endfor %}
+  </ul><!-- /.offcanvas__nav -->
+</div><!-- /.offcanvas -->
+{% endif %}
+
+{% if page.header.logo.text or page.header.logo.image or page.header.nav %}
+<header class="site-header">
+  <div class="container">
+    <div class="row">
+      <div class="col-xs-12">
+        {% if page.header.logo.text %}
+        <a href="{{ site.baseurl }}{{ page.header.logo.url | default: '/' }}" class="site-header__logo">{{ page.header.logo.text }}</a>
+        {% elsif page.header.logo.image %}
+        <a href="{{ site.baseurl }}{{ page.header.logo.url | default: '/' }}" class="site-header__logo">
+          <img src="{{ page.header.logo.image }}">
+        </a><!-- /.site-header__logo -->
+        {% endif %}
+        {% if page.header.nav %}
+        <ul class="site-header__nav hidden-xs">
+          {% for item in page.header.nav %}
+          <li><a href="{{ site.baseurl }}{{ item.item_url }}">{{ item.item_name }}</a></li>
+          {% endfor %}
+        </ul><!-- /.site-header__nav -->
+        <button type="button" class="offcanvas-toggle visible-xs" id="docs-offcanvas-toggle">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button><!-- /.offcanvas-toggle -->
+        {% endif %}
+      </div><!-- /.col -->
+    </div><!-- /.row -->
+  </div><!-- /.container -->
+</header><!-- /.site-header -->
+{% endif %}
