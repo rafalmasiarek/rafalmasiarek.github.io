@@ -56,6 +56,10 @@ function getLangColor(language) {
     return dynamicLangColors[language];
 }
 
+function shortLangLabel(language) {
+    return language === 'JavaScript' ? 'JS' : language;
+}
+
 function createCard(repo) {
     const card = document.createElement('div');
     card.className = 'col-md-6 col-lg-4 mb-4 project-card-wrapper';
@@ -63,7 +67,7 @@ function createCard(repo) {
 
     const langColor = getLangColor(repo.language);
     const language = repo.language
-        ? `<span class="badge badge-dynamic" style="background-color: ${langColor}">${repo.language}</span>`
+        ? `<span class="badge badge-dynamic" style="background-color: ${langColor}">${shortLangLabel(repo.language)}</span>`
         : '';
 
     card.innerHTML = `
@@ -93,7 +97,7 @@ function updateFilterButtons() {
     filterBar.innerHTML = '';
     const langs = Object.keys(dynamicLangColors);
     const allBtn = document.createElement('button');
-    allBtn.className = 'btn btn-outline-dark btn-sm';
+    allBtn.className = 'btn btn-outline-dark btn-sm me-2 mb-2';
     allBtn.textContent = 'All';
     allBtn.onclick = () => {
         activeLang = null;
@@ -103,10 +107,10 @@ function updateFilterButtons() {
 
     langs.forEach(lang => {
         const btn = document.createElement('button');
-        btn.className = 'btn btn-sm';
+        btn.className = 'btn btn-sm me-2 mb-2';
         btn.style.backgroundColor = dynamicLangColors[lang];
         btn.style.color = '#fff';
-        btn.textContent = lang;
+        btn.textContent = shortLangLabel(lang);
         btn.onclick = () => {
             activeLang = lang;
             renderFilteredProjects();

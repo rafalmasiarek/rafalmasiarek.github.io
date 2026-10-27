@@ -6,8 +6,8 @@ layout: vinyls-shell
   <h1 class="mb-4">{{ page.title }}</h1>
 
   <!-- Mobile-only toggle -->
-  <button id="toggle-tags-btn" class="btn btn-outline-primary mb-3 d-md-none" type="button" data-bs-toggle="collapse"
-    data-bs-target="#vinyl-tags" aria-expanded="false" aria-controls="vinyl-tags">
+  <button id="toggle-tags-btn" class="btn btn-outline-primary mb-3 d-md-none" type="button"
+    aria-expanded="false" aria-controls="vinyl-tags">
     Filter by artist
   </button>
 
@@ -71,9 +71,6 @@ layout: vinyls-shell
   </div>
 </div>
 
-<script src='{{ "bootstrap/v5.3.8/bootstrap.bundle.min.js" | asset_url: "cdn" }}'
-  integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"
-  defer></script>
 {% if jekyll.environment == "production" %}
 <script data-cfasync="false"
   src='{{ "js/vinyl-loader.min.js" | asset_url }}'></script>

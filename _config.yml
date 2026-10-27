@@ -138,19 +138,19 @@ compress_html:
   startings: [html, head, body]
 
 licenses:
+  - name: normalize.css
+    version: 8.0.1
+    license: MIT
+    author: Nicolas Gallagher and Jonathan Neal
+    homepage: https://necolas.github.io/normalize.css/
+    source_url: https://github.com/necolas/normalize.css
+    source: CSS
   - name: Croodles Neutral (DiceBear)
     license: CC BY 4.0
     author: "vijay verma (https://vjy.me/)"
     homepage: https://www.dicebear.com/styles/croodles-neutral/
     source_url: https://www.figma.com/community/file/966199982810283152
     source: CSS
-  - name: Bootstrap
-    version: 5.3.8
-    license: MIT
-    author: The Bootstrap Authors
-    homepage: https://getbootstrap.com/
-    source_url: https://github.com/twbs/bootstrap
-    source: JS
   - name: js-fair-consent
     version: v1.0.0
     license: MIT

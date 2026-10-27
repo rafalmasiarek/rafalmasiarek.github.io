@@ -702,12 +702,16 @@
     loadMore();
   };
 
+  function setTagsCollapse(show) {
+    const el = document.getElementById('vinyl-tags');
+    const btn = document.getElementById('toggle-tags-btn');
+    if (!el) return;
+    el.classList.toggle('show', show);
+    btn?.setAttribute('aria-expanded', String(show));
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
-    const collapseEl = document.getElementById('vinyl-tags');
-    if (collapseEl && window.bootstrap?.Collapse) {
-      const bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false });
-      bsCollapse.hide();
-    }
+    setTagsCollapse(false);
 
     fetchAndRenderFacets();
     attachScroll();
@@ -727,15 +731,15 @@
         if (artist === activeArtist) window.__vinylsClearFilter();
         else window.__vinylsSetFilter(artist);
 
-        const collapseEl2 = document.getElementById('vinyl-tags');
-        if (collapseEl2 && window.bootstrap?.Collapse && window.matchMedia('(max-width: 767.98px)').matches) {
-          bootstrap.Collapse.getOrCreateInstance(collapseEl2, { toggle: false }).hide();
+        if (window.matchMedia('(max-width: 767.98px)').matches) {
+          setTagsCollapse(false);
         }
         return;
       }
 
-      if (e.target.id === 'toggle-tags-btn' && collapseEl && window.bootstrap?.Collapse) {
-        bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false }).toggle();
+      if (e.target.id === 'toggle-tags-btn') {
+        const el = document.getElementById('vinyl-tags');
+        setTagsCollapse(!el?.classList.contains('show'));
       }
     });
   });
