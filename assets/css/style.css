@@ -879,13 +879,21 @@ textarea.input {
   opacity: 1;
 }
 
-img[data-src] {
-  filter: blur(20px);
-  transition: filter 0.3s ease;
+.cover-wrap {
+  position: relative;
 }
 
-img.loaded {
-  filter: blur(0);
+.cover-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #6c757d;
+  font-size: 1.5em;
+}
+
+.card-img-top.loaded+.cover-spinner {
+  display: none;
 }
 
 /* =============================================================================
