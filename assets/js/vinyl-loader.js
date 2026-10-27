@@ -345,49 +345,6 @@
     return u.toString();
   }
 
-  function hydrateImages(container, threshold = 0.5) {
-    const images = container.querySelectorAll('img[data-src]');
-    const total = images.length;
-    let loaded = 0, resolved = false;
-
-    return new Promise((resolve) => {
-      if (total === 0) return resolve();
-
-      const t = setTimeout(() => { if (!resolved) { resolved = true; resolve(); } }, 2000);
-
-      function maybeResolve() {
-        if (!resolved && loaded / total >= threshold) {
-          resolved = true;
-          clearTimeout(t);
-          resolve();
-        }
-      }
-
-      images.forEach(imgEl => {
-        const realSrc = imgEl.dataset.src;
-        const card = imgEl.closest('.gallery-item');
-
-        const pre = new Image();
-        pre.decoding = 'async';
-        pre.onload = () => {
-          imgEl.src = realSrc;
-          imgEl.removeAttribute('data-src');
-          imgEl.classList.add('loaded');
-          if (card) card.classList.add('visible');
-          loaded++; maybeResolve();
-        };
-        pre.onerror = () => {
-          imgEl.src = PLACEHOLDER_COVER;
-          imgEl.removeAttribute('data-src');
-          imgEl.classList.add('loaded');
-          if (card) card.classList.add('visible');
-          loaded++; maybeResolve();
-        };
-        pre.src = realSrc;
-      });
-    });
-  }
-
   function resetListState() {
     currentPage = 1;
     hasMore = true;
@@ -416,13 +373,33 @@
     const card = document.createElement('div');
     card.className = 'card h-100 shadow-sm vinyl-card gallery-item hidden-until-loaded';
 
+    const coverWrap = document.createElement('div');
+    coverWrap.className = 'cover-wrap';
+
     const img = document.createElement('img');
     img.className = 'card-img-top';
     img.loading = 'lazy';
+    img.decoding = 'async';
     img.fetchPriority = 'low';
-    img.src = 'data:image/svg+xml;base64,PHN2ZyBoZWlnaHQ9IjEwIiB3aWR0aD0iMTYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZyIvPg==';
-    img.dataset.src = v.cover || PLACEHOLDER_COVER;
     img.alt = v.title || '';
+
+    const spinner = document.createElement('i');
+    spinner.className = 'fas fa-spinner fa-spin cover-spinner';
+
+    function revealCover() {
+      img.classList.add('loaded');
+      card.classList.add('visible');
+    }
+
+    img.addEventListener('load', revealCover);
+    img.addEventListener('error', () => {
+      img.src = PLACEHOLDER_COVER;
+      revealCover();
+    });
+    img.src = v.cover || PLACEHOLDER_COVER;
+
+    coverWrap.appendChild(img);
+    coverWrap.appendChild(spinner);
 
     const body = document.createElement('div');
     body.className = 'card-body';
@@ -446,7 +423,7 @@
     body.appendChild(h5);
     body.appendChild(p);
 
-    card.appendChild(img);
+    card.appendChild(coverWrap);
     card.appendChild(body);
 
     a.appendChild(card);
@@ -509,19 +486,17 @@
 
         if (!jsonLdInjected && currentPage === 1) injectListJsonLd(list, 0);
 
-        return hydrateImages(grid).then(() => {
-          if (pg) {
-            hasMore = !!pg.has_more;
-          } else {
-            hasMore = list.length === PER_PAGE;
-          }
+        if (pg) {
+          hasMore = !!pg.has_more;
+        } else {
+          hasMore = list.length === PER_PAGE;
+        }
 
-          if (hasMore) {
-            currentPage += 1;
-          } else {
-            detachScroll();
-          }
-        });
+        if (hasMore) {
+          currentPage += 1;
+        } else {
+          detachScroll();
+        }
       })
       .catch(err => {
         reportError(err, { component: 'vinyl-loader', operation: 'load-page', code: 'VINYLS_FETCH_FAILED', metadata: { requestId: reqId } });

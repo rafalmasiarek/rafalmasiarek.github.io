@@ -240,7 +240,7 @@
 
   function setListHead() {
     const siteName = document.querySelector('header .username a')?.textContent || '';
-    document.title = `My Vinyl Collection â ${siteName}`;
+    document.title = `My Vinyl Collection - ${siteName}`;
 
     const meta = document.getElementById('meta-desc');
     if (meta) meta.setAttribute('content', 'Browse my vinyl record collection.');
@@ -257,7 +257,7 @@
     const artist = v?.artist || 'Unknown';
     const publicUrl = vinylPublicUrl(v?.slug || '');
 
-    document.title = `${title} â ${artist} | ${siteName}`;
+    document.title = `${title} - ${artist} | ${siteName}`;
 
     const desc = `${title} by ${artist}${v?.year ? `, released ${v.year}` : ''}. View details from my vinyl collection.`;
     const meta = document.getElementById('meta-desc');
