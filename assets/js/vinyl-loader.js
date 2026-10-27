@@ -383,8 +383,8 @@
     img.fetchPriority = 'low';
     img.alt = v.title || '';
 
-    const spinner = document.createElement('i');
-    spinner.className = 'fas fa-spinner fa-spin cover-spinner';
+    const spinner = document.createElement('span');
+    spinner.className = 'spinner cover-spinner';
 
     function revealCover() {
       img.classList.add('loaded');
