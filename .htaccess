@@ -120,6 +120,17 @@
 
 
   # ---------------------------------------------------------
+  # CORS for the public icon set (assets/img/icons/*.svg)
+  # ---------------------------------------------------------
+  # These are free, public icons meant to be fetched cross-origin by the
+  # rm-icons loader (assets/js/rm-icons.js) from any site - a plain <img>
+  # tag never needs CORS, but inlining the SVG via fetch() does.
+  <If "%{REQUEST_URI} =~ m#^/assets/img/icons/#">
+    Header set Access-Control-Allow-Origin "*"
+  </If>
+
+
+  # ---------------------------------------------------------
   # BROTLI HEADERS
   # ---------------------------------------------------------
   <FilesMatch "\.(html|css|js)(\.br)?$">
