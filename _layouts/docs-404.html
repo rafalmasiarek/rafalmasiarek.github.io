@@ -3,6 +3,7 @@
 
 <head>
   {% include docs/site-head.html %}
+  <link href="{{ "icons/@latest/icons.min.css" | asset_url: "cdn" }}" rel="stylesheet">
 </head>
 
 <body class="{{ page.color_theme }} error-404">
@@ -13,11 +14,12 @@
       <p>{{ page.page_content.message }}</p>
       {% endif %}
       <a href="{{ site.baseurl }}{{ page.header.logo.url | default: '/' }}" class="btn btn--dark btn--rounded btn--w-icon btn--w-icon-left">
-        <i class="icon icon--home"></i>
+        <span class="icon icon-house"></span>
         Go back home
       </a>
     </div><!-- /.align-inner -->
   </div><!-- /.align-container -->
+  <script src="{{ "icons/@latest/icons.min.js" | asset_url: "cdn" }}" defer></script>
 </body>
 
 </html>
