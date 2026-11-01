@@ -36,7 +36,6 @@
 @import 'docs/objects/content';
 @import 'docs/objects/error-404';
 @import 'docs/objects/grid';
-@import 'docs/objects/icons';
 @import 'docs/objects/section';
 
 /* ----- Components ----- */
@@ -247,7 +246,7 @@ svg.icon {
   color: #fff;
 }
 
-.icon-tile .rm-icon {
+.icon-tile .icon {
   font-size: 1.5em;
 }
 

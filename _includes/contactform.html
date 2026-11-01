@@ -67,11 +67,13 @@
     defer></script>
 <script src="https://www.google.com/recaptcha/api.js?render={{ site.recaptcha_site_key }}" async defer
     data-cfasync="false"></script>
+<script src="{{ "csrf/@latest/csrf.min.js" | asset_url: "cdn" }}"></script>
 <script src="{{ "js/contactform_v2.min.js" | asset_url }}"></script>
 {% else %}
 <script src="{{ "openpgpjs/v6.3.1/openpgp.js" | asset_url: "cdn" }}"
     integrity="sha384-rE3LtP8P00dy3MJ373eKcDm7KiwH8aSWOBPloROfXA5COPXQQyz7+bCvqBiBMsoy" crossorigin="anonymous"
     defer></script>
+<script src="{{ "csrf/@latest/csrf.min.js" | asset_url: "cdn" }}"></script>
 <script src="{{ "js/contactform_v2.js" | asset_url }}"></script>
 {% endif %}
 <script>

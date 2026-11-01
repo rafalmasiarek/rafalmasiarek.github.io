@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   tiles.forEach(function (tile) {
     tile.addEventListener('click', function () {
-      var snippet = '<span class="rm-icon rm-icon-' + tile.dataset.name + '"></span>';
+      var snippet = '<span class="icon icon-' + tile.dataset.name + '"></span>';
 
       function done() {
         showFeedback('Copied: ' + tile.dataset.name);

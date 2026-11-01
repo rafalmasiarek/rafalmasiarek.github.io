@@ -7,16 +7,16 @@ docs_home:
 color_theme: blue
 scroll_top: true
 title: Icons
-description: Browse and search the full icon set, or read the docs to use rm-icons in your own project.
+description: Browse and search the full icon set, or read the docs to use icons in your own project.
 permalink: /icons/
 extra_head: |
-  <link href="/assets/css/rm-icons.css" rel="stylesheet">
+  <link href="/assets/css/icons.css" rel="stylesheet">
 extra_body: |
-  <script src="/assets/js/rm-icons.js" defer></script>
+  <script src="/assets/js/icons.js" defer></script>
   <script src="/assets/js/icons-page.js" defer></script>
 ---
 
-From [Bootstrap Icons](https://icons.getbootstrap.com) (MIT), served through `rm-icons`. Click any icon to
+From [Bootstrap Icons](https://icons.getbootstrap.com) (MIT), served through `icons`. Click any icon to
 copy its usage snippet.
 
 <input type="search" id="icon-search" class="icon-search" placeholder="Search icons" autocomplete="off">
@@ -32,7 +32,7 @@ copy its usage snippet.
     {%- for icon in group.items -%}
     <button type="button" class="icon-tile" data-name="{{ icon.name }}"
       data-tags="{{ icon.tags | join: ' ' | downcase }}" title="{{ icon.title }}">
-      <span class="rm-icon rm-icon-{{ icon.name }}" aria-hidden="true"></span>
+      <span class="icon icon-{{ icon.name }}" aria-hidden="true"></span>
       <span class="icon-tile__name">{{ icon.name }}</span>
     </button>
     {%- endfor -%}

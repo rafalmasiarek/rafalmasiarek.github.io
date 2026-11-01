@@ -49,9 +49,6 @@ function makeError(message, options = {}) {
 
 // Endpoints configuration
 const ENDPOINTS = {
-  csrfGenerate: '/api/v1/csrf/generate',
-  csrfRegenerate: '/api/v1/csrf/regenerate',
-  csrfExpiry: '/api/v1/csrf/token-expiry',
   formSubmit: '/api/v2/contactform/send'
 };
 
@@ -410,69 +407,33 @@ document.addEventListener('DOMContentLoaded', () => {
   const sitekeyEl = document.getElementById('g-recaptcha-sitekey');
   const SITEKEY = sitekeyEl?.value || form.dataset.recaptchaSitekey || '';
 
-  // Helper: common fetch init for CSRF endpoints
-  function csrfGet(url) {
-    return fetch(url, {
-      method: 'GET',
-      headers: { 'X-CSRF-Container': CSRF_CONTAINER, 'X-Request-Id': reqId.value },
-      credentials: 'same-origin',
+  // CSRF token lifecycle (fetch, regenerate-before-expiry, polling) is handled by
+  // csrf (https://cdn.masiarek.dev/csrf) — load it before this script.
+  if (!window.Csrf) {
+    console.error('[contact-form] csrf is not loaded — the form will submit without a CSRF token.');
+  } else {
+    const CSRF_CODE_BY_OPERATION = {
+      'csrf-generate': 'CSRF_GENERATE_FAILED',
+      'csrf-regenerate': 'CSRF_REGENERATE_FAILED',
+      'csrf-expiry-check': 'CSRF_EXPIRY_CHECK_FAILED',
+    };
+
+    const csrf = new window.Csrf({
+      apiBase: '/api',
+      container: CSRF_CONTAINER,
+      requestId: () => reqId.value,
+      onError: (err, { operation }) => {
+        reportError(err, {
+          component: 'contact-form',
+          operation,
+          code: CSRF_CODE_BY_OPERATION[operation] || 'CSRF_GENERATE_FAILED',
+          metadata: { requestId: reqId.value },
+        });
+      },
     });
+    csrf.bind(tokenInput, tokenProofInput);
+    csrf.generate().then(() => csrf.startAutoRefresh());
   }
-
-  // A fetch() that never got a response (offline, WiFi switch, laptop woke
-  // from sleep mid-request) throws a plain TypeError, before any response
-  // exists to read .json() from. These background checks retry on their own
-  // next cycle regardless, and at any real user count this is constant,
-  // non-actionable noise — same call as access-helper.js's clipboard
-  // fallback or vinyl-loader's facet fallback (see CLAUDE.md). Only report
-  // when a response was actually received but something about it was wrong
-  // (bad JSON, a thrown error while handling it, etc.) — a genuine backend bug.
-  function reportCsrfError(err, operation, code) {
-    if (err instanceof TypeError) {
-      console.warn(`[contact-form] ${operation} network error (likely transient):`, err);
-      return;
-    }
-    reportError(err, { component: 'contact-form', operation, code, metadata: { requestId: reqId.value } });
-  }
-
-  // Initial CSRF token fetch
-  csrfGet(ENDPOINTS.csrfGenerate)
-    .then(res => res.json())
-    .then(json => {
-      if (json.status === 'success' && json.data?.csrf_token) {
-        tokenInput.value = json.data.csrf_token;
-        if (tokenProofInput) tokenProofInput.value = json.data.proof || '';
-      }
-    })
-    .catch(err => reportCsrfError(err, 'csrf-generate', 'CSRF_GENERATE_FAILED'));
-
-  // Regenerate token
-  async function regenerateToken() {
-    try {
-      const res = await csrfGet(ENDPOINTS.csrfRegenerate);
-      const json = await res.json();
-      if (json.status === 'success' && json.data?.csrf_token) {
-        tokenInput.value = json.data.csrf_token;
-        if (tokenProofInput) tokenProofInput.value = json.data.proof || '';
-        console.log('CSRF token regenerated and updated.');
-      }
-    } catch (err) {
-      reportCsrfError(err, 'csrf-regenerate', 'CSRF_REGENERATE_FAILED');
-    }
-  }
-
-  // Periodic TTL check (every 10s)
-  setInterval(async () => {
-    try {
-      const res = await csrfGet(ENDPOINTS.csrfExpiry);
-      const json = await res.json();
-      if (json.status === 'success' && typeof json.data?.ttl === 'number' && json.data.ttl < 30) {
-        await regenerateToken();
-      }
-    } catch (err) {
-      reportCsrfError(err, 'csrf-expiry-check', 'CSRF_EXPIRY_CHECK_FAILED');
-    }
-  }, 10000);
 
   // Submit handler
   form.addEventListener('submit', async (ev) => {
