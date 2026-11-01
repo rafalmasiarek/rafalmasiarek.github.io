@@ -419,9 +419,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const csrf = new window.Csrf({
-      apiBase: '/api',
       container: CSRF_CONTAINER,
-      requestId: () => reqId.value,
       onError: (err, { operation }) => {
         reportError(err, {
           component: 'contact-form',
