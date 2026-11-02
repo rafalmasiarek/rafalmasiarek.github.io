@@ -346,7 +346,8 @@ textarea.input {
   width: 100%
 }
 
-#contact-form-messageInput {
+#contact-form-messageInput,
+#contact-form-subjectInput {
   width: 100%;
   padding-right: 42px
 }

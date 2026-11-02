@@ -14,7 +14,7 @@
 
     <div class="wrap-input">
         <input class="input" id="contact-form-subjectInput" type="text" name="subject" data-prefill-key="subject"
-            placeholder="Message subject" required autocomplete="off">
+            maxlength="100" placeholder="Message subject" required autocomplete="off">
     </div>
 
     <div class="wrap-input">
@@ -47,7 +47,6 @@
     <input type="hidden" name="g-recaptcha-response" id="contact-form-recaptcha-token">
     {% endif %}
 
-    <input type="hidden" name="cf_request_id" id="cf_request_id">
     <input type="hidden" name="csrf_token" id="csrf_token">
     <input type="hidden" name="csrf_container" value="contactform_main">
     <input type="hidden" name="csrf_proof" id="csrf_proof">
