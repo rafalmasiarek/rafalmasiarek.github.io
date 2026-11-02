@@ -11,6 +11,13 @@ extra_head: |
   <link href="https://cdn.masiarek.pl/icons/@latest/icons.min.css" rel="stylesheet">
 extra_body: |
   <script src="https://cdn.masiarek.pl/icons/@latest/icons.min.js" defer></script>
+  <script defer>
+    window.Icons && window.Icons.configure({
+      onError: function (err, info) {
+        window.AppErrors && window.AppErrors.report(err, Object.assign({ component: 'icons' }, info));
+      }
+    });
+  </script>
 ---
 
 `icon-ul` on a `<ul>` plus `icon-li` on the icon inside each `<li>`

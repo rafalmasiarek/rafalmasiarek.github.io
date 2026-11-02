@@ -8,6 +8,45 @@
 
 <link rel="icon" href="data:,">
 
+{% if jekyll.environment == "production" %}
+<script src="{{ "js/app-errors.min.js" | asset_url }}"></script>
+{% else %}
+<script src="{{ "js/app-errors.js" | asset_url }}"></script>
+{% endif %}
+<script>
+  window.AppErrors && window.AppErrors.configure({ environment: '{{ jekyll.environment }}' });
+</script>
+
+{% if jekyll.environment == "production" %}
+<link rel="preconnect" href="https://d2wy8f7a9ursnm.cloudfront.net" crossorigin>
+<link rel="preconnect" href="https://notify.bugsnag.com" crossorigin>
+<link rel="preconnect" href="https://otlp.bugsnag.com" crossorigin>
+<script src="{{ "js/app-errors-bugsnag.min.js" | asset_url }}"></script>
+<script src="https://d2wy8f7a9ursnm.cloudfront.net/v8.10.0/bugsnag.min.js"
+  integrity="sha384-Zse1bOiPR7ucqkqhiKa1Vs1QdGL9lKHiQuBMVWbpDXkGistsEt2G5fYNteXi0Pwp" crossorigin="anonymous"></script>
+<script type="module">
+  import BugsnagPerformance from 'https://d2wy8f7a9ursnm.cloudfront.net/v3.4.1/bugsnag-performance.min.js';
+
+  var bugsnagConfig = {
+    apiKey: '{{ site.bugsnag_api_key }}',
+    appVersion: 'frontend-{{ site.asset_build.version | default: "dev" | slice: 0, 7 }}',
+    releaseStage: '{{ jekyll.environment }}',
+    enabledReleaseStages: ['production']
+  };
+
+  window.Bugsnag && window.Bugsnag.start(bugsnagConfig);
+  BugsnagPerformance.start({ apiKey: bugsnagConfig.apiKey });
+
+  if (window.Bugsnag && window.AppErrors && typeof window.AppErrors.getRequestId === 'function') {
+    window.Bugsnag.setUser(window.AppErrors.getRequestId());
+  }
+
+  if (window.AppErrors && window.AppErrors.middleware && window.AppErrors.middleware.bugsnag) {
+    window.AppErrors.use(window.AppErrors.middleware.bugsnag());
+  }
+</script>
+{% endif %}
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet"
