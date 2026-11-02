@@ -119,25 +119,6 @@ jobs:
               --overwrite
           done
 
-      - name: Minify CSS (assets/css/*.css -> *.min.css)
-        shell: bash
-        run: |
-          set -euo pipefail
-          shopt -s nullglob
-
-          for f in assets/css/*.css; do
-            case "$f" in
-              *.min.css)
-                echo "Skipping already minified: $f"
-                ;;
-              *)
-                out="${f%.css}.min.css"
-                echo "Minifying $f -> $out"
-                cleancss -O2 -o "$out" "$f"
-                ;;
-            esac
-          done
-
       - name: Generate deploy config
         shell: bash
         run: |
@@ -159,16 +140,24 @@ jobs:
         env:
           JEKYLL_ENV: production
 
-      - name: Minify Sass-compiled CSS (_site/assets/css/docs.css -> docs.min.css)
+      - name: Minify CSS (_site/assets/css/*.css -> *.min.css)
         shell: bash
         run: |
           set -euo pipefail
-          f="_site/assets/css/docs.css"
-          if [ -f "$f" ]; then
-            out="${f%.css}.min.css"
-            echo "Minifying $f -> $out"
-            cleancss -O2 -o "$out" "$f"
-          fi
+          shopt -s nullglob
+
+          for f in _site/assets/css/*.css; do
+            case "$f" in
+              *.min.css)
+                echo "Skipping already minified: $f"
+                ;;
+              *)
+                out="${f%.css}.min.css"
+                echo "Minifying $f -> $out"
+                cleancss -O2 -o "$out" "$f"
+                ;;
+            esac
+          done
 
       - name: Precompress assets in _site (gzip + brotli)
         shell: bash
