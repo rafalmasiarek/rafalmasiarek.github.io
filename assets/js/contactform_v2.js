@@ -347,48 +347,44 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Ensure cf_request_id hidden input
-  let reqId = document.getElementById('cf_request_id');
-  if (!reqId) {
-    reqId = document.createElement('input');
-    reqId.type = 'hidden';
-    reqId.name = 'cf_request_id';
-    reqId.id = 'cf_request_id';
-    form.appendChild(reqId);
-  }
-  // Shared session trace id, or a local fallback if app-errors.js is absent.
-  reqId.value = (window.AppErrors && typeof window.AppErrors.getRequestId === 'function')
+  // Shared session trace id, sent only as the X-Request-Id header — never as
+  // a form field, nothing on the backend reads one. Local fallback if
+  // app-errors.js is absent.
+  let reqId = (window.AppErrors && typeof window.AppErrors.getRequestId === 'function')
     ? window.AppErrors.getRequestId()
     : (Math.random().toString(36).substring(2, 10) + Date.now().toString(36));
 
-  // Optional: textarea character counter
-  (function setupTextareaCounter() {
-    const ta = document.getElementById('contact-form-messageInput');
-    if (!ta) return;
+  // Optional: character counter, shared by the subject input and message textarea
+  function setupCharCounter(elementId, defaultMax) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
 
-    const max = parseInt(ta.getAttribute('maxlength'), 10) || 5000;
-    if (!ta.hasAttribute('maxlength')) {
-      ta.setAttribute('maxlength', String(max));
+    const max = parseInt(el.getAttribute('maxlength'), 10) || defaultMax;
+    if (!el.hasAttribute('maxlength')) {
+      el.setAttribute('maxlength', String(max));
     }
 
     const wrap = document.createElement('div');
     wrap.className = 'textarea-wrapper';
-    ta.parentNode.insertBefore(wrap, ta);
-    wrap.appendChild(ta);
+    el.parentNode.insertBefore(wrap, el);
+    wrap.appendChild(el);
 
     const counter = document.createElement('span');
     counter.className = 'char-counter';
     wrap.appendChild(counter);
 
     function updateCounter() {
-      const left = max - ta.value.length;
+      const left = max - el.value.length;
       counter.textContent = left;
       counter.classList.toggle('red', left < 50);
     }
 
-    ta.addEventListener('input', updateCounter);
+    el.addEventListener('input', updateCounter);
     updateCounter();
-  })();
+  }
+
+  setupCharCounter('contact-form-subjectInput', 100);
+  setupCharCounter('contact-form-messageInput', 5000);
 
   // If PGP checkbox exists, toggle UI + require reply_pgp when enabled
   if (encryptedCb) {
@@ -425,7 +421,7 @@ document.addEventListener('DOMContentLoaded', () => {
           component: 'contact-form',
           operation,
           code: CSRF_CODE_BY_OPERATION[operation] || 'CSRF_GENERATE_FAILED',
-          metadata: { requestId: reqId.value },
+          metadata: { requestId: reqId },
         });
       },
     });
@@ -513,7 +509,7 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         res = await fetch(ENDPOINTS.formSubmit, {
           method: 'POST',
-          headers: { 'X-Request-Id': reqId.value },
+          headers: { 'X-Request-Id': reqId },
           body,
           signal: submitController.signal,
         });
@@ -558,11 +554,6 @@ document.addEventListener('DOMContentLoaded', () => {
         form.reset();
         setPgpStatus('');
         if (pgpWrap) pgpWrap.style.display = 'none';
-
-        // form.reset() clears reqId's value — restore it.
-        reqId.value = (window.AppErrors && typeof window.AppErrors.getRequestId === 'function')
-          ? window.AppErrors.getRequestId()
-          : (Math.random().toString(36).substring(2, 10) + Date.now().toString(36));
       }
     } catch (err) {
       const isTimeout = !!(err && err.name === 'AbortError');
@@ -581,7 +572,7 @@ document.addEventListener('DOMContentLoaded', () => {
         reportError(err, {
           component: 'contact-form', operation: 'submit', code: fallbackCode,
           metadata: {
-            requestId: reqId.value,
+            requestId: reqId,
             attemptId,
             name: form.elements['name'] ? form.elements['name'].value : '',
             replyToAddress: form.elements['email'] ? form.elements['email'].value : '',
