@@ -159,6 +159,17 @@ jobs:
         env:
           JEKYLL_ENV: production
 
+      - name: Minify Sass-compiled CSS (_site/assets/css/docs.css -> docs.min.css)
+        shell: bash
+        run: |
+          set -euo pipefail
+          f="_site/assets/css/docs.css"
+          if [ -f "$f" ]; then
+            out="${f%.css}.min.css"
+            echo "Minifying $f -> $out"
+            cleancss -O2 -o "$out" "$f"
+          fi
+
       - name: Precompress assets in _site (gzip + brotli)
         shell: bash
         run: |
