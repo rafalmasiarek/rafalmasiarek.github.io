@@ -23,6 +23,18 @@
   RewriteEngine On
 
   # ---------------------------------------------------------
+  # CANONICAL DOMAIN: force https + non-www
+  # ---------------------------------------------------------
+  RewriteCond %{HTTP:X-Forwarded-Proto} =http [OR]
+  RewriteCond %{HTTP_HOST} ^www\.masiarek\.pl$ [NC]
+  RewriteRule ^(.*)$ https://masiarek.pl/$1 [R=301,L]
+
+  RewriteCond %{HTTP:X-Forwarded-Proto} ^$
+  RewriteCond %{HTTPS} off
+  RewriteRule ^(.*)$ https://masiarek.pl/$1 [R=301,L]
+
+
+  # ---------------------------------------------------------
   # BLOCK: known AI crawlers / agents
   # ---------------------------------------------------------
   #
