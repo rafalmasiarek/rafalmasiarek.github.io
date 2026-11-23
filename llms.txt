@@ -6,6 +6,20 @@ Except for access strictly necessary to retrieve and interpret this file, the li
 
 For the purposes of this file, "Websites" means masiarek.pl, masiarek.dev, masiar.io, and all of their subdomains.
 
+## Automated access notice
+
+If this file was returned in response to a request for other Website Content, that request was not permitted to proceed, and this policy is being returned in its place so that the automated system making the request has the opportunity to read it.
+
+Automated systems are permitted to access the following resources solely for the purpose of determining the applicable access and usage policy:
+
+- https://masiarek.pl/robots.txt
+- https://masiarek.pl/llms.txt
+- https://masiarek.pl/terms-and-conditions.txt
+
+Access to these policy resources does not grant consent, licence, authorisation, waiver, or permission to access or use any other Website Content.
+
+HTTP response status codes, headers, and the technical availability of a response are an enforcement mechanism and do not replace or limit the applicable legal and machine-readable policy stated in this file.
+
 ## TDM Policy
 
 TDM rights are expressly reserved.

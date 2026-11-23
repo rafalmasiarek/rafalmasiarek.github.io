@@ -9,13 +9,12 @@
 # ---------------------------------------------------------
 #
 # Normal 403 responses keep the default Apache behaviour.
-# Known AI crawlers receive /403-ai.txt instead.
-#
-# /403-ai.txt itself must remain accessible to avoid
-# recursively triggering another 403.
+# Known AI crawlers receive /llms.txt instead (same policy file
+# the main crawler rewrite below serves with a 200 - see that
+# section for why 403 is avoided wherever possible).
 #
 <If "req('User-Agent') =~ m#(?i)(GPTBot|ChatGPT-User|OAI-SearchBot|Google-Extended|ClaudeBot|Claude-Web|anthropic-ai|PerplexityBot|Perplexity-User|Bytespider|CCBot|cohere-ai|Meta-ExternalAgent|Meta-ExternalFetcher|Amazonbot|Applebot-Extended|Diffbot|FacebookBot|ImagesiftBot|YouBot)#">
-  ErrorDocument 403 /403-ai.txt
+  ErrorDocument 403 /llms.txt
 </If>
 
 
@@ -35,23 +34,25 @@
 
 
   # ---------------------------------------------------------
-  # BLOCK: known AI crawlers / agents
+  # SERVE POLICY: known AI crawlers / agents get llms.txt (HTTP 200)
   # ---------------------------------------------------------
   #
-  # These resources remain accessible so automated systems
-  # can determine the applicable access and usage policy:
+  # A 403 body is routinely ignored by automated agents - only the
+  # status code is checked. Serving the policy file itself with a
+  # 200 instead means the agent actually reads it.
+  #
+  # These resources remain the real requested content, not overridden:
   #
   #   /robots.txt
   #   /llms.txt
   #   /terms-and-conditions.txt
-  #   /403-ai.txt
   #
-  # All other requests from known AI agents receive
-  # HTTP 403 Forbidden.
+  # All other requests from known AI agents are rewritten internally
+  # to /llms.txt - same URL in the agent's own logs, no redirect.
   #
-  RewriteCond %{REQUEST_URI} !^/(?:robots\.txt|llms\.txt|terms-and-conditions\.txt|403-ai\.txt)$ [NC]
+  RewriteCond %{REQUEST_URI} !^/(?:robots\.txt|llms\.txt|terms-and-conditions\.txt)$ [NC]
   RewriteCond %{HTTP_USER_AGENT} "(GPTBot|ChatGPT-User|OAI-SearchBot|Google-Extended|ClaudeBot|Claude-Web|anthropic-ai|PerplexityBot|Perplexity-User|Bytespider|CCBot|cohere-ai|Meta-ExternalAgent|Meta-ExternalFetcher|Amazonbot|Applebot-Extended|Diffbot|FacebookBot|ImagesiftBot|YouBot)" [NC]
-  RewriteRule ^ - [F,L]
+  RewriteRule ^ /llms.txt [L]
 
 
   # ---------------------------------------------------------
@@ -114,7 +115,7 @@
   # ---------------------------------------------------------
   # NO-CACHE for AI / policy / discovery files
   # ---------------------------------------------------------
-  <FilesMatch "^(robots\.txt|llms\.txt|terms-and-conditions\.txt|403-ai\.txt|sitemap\.xml)$">
+  <FilesMatch "^(robots\.txt|llms\.txt|terms-and-conditions\.txt|sitemap\.xml)$">
     Header always set Cache-Control "no-cache, no-store, must-revalidate, max-age=0"
     Header always set Pragma "no-cache"
     Header always set Expires "0"
