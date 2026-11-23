@@ -92,8 +92,10 @@ module Jekyll
       allow.each { |path| lines << "Allow: #{path}" }
 
       sitemap = cfg["sitemap"]
-      sitemap = default_sitemap(site) if sitemap.nil? || sitemap.to_s.strip.empty?
-      lines << "Sitemap: #{sitemap}" unless sitemap.to_s.strip.empty?
+      unless sitemap == false
+        sitemap = default_sitemap(site) if sitemap.nil? || sitemap.to_s.strip.empty?
+        lines << "Sitemap: #{sitemap}" unless sitemap.to_s.strip.empty?
+      end
 
       lines.join("\n") + "\n"
     end
