@@ -84,11 +84,12 @@ lab:
   - title: Icons
     description: |-
       A small, dependency-free SVG icon loader with ~2000 icons.<br>
-      Install:<br>
-      <code>&lt;link rel="stylesheet" href="https://cdn.masiarek.pl/icons/@latest/icons.min.css"&gt;</code><br>
-      <code>&lt;script src="https://cdn.masiarek.pl/icons/@latest/icons.min.js" defer&gt;&lt;/script&gt;</code><br>
-      Usage:<br>
-      <code>&lt;span class="icon icon-key-fill"&gt;&lt;/span&gt;</code>
+      CSS:
+      <pre><code>&lt;link rel="stylesheet" href="https://cdn.masiarek.pl/icons/@latest/icons.min.css"&gt;</code></pre>
+      JS:
+      <pre><code>&lt;script src="https://cdn.masiarek.pl/icons/@latest/icons.min.js" defer&gt;&lt;/script&gt;</code></pre>
+      Usage:
+      <pre><code>&lt;span class="icon icon-key-fill"&gt;&lt;/span&gt;</code></pre>
     url: https://masiarek.pl/icons
     domain: masiarek.pl/icons
 
