@@ -53,7 +53,32 @@ nav:
   - title: I ❤️ OPENSOURCE
     url: /i-love-opensource
 
-lab: []
+lab:
+  - title: QR code generator
+    url: https://qr.masiar.io
+    domain: qr.masiar.io
+  - title: What's my IP
+    description: My internal ASN resolver with optional location, abuse, and RBL lookups.
+    url: https://ip.masiar.io
+    domain: ip.masiar.io
+  - title: Password generator
+    url: https://p.masiar.io
+    domain: p.masiar.io
+  - title: An endless scroll of lenny faces ¯\_(ツ)_/¯
+    url: https://lenny.masiar.io
+    domain: lenny.masiar.io
+  - title: Http statuses
+    description: Trigger any HTTP status code on demand — for testing clients and retries.
+    url: https://http.masiar.io
+    domain: http.masiar.io
+  - title: Retry web client
+    description: HTTP retry proxy with redirect follow. Build on Cloudflare Workers.
+    url: https://retry.masiar.io
+    domain: retry.masiar.io
+  - title: My own CDN
+    description: Set up on public GitHub Pages using the Fastly CDN (which GitHub uses natively).
+    url: https://cdn.masiar.io
+    domain: cdn.masiar.io
 
 robots:
   enabled: true
