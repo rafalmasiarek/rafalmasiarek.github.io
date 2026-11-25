@@ -50,6 +50,8 @@ nav:
     url: /terms-and-conditions
   - title: Vinyls
     url: /vinyls
+  - title: Lab
+    url: /lab/
   - title: I ❤️ OPENSOURCE
     url: /i-love-opensource
 
@@ -79,6 +81,16 @@ lab:
     description: Set up on public GitHub Pages using the Fastly CDN (which GitHub uses natively).
     url: https://cdn.masiar.io
     domain: cdn.masiar.io
+  - title: Icons
+    description: |-
+      A small, dependency-free SVG icon loader with ~2000 icons.<br>
+      Install:<br>
+      <code>&lt;link rel="stylesheet" href="https://cdn.masiarek.pl/icons/@latest/icons.min.css"&gt;</code><br>
+      <code>&lt;script src="https://cdn.masiarek.pl/icons/@latest/icons.min.js" defer&gt;&lt;/script&gt;</code><br>
+      Usage:<br>
+      <code>&lt;span class="icon icon-key-fill"&gt;&lt;/span&gt;</code>
+    url: https://masiarek.pl/icons
+    domain: masiarek.pl/icons
 
 robots:
   enabled: true
