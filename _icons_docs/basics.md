@@ -8,9 +8,9 @@ color_theme: blue
 nav_order: 2
 title: Basics
 extra_head: |
-  <link href="https://cdn.masiarek.pl/icons/@latest/icons.min.css" rel="stylesheet">
+  <link href="https://cdn.masiar.io/icons/@latest/icons.min.css" rel="stylesheet">
 extra_body: |
-  <script src="https://cdn.masiarek.pl/icons/@latest/icons.min.js" defer></script>
+  <script src="https://cdn.masiar.io/icons/@latest/icons.min.js" defer></script>
   <script defer>
     window.Icons && window.Icons.configure({
       onError: function (err, info) {

@@ -10,9 +10,9 @@ title: Icons
 description: Browse and search the full icon set, or read the docs to use icons in your own project.
 permalink: /icons/
 extra_head: |
-  <link href="https://cdn.masiarek.pl/icons/@latest/icons.min.css" rel="stylesheet">
+  <link href="https://cdn.masiar.io/icons/@latest/icons.min.css" rel="stylesheet">
 extra_body: |
-  <script src="https://cdn.masiarek.pl/icons/@latest/icons.min.js" defer></script>
+  <script src="https://cdn.masiar.io/icons/@latest/icons.min.js" defer></script>
   <script defer>
     window.Icons && window.Icons.configure({
       onError: function (err, info) {

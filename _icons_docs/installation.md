@@ -8,9 +8,9 @@ color_theme: blue
 nav_order: 1
 title: Installation
 extra_head: |
-  <link href="https://cdn.masiarek.pl/icons/@latest/icons.min.css" rel="stylesheet">
+  <link href="https://cdn.masiar.io/icons/@latest/icons.min.css" rel="stylesheet">
 extra_body: |
-  <script src="https://cdn.masiarek.pl/icons/@latest/icons.min.js" defer></script>
+  <script src="https://cdn.masiar.io/icons/@latest/icons.min.js" defer></script>
   <script defer>
     window.Icons && window.Icons.configure({
       onError: function (err, info) {
@@ -39,8 +39,8 @@ Load the stylesheet and script, then reference any icon by name.
 <div class="example"></div>
 
 ```html
-<link rel="stylesheet" href="https://cdn.masiarek.pl/icons/@stable/icons.min.css">
-<script src="https://cdn.masiarek.pl/icons/@stable/icons.min.js"></script>
+<link rel="stylesheet" href="https://cdn.masiar.io/icons/@stable/icons.min.css">
+<script src="https://cdn.masiar.io/icons/@stable/icons.min.js"></script>
 
 <span class="icon icon-github"></span>
 ```
@@ -50,7 +50,7 @@ Load the stylesheet and script, then reference any icon by name.
   latest stable release. Pin a specific version instead with
   <code>/icons/v1.0.0/icons.min.js</code>, or a major/minor line with
   <code>/icons/stable/v1/</code> - see the
-  <a href="https://cdn.masiarek.pl/" target="_blank" rel="noopener">CDN index</a>
+  <a href="https://cdn.masiar.io/" target="_blank" rel="noopener">CDN index</a>
   for every published version.</p>
 </div>
 
@@ -62,7 +62,7 @@ Set `data-prefix` / `data-base-url` on the script tag, or call
 <div class="example"></div>
 
 ```html
-<script src="https://cdn.masiarek.pl/icons/@stable/icons.min.js"
+<script src="https://cdn.masiar.io/icons/@stable/icons.min.js"
   data-prefix="my-icon"
   data-base-url="https://example.com/icons"></script>
 ```

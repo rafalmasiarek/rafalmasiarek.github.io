@@ -29,7 +29,7 @@ assets:
       preconnect: true
 
     cdn:
-      base_url: "https://cdn.masiarek.pl"
+      base_url: "https://cdn.masiar.io"
       prefix: ""
       preconnect: true
 
