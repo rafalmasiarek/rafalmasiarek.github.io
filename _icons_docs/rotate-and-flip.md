@@ -2,7 +2,7 @@
 layout: docs
 docs_collection: icons_docs
 docs_home:
-  url: /icons/
+  url: /docs/icons/
   title: Home
 color_theme: blue
 nav_order: 6

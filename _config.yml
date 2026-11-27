@@ -39,10 +39,10 @@ collections:
     permalink: /vinyls/:name/
   icons_docs:
     output: true
-    permalink: /icons/:name/
+    permalink: /docs/icons/:name/
   lite_docs:
     output: true
-    permalink: /lite/:name/
+    permalink: /docs/lite/:name/
 
 nav:
   - title: Home
@@ -93,15 +93,15 @@ lab:
       <pre><code>&lt;script src="https://cdn.masiar.io/icons/@latest/icons.min.js" defer&gt;&lt;/script&gt;</code></pre>
       Usage:
       <pre><code>&lt;span class="icon icon-key-fill"&gt;&lt;/span&gt;</code></pre>
-    url: https://masiarek.pl/icons
-    domain: masiarek.pl/icons
-  - title: lite.css
+    url: https://masiarek.pl/docs/icons
+    domain: masiarek.pl/docs/icons
+  - title: Lite.css
     description: |-
-      Classless-first base CSS for small single-purpose tools — no classes, no JS, no dark mode.<br>
+      Classless base CSS - styles bare HTML elements, no classes required.<br>
       CSS:
       <pre><code>&lt;link rel="stylesheet" href="https://cdn.masiar.io/lite/@latest/lite.min.css"&gt;</code></pre>
-    url: https://masiarek.pl/lite
-    domain: masiarek.pl/lite
+    url: https://masiarek.pl/docs/lite
+    domain: masiarek.pl/docs/lite
 
 robots:
   enabled: true

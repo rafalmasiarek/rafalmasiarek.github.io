@@ -2,19 +2,20 @@
 layout: docs
 docs_collection: lite_docs
 docs_home:
-  url: /lite/
+  url: /docs/lite/
   title: Home
 color_theme: blue
-nav_order: 6
+nav_order: 7
 title: Pairing with icons
-extra_head: |
-  <link href="https://cdn.masiar.io/lite/@latest/lite.min.css" rel="stylesheet">
 ---
 
-`lite.css` has no icon set — pair it with
-[`icons`](/icons/) when a page needs one.
+`Lite.css` has no icon set - pair it with
+[`icons`](/docs/icons/) when a page needs one.
 
-<div class="example"></div>
+<div class="code-tabs">
+  <button type="button" class="code-tabs__tab is-active" data-tab="code">Code</button>
+  <button type="button" class="code-tabs__tab" data-tab="preview">Preview</button>
+</div>
 
 ```html
 <link rel="stylesheet" href="https://cdn.masiar.io/lite/@latest/lite.min.css">
@@ -23,3 +24,8 @@ extra_head: |
 
 <button type="button"><span class="icon icon-star-fill"></span> Open</button>
 ```
+
+<div class="code-tabs__preview" hidden>
+  <iframe class="code-tabs__iframe" title="Live preview" loading="lazy"
+    data-stylesheet="https://cdn.masiar.io/lite/@latest/lite.min.css"></iframe>
+</div>

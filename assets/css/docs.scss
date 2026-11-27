@@ -109,6 +109,49 @@
   font-size: 1rem;
 }
 
+/* ----- Code/Preview tabs (not part of the original Doks theme) -----
+   Used instead of .docs-example-preview wherever the live render needs a
+   classless stylesheet (lite.css) that styles bare tags globally - direct
+   inline rendering on this page would also restyle the Doks theme's own
+   buttons/inputs/tables. The "Preview" panel's <iframe> loads that
+   stylesheet only inside its own srcdoc document (assets/js/docs.js),
+   never in this page's own <head>. */
+.code-tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: -1px;
+}
+
+.code-tabs__tab {
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: $color-white;
+  background-color: $color-pre-border;
+  border: none;
+  opacity: 0.55;
+  cursor: pointer;
+}
+
+.code-tabs__tab.is-active {
+  opacity: 1;
+}
+
+.code-tabs__preview {
+  padding: 1.25rem;
+  margin: 0 0 1.25rem 0;
+  background-color: #f5f5f5;
+}
+
+.code-tabs__iframe {
+  display: block;
+  width: 100%;
+  min-height: 2.5rem;
+  border: 0;
+  background: #fff;
+}
+
 /* ----- Main site header (reused by default - docs.html falls back to
    {% include site-header.html %} unless a page sets its own `header:`).
    assets/css/site-header.css is loaded verbatim alongside this file (see
