@@ -2,7 +2,7 @@
 layout: docs
 docs_collection: icons_docs
 docs_home:
-  url: /icons/
+  url: /docs/icons/
   title: Home
 color_theme: blue
 nav_order: 1
@@ -23,7 +23,7 @@ extra_body: |
 `icons` is a small, dependency-free SVG icon loader: a classic
 `<script>`/`<link>` tag pair that lazily fetches and inlines an icon by
 name from a configurable URL. Browse the full icon set on the
-[Icons page](/icons/).
+[Icons page](/docs/icons/).
 
 <div class="callout callout--info">
   <p><strong>Lazy by design.</strong> Icons are only fetched once their

@@ -2,13 +2,13 @@
 layout: docs
 docs_collection: icons_docs
 docs_home:
-  url: /icons/
+  url: /docs/icons/
   title: Home
 color_theme: blue
 scroll_top: true
 title: Icons
 description: Browse and search the full icon set, or read the docs to use icons in your own project.
-permalink: /icons/
+permalink: /docs/icons/
 extra_head: |
   <link href="https://cdn.masiar.io/icons/@latest/icons.min.css" rel="stylesheet">
 extra_body: |

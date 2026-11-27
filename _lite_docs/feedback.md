@@ -2,25 +2,29 @@
 layout: docs
 docs_collection: lite_docs
 docs_home:
-  url: /lite/
+  url: /docs/lite/
   title: Home
 color_theme: blue
-nav_order: 3
+nav_order: 4
 title: Feedback
-extra_head: |
-  <link href="https://cdn.masiar.io/lite/@latest/lite.min.css" rel="stylesheet">
 ---
 
-Show a validation or server error with `.error`.
+Four status boxes are built in: `.error`, `.success`, `.warning`, and
+`.info`.
 
-<div class="example"></div>
+<div class="code-tabs">
+  <button type="button" class="code-tabs__tab is-active" data-tab="code">Code</button>
+  <button type="button" class="code-tabs__tab" data-tab="preview">Preview</button>
+</div>
 
 ```html
 <div class="error">Something went wrong.</div>
+<div class="success">Saved successfully.</div>
+<div class="warning">This action cannot be undone.</div>
+<div class="info">A new version is available.</div>
 ```
 
-<div class="docs-example-preview">
-<div style="width: 100%;">
-<div class="error">Something went wrong.</div>
-</div>
+<div class="code-tabs__preview" hidden>
+  <iframe class="code-tabs__iframe" title="Live preview" loading="lazy"
+    data-stylesheet="https://cdn.masiar.io/lite/@latest/lite.min.css"></iframe>
 </div>

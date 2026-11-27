@@ -2,19 +2,14 @@
 layout: docs
 docs_collection: lite_docs
 docs_home:
-  url: /lite/
+  url: /docs/lite/
   title: Home
 color_theme: blue
 scroll_top: true
-title: lite.css
-description: Classless-first base CSS for small single-purpose tools. Link one file, write plain HTML, done.
-permalink: /lite/
-extra_head: |
-  <link href="https://cdn.masiar.io/lite/@latest/lite.min.css" rel="stylesheet">
+title: Lite.css
+description: Classless base CSS - styles bare HTML elements, no classes required.
+permalink: /docs/lite/
 ---
-
-One file, no classes required for the basics, no JS, no dark mode, no grid
-system. Link it and write plain semantic HTML.
 
 <div class="example"></div>
 
